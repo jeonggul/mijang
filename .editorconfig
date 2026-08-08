@@ -1,0 +1,22 @@
+# https://editorconfig.org — IDE가 달라도 코드 스타일 통일
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# 마크업·설정 파일은 2칸
+[*.{yml,yaml,json,html,css,js}]
+indent_size = 2
+
+# 마크다운은 줄 끝 공백 유지(줄바꿈 문법)
+[*.md]
+trim_trailing_whitespace = false
+
+# Windows 배치 파일은 CRLF
+[*.bat]
+end_of_line = crlf

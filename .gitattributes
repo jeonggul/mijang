@@ -1,3 +1,31 @@
-/gradlew text eol=lf
-*.bat text eol=crlf
-*.jar binary
+# 줄바꿈 자동 정규화 — 저장소에는 LF로 통일 (Windows·Mac 혼합 팀 대비)
+* text=auto eol=lf
+
+# 스크립트
+/gradlew     text eol=lf
+*.sh         text eol=lf
+*.bat        text eol=crlf
+*.cmd        text eol=crlf
+
+# 소스·텍스트
+*.java       text
+*.xml        text
+*.yml        text
+*.yaml       text
+*.properties text
+*.sql        text
+*.md         text
+*.html       text
+*.css        text
+*.js         text
+
+# 바이너리 (정규화 금지)
+*.jar   binary
+*.war   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
