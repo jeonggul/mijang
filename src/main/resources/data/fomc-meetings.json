@@ -1,0 +1,31 @@
+{
+  "_comment": [
+    "FOMC 정례회의 일정. 출처: https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "연준은 회의 일정을 1~2년 앞서 확정 공개하고 바꾸는 일이 거의 없다.",
+    "연 8회짜리 데이터를 위해 HTML 을 긁는 것보다 여기에 두고 해마다 한 번 갱신하는 편이 안전하다.",
+    "date 는 결정이 발표되는 날(회의 이틀째)이다. 발표는 미 동부시각 오후 2시.",
+    "projections=true 는 경제전망 요약(SEP) 발표와 의장 기자회견이 함께 있는 회의로, 시장 반응이 더 크다.",
+    "갱신 방법: 위 연준 페이지에서 다음 해 일정을 확인해 meetings 배열에 추가한다.",
+    "마지막 회의가 6개월 안으로 다가오면 앱 기동 시 경고 로그가 뜬다."
+  ],
+  "source": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+  "checkedOn": "2026-08-11",
+  "meetings": [
+    { "date": "2026-01-28", "projections": false },
+    { "date": "2026-03-18", "projections": true },
+    { "date": "2026-04-29", "projections": false },
+    { "date": "2026-06-17", "projections": true },
+    { "date": "2026-07-29", "projections": false },
+    { "date": "2026-09-16", "projections": true },
+    { "date": "2026-10-28", "projections": false },
+    { "date": "2026-12-09", "projections": true },
+    { "date": "2027-01-27", "projections": false },
+    { "date": "2027-03-17", "projections": true },
+    { "date": "2027-04-28", "projections": false },
+    { "date": "2027-06-09", "projections": true },
+    { "date": "2027-07-28", "projections": false },
+    { "date": "2027-09-15", "projections": true },
+    { "date": "2027-10-27", "projections": false },
+    { "date": "2027-12-08", "projections": true }
+  ]
+}
