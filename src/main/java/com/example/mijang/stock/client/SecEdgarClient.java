@@ -50,7 +50,7 @@ public class SecEdgarClient {
      */
     public JsonNode companyTickers() {
         return get(wwwClient, "/files/company_tickers.json")
-                .orElseThrow(() -> new BusinessException(ErrorCode.EXTERNAL_API_ERROR));
+                .orElseThrow(() -> new BusinessException(ErrorCode.VENDOR_UNAVAILABLE));
     }
 
     /**
@@ -60,7 +60,7 @@ public class SecEdgarClient {
      */
     public JsonNode submissions(String cik) {
         return get(dataClient, "/submissions/CIK" + cik + ".json")
-                .orElseThrow(() -> new BusinessException(ErrorCode.DISCLOSURE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.STOCK_DISCLOSURE_NOT_FOUND));
     }
 
     /**
@@ -87,7 +87,7 @@ public class SecEdgarClient {
     private Optional<JsonNode> get(RestClient client, String path) {
         if (!config.configured()) {
             log.warn("SEC User-Agent 미설정 상태로 호출 시도: {}", path);
-            throw new BusinessException(ErrorCode.EXTERNAL_API_NOT_CONFIGURED);
+            throw new BusinessException(ErrorCode.VENDOR_NOT_CONFIGURED);
         }
         throttle();
         try {
@@ -97,10 +97,10 @@ public class SecEdgarClient {
         } catch (HttpClientErrorException.Forbidden e) {
             // SEC 의 403 은 대부분 User-Agent 문제이거나 초당 한도 초과 뒤의 차단이다.
             log.error("SEC 403 — User-Agent 형식 또는 호출 한도를 확인할 것. path={}", path);
-            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+            throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
         } catch (RestClientException e) {
             log.error("SEC 호출 실패 path={} : {}", path, e.getMessage());
-            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+            throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
         }
     }
 
@@ -121,7 +121,7 @@ public class SecEdgarClient {
                 Thread.sleep(waitNanos / 1_000_000L, (int) (waitNanos % 1_000_000L));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+                throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
             }
         }
     }
