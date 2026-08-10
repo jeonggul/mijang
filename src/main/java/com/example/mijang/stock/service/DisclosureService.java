@@ -85,7 +85,7 @@ public class DisclosureService {
         ensureCikLoaded();
         String cik = tickerToCik.get(symbol.toUpperCase(Locale.ROOT));
         if (cik == null) {
-            throw new BusinessException(ErrorCode.CIK_NOT_FOUND);
+            throw new BusinessException(ErrorCode.STOCK_CIK_NOT_FOUND);
         }
         return cik;
     }
@@ -95,7 +95,7 @@ public class DisclosureService {
         String cik = cikOf(symbol);
         JsonNode recent = client.submissions(cik).path("filings").path("recent");
         if (recent.isMissingNode()) {
-            throw new BusinessException(ErrorCode.DISCLOSURE_NOT_FOUND);
+            throw new BusinessException(ErrorCode.STOCK_DISCLOSURE_NOT_FOUND);
         }
 
         JsonNode forms = recent.path("form");
@@ -129,7 +129,7 @@ public class DisclosureService {
     public List<FinancialFactResponse> financials(String symbol, String metric, int limit) {
         List<String> candidates = METRIC_TAGS.get(metric);
         if (candidates == null) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+            throw new BusinessException(ErrorCode.COMMON_INVALID_REQUEST);
         }
         String cik = cikOf(symbol);
 
@@ -318,7 +318,7 @@ public class DisclosureService {
                 }
             });
             if (loaded.isEmpty()) {
-                throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+                throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
             }
             tickerToCik.clear();
             tickerToCik.putAll(loaded);

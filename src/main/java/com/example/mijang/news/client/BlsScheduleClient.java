@@ -59,10 +59,10 @@ public class BlsScheduleClient {
             ics = client.get().uri(config.scheduleUrl()).retrieve().body(String.class);
         } catch (RestClientException e) {
             log.error("BLS 일정 조회 실패: {}", e.getMessage());
-            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+            throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
         }
         if (ics == null || ics.isBlank()) {
-            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+            throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
         }
         return parse(ics);
     }
@@ -95,7 +95,7 @@ public class BlsScheduleClient {
         }
         if (events.isEmpty()) {
             log.error("BLS 일정을 한 건도 파싱하지 못했다. 파일 형식이 바뀌었을 수 있다.");
-            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+            throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
         }
         log.info("BLS 발표 일정 {}건 파싱", events.size());
         return events;
