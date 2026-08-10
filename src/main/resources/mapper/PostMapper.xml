@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(MVC): "PostMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.community.mapper.PostMapper">
+
+    <select id="countBySymbol" resultType="long">
+        SELECT COUNT(*)
+          FROM posts
+         WHERE symbol = #{symbol}
+           AND deleted = 0
+    </select>
+
+</mapper>

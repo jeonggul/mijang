@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(MVC): "StockMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.stock.mapper.StockMapper">
+
+    <select id="searchByPrefix" resultType="com.example.mijang.stock.dto.StockSearchResponse">
+        SELECT symbol, name, exchange
+          FROM stocks
+         WHERE active = 1
+           AND (symbol LIKE CONCAT(#{q}, '%') OR name LIKE CONCAT(#{q}, '%'))
+         ORDER BY symbol
+         LIMIT #{limit}
+    </select>
+
+</mapper>

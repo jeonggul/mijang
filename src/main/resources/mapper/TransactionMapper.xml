@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(MVC): "TransactionMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.portfolio.mapper.TransactionMapper">
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*)
+          FROM transactions
+         WHERE user_id = #{userId}
+    </select>
+
+</mapper>

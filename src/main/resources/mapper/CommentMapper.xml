@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(MVC): "CommentMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.community.mapper.CommentMapper">
+
+    <select id="countByPost" resultType="long">
+        SELECT COUNT(*)
+          FROM comments
+         WHERE post_id = #{postId}
+           AND deleted = 0
+    </select>
+
+</mapper>

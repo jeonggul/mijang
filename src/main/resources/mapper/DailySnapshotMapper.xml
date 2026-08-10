@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(MVC): "DailySnapshotMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.portfolio.mapper.DailySnapshotMapper">
+
+    <select id="countByRange" resultType="long">
+        SELECT COUNT(*)
+          FROM daily_snapshots
+         WHERE user_id = #{userId}
+           AND base_date BETWEEN #{from} AND #{to}
+    </select>
+
+</mapper>
