@@ -1,0 +1,47 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 로그인</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="auth">
+  <div>
+    <div class="auth-card">
+      <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></p>
+      <form onsubmit="location.href='/';return false">
+        <div class="field">
+          <label for="email">이메일</label>
+          <input id="email" type="email" value="demo@mijang.app" autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="pw">비밀번호</label>
+          <input id="pw" type="password" value="password12" autocomplete="current-password">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label class="check" style="flex:1"><input type="checkbox" checked>로그인 상태 유지</label>
+          <a th:href="@{/password-forgot}" style="font-size:var(--fs-label);color:var(--record);font-weight:600">비밀번호 찾기</a>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">로그인</button>
+        <p class="divider">또는</p>
+        <button class="btn btn-block" type="button">Google로 계속하기</button>
+        <button class="btn btn-block" type="button">Kakao로 계속하기</button>
+        <p class="note" style="text-align:center">소셜 로그인은 확장 단계 기능입니다</p>
+      </form>
+
+      <p class="auth-foot">아직 계정이 없으신가요? <a th:href="@{/signup}">회원가입</a></p>
+    </div>
+    <p class="auth-note">미장은 증권사가 아닙니다. 본인 확인이나 인증서 절차가 없습니다.</p>
+  </div>
+</div>
+<script th:src="@{/js/ui.js}"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(API) COM-005 · 중복 신고 409 판정 -->
+<mapper namespace="com.example.mijang.community.mapper.ReportMapper">
+
+    <select id="countByReporterAndTarget" resultType="int">
+        SELECT COUNT(*)
+          FROM reports
+         WHERE reporter_id = #{userId}
+           AND target_type = #{targetType}
+           AND target_id   = #{targetId}
+    </select>
+</mapper>

@@ -1,0 +1,530 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 관리자</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- 관리자 화면에는 서비스 헤더도 다크모드 전환도 없다. -->
+<div class="admin-layout">
+  <nav class="admin-nav" aria-label="관리자 메뉴">
+    <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>ADMIN</small></a>
+
+    <p class="lbl">대시보드</p>
+    <ul role="tablist" aria-orientation="vertical">
+      <li><button role="tab" id="m-dash" aria-controls="a-dash" aria-selected="true" aria-current="page">대시보드</button></li>
+      <li><button role="tab" id="m-users" aria-controls="a-users" aria-selected="false">회원 관리</button></li>
+      <li><button role="tab" id="m-stocks" aria-controls="a-stocks" aria-selected="false">종목 관리</button></li>
+      <li><button role="tab" id="m-posts" aria-controls="a-posts" aria-selected="false">게시글 관리</button></li>
+      <li><button role="tab" id="m-report" aria-controls="a-report" aria-selected="false">신고 처리</button></li>
+      <li><button role="tab" id="m-notice" aria-controls="a-notice" aria-selected="false">공지사항</button></li>
+      <li><button role="tab" id="m-sync" aria-controls="a-sync" aria-selected="false">데이터 동기화</button></li>
+      <li><button role="tab" id="m-stats" aria-controls="a-stats" aria-selected="false">통계</button></li>
+      <li><button role="tab" id="m-logs" aria-controls="a-logs" aria-selected="false">작업 로그</button></li>
+      <li><button role="tab" id="m-config" aria-controls="a-config" aria-selected="false">운영 설정</button></li>
+    </ul>
+
+    <span class="grow"></span>
+    <a class="logout" th:href="@{/login}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M15 17l5-5-5-5M20 12H9M12 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"
+              stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      로그아웃
+    </a>
+  </nav>
+
+  <main class="admin-main">
+  <section role="tabpanel" id="a-dash" aria-labelledby="m-dash">
+    <div class="page-head"><div><h1>대시보드</h1><p>2025-08-05 09:12 기준</p></div></div>
+
+    <section class="card stat-strip" style="margin-bottom:16px">
+      <div><span class="k">전체 회원</span><span class="v">1,284</span><span class="s">어제 대비 +12</span></div>
+      <div><span class="k">오늘 활성 회원</span><span class="v">317</span><span class="s">DAU</span></div>
+      <div><span class="k">누적 매매 기록</span><span class="v">48,209</span><span class="s">어제 +604</span></div>
+      <div><span class="k">미처리 신고</span><span class="v" style="color:var(--valid-err)">7</span><span class="s">평균 대기 4시간</span></div>
+    </section>
+
+    <div class="grid-2">
+      <section class="card card-pad">
+        <h2 style="margin:0 0 14px;font-size:var(--fs-section)">일별 가입자</h2>
+        <svg viewBox="0 0 640 200" width="100%" height="200" preserveAspectRatio="none" role="img" aria-label="최근 2주 일별 가입자">
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="0" y1="50" x2="640" y2="50"/><line x1="0" y1="100" x2="640" y2="100"/>
+            <line x1="0" y1="150" x2="640" y2="150"/>
+          </g>
+          <g fill="var(--record)">
+            <rect x="8"  y="128" width="30" height="72" rx="3"/><rect x="52" y="112" width="30" height="88" rx="3"/>
+            <rect x="96" y="140" width="30" height="60" rx="3"/><rect x="140" y="96" width="30" height="104" rx="3"/>
+            <rect x="184" y="120" width="30" height="80" rx="3"/><rect x="228" y="84" width="30" height="116" rx="3"/>
+            <rect x="272" y="104" width="30" height="96" rx="3"/><rect x="316" y="72" width="30" height="128" rx="3"/>
+            <rect x="360" y="92" width="30" height="108" rx="3"/><rect x="404" y="60" width="30" height="140" rx="3"/>
+            <rect x="448" y="80" width="30" height="120" rx="3"/><rect x="492" y="48" width="30" height="152" rx="3"/>
+            <rect x="536" y="68" width="30" height="132" rx="3"/><rect x="580" y="40" width="30" height="160" rx="3"/>
+          </g>
+        </svg>
+      </section>
+
+      <section class="card card-pad">
+        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">외부 데이터 상태</h2>
+        <div class="setting-row">
+          <span class="txt"><b>Alpaca 시세</b><small>IEX 실시간 · 마지막 수신 3초 전</small></span>
+          <span class="val"><span class="badge badge-ok">정상</span></span>
+        </div>
+        <div class="setting-row">
+          <span class="txt"><b>한국수출입은행 환율</b><small>오늘 11:02 수신 · 잔여 호출 842/1000</small></span>
+          <span class="val"><span class="badge badge-ok">정상</span></span>
+        </div>
+        <div class="setting-row">
+          <span class="txt"><b>SEC EDGAR</b><small>마지막 동기화 06:00</small></span>
+          <span class="val"><span class="badge badge-ok">정상</span></span>
+        </div>
+        <div class="setting-row">
+          <span class="txt"><b>Finnhub 뉴스</b><small>13:40 이후 응답 지연</small></span>
+          <span class="val"><span class="badge badge-warn">지연</span></span>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section role="tabpanel" id="a-users" aria-labelledby="m-users" hidden>
+    <div class="page-head">
+      <div><h1>회원 관리</h1><p>전체 1,284명</p></div>
+      <span class="grow"></span>
+      <button class="btn btn-sm" type="button">CSV 내보내기</button>
+    </div>
+
+    <div class="card card-pad" style="margin-bottom:16px">
+      <div class="row-between">
+        <div class="field" style="flex:1;min-width:240px">
+          <label for="u-q">닉네임 또는 이메일</label>
+          <input id="u-q" type="search" placeholder="검색어 입력">
+        </div>
+        <div class="pills" data-toggle-group style="align-self:flex-end;padding-bottom:6px">
+          <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+          <button type="button" data-value="ACTIVE" aria-pressed="false">활성</button>
+          <button type="button" data-value="DORMANT" aria-pressed="false">휴면</button>
+          <button type="button" data-value="BLOCKED" aria-pressed="false">정지</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th scope="col">ID</th><th class="txt" scope="col">닉네임</th><th class="txt" scope="col">이메일</th>
+            <th scope="col">가입일</th><th scope="col">최근 접속</th>
+            <th class="r" scope="col">기록</th><th scope="col">상태</th><th scope="col"></th>
+          </tr></thead>
+          <tbody>
+            <tr><td>1284</td><td class="txt">태윤</td><td class="txt">tae***@gmail.com</td><td>2025-08-05</td><td>3분 전</td><td class="r">0</td><td><span class="badge badge-ok">활성</span></td><td><button class="btn btn-sm" type="button" data-open="u-detail">상세</button></td></tr>
+            <tr><td>1198</td><td class="txt">수연</td><td class="txt">soo***@naver.com</td><td>2025-06-19</td><td>2시간 전</td><td class="r">87</td><td><span class="badge badge-ok">활성</span></td><td><button class="btn btn-sm" type="button" data-open="u-detail">상세</button></td></tr>
+            <tr><td>1104</td><td class="txt">현우</td><td class="txt">hyu***@daum.net</td><td>2025-04-02</td><td>어제</td><td class="r">143</td><td><span class="badge badge-ok">활성</span></td><td><button class="btn btn-sm" type="button" data-open="u-detail">상세</button></td></tr>
+            <tr><td>0871</td><td class="txt">민서</td><td class="txt">min***@gmail.com</td><td>2024-11-28</td><td>92일 전</td><td class="r">26</td><td><span class="badge badge-warn">휴면</span></td><td><button class="btn btn-sm" type="button" data-open="u-detail">상세</button></td></tr>
+            <tr><td>0642</td><td class="txt">차트왕</td><td class="txt">cha***@gmail.com</td><td>2024-08-14</td><td>6일 전</td><td class="r">4</td><td><span class="badge badge-err">정지</span></td><td><button class="btn btn-sm" type="button" data-open="u-detail">상세</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-stocks" aria-labelledby="m-stocks" hidden>
+    <div class="page-head">
+      <div><h1>종목 관리</h1><p>등록 종목 6,412개 · 상장폐지 제외</p></div>
+      <span class="grow"></span>
+      <button class="btn btn-sm" type="button">종목 목록 재동기화</button>
+    </div>
+
+    <div class="card card-pad" style="margin-bottom:16px">
+      <div class="field">
+        <label for="s-q">티커 또는 종목명</label>
+        <input id="s-q" type="search" placeholder="AAPL">
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="txt" scope="col">한글명</th>
+            <th scope="col">거래소</th><th scope="col">유형</th>
+            <th class="r" scope="col">관심 등록</th><th scope="col">노출</th><th scope="col"></th>
+          </tr></thead>
+          <tbody>
+            <tr><td>AAPL</td><td class="txt">Apple Inc.</td><td class="txt">애플</td><td>NASDAQ</td><td>주식</td><td class="r">412</td><td><label class="switch"><input type="checkbox" checked><span></span></label></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+            <tr><td>NVDA</td><td class="txt">NVIDIA Corp.</td><td class="txt">엔비디아</td><td>NASDAQ</td><td>주식</td><td class="r">638</td><td><label class="switch"><input type="checkbox" checked><span></span></label></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+            <tr><td>SCHD</td><td class="txt">Schwab US Dividend Equity ETF</td><td class="txt">슈왑 배당 ETF</td><td>NYSE</td><td>ETF</td><td class="r">294</td><td><label class="switch"><input type="checkbox" checked><span></span></label></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+            <tr><td>SIVB</td><td class="txt">SVB Financial Group</td><td class="txt sub">—</td><td>NASDAQ</td><td>주식</td><td class="r">3</td><td><label class="switch"><input type="checkbox"><span></span></label></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="padding:12px 18px">노출을 끄면 검색과 신규 기록 등록에서 제외됩니다. 이미 보유 중인 회원의 기록은 유지됩니다.</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-posts" aria-labelledby="m-posts" hidden>
+    <div class="page-head">
+      <div><h1>게시글 관리</h1><p>전체 3,842건 · 오늘 47건</p></div>
+    </div>
+
+    <div class="card card-pad" style="margin-bottom:16px">
+      <div class="pills" data-toggle-group>
+        <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+        <button type="button" data-value="STOCK" aria-pressed="false">종목 토론</button>
+        <button type="button" data-value="RECORD" aria-pressed="false">기록 공유</button>
+        <button type="button" data-value="QNA" aria-pressed="false">질문</button>
+        <button type="button" data-value="HIDDEN" aria-pressed="false">숨김 처리됨</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th scope="col">ID</th><th class="txt" scope="col">제목</th><th class="txt" scope="col">작성자</th>
+            <th scope="col">작성일</th><th class="r" scope="col">조회</th>
+            <th class="r" scope="col">댓글</th><th class="r" scope="col">신고</th><th scope="col"></th>
+          </tr></thead>
+          <tbody>
+            <tr><td>3842</td><td class="txt">NVDA 지금 들어가도 될까요? 데이터센터 매출 추이 정리해봤습니다</td><td class="txt">지훈</td><td>08-05</td><td class="r">842</td><td class="r">14</td><td class="r">0</td><td><button class="btn btn-sm" type="button">숨김</button></td></tr>
+            <tr><td>3841</td><td class="txt">1년 반 기록해보니 알게 된 것</td><td class="txt">민서</td><td>08-05</td><td class="r">1,204</td><td class="r">32</td><td class="r">0</td><td><button class="btn btn-sm" type="button">숨김</button></td></tr>
+            <tr><td>3839</td><td class="txt">💰 무료 리딩방 오픈했습니다 선착순</td><td class="txt">차트왕</td><td>08-05</td><td class="r">88</td><td class="r">2</td><td class="r" style="color:var(--valid-err)">5</td><td><button class="btn btn-sm btn-danger" type="button">삭제</button></td></tr>
+            <tr><td>3838</td><td class="txt">평단가 이동평균법이랑 선입선출 중에 뭐가 맞나요</td><td class="txt">현우</td><td>08-04</td><td class="r">316</td><td class="r">8</td><td class="r">0</td><td><button class="btn btn-sm" type="button">숨김</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-report" aria-labelledby="m-report" hidden>
+    <div class="page-head">
+      <div><h1>신고 처리</h1><p>미처리 7건 · 평균 대기 4시간</p></div>
+      <span class="grow"></span>
+      <div class="pills" data-toggle-group>
+        <button type="button" data-value="TODO" aria-pressed="true">미처리 7</button>
+        <button type="button" data-value="DONE" aria-pressed="false">처리 완료</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th scope="col">접수</th><th scope="col">유형</th><th class="txt" scope="col">대상</th>
+            <th class="txt" scope="col">신고자</th><th class="txt" scope="col">사유</th>
+            <th class="r" scope="col">누적</th><th scope="col"></th>
+          </tr></thead>
+          <tbody>
+            <tr><td>08-05 14:02</td><td>게시글</td><td class="txt">💰 무료 리딩방 오픈했습니다 선착순</td><td class="txt">수연</td><td class="txt">외부 홍보·리딩방</td><td class="r" style="color:var(--valid-err)">5</td><td><button class="btn btn-sm btn-danger" type="button" data-open="r-detail">처리</button></td></tr>
+            <tr><td>08-05 11:48</td><td>댓글</td><td class="txt">이거 사면 무조건 오릅니다 지금 사세요</td><td class="txt">현우</td><td class="txt">매수·매도 권유</td><td class="r">2</td><td><button class="btn btn-sm" type="button" data-open="r-detail">처리</button></td></tr>
+            <tr><td>08-04 22:15</td><td>게시글</td><td class="txt">수익률 800% 인증합니다</td><td class="txt">민서</td><td class="txt">수익 인증</td><td class="r">1</td><td><button class="btn btn-sm" type="button" data-open="r-detail">처리</button></td></tr>
+            <tr><td>08-04 19:33</td><td>댓글</td><td class="txt">(욕설 포함 댓글)</td><td class="txt">태윤</td><td class="txt">욕설·비방</td><td class="r">3</td><td><button class="btn btn-sm" type="button" data-open="r-detail">처리</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-notice" aria-labelledby="m-notice" hidden>
+    <div class="page-head">
+      <div><h1>공지사항</h1><p>게시 중 3건</p></div>
+      <span class="grow"></span>
+      <button class="btn btn-primary btn-sm" type="button" data-open="n-write">＋ 공지 작성</button>
+    </div>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th scope="col">ID</th><th class="txt" scope="col">제목</th><th scope="col">게시일</th>
+            <th scope="col">상단 고정</th><th class="r" scope="col">조회</th>
+            <th scope="col">상태</th><th scope="col"></th>
+          </tr></thead>
+          <tbody>
+            <tr><td>18</td><td class="txt">환율 데이터 제공처 도메인 변경 안내</td><td>2025-07-30</td><td><label class="switch"><input type="checkbox" checked><span></span></label></td><td class="r">2,104</td><td><span class="badge badge-ok">게시 중</span></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+            <tr><td>17</td><td class="txt">커뮤니티 운영 정책 개정 (리딩방 홍보 제재 강화)</td><td>2025-07-12</td><td><label class="switch"><input type="checkbox"><span></span></label></td><td class="r">1,588</td><td><span class="badge badge-ok">게시 중</span></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+            <tr><td>16</td><td class="txt">양도소득세 추정 기능 추가</td><td>2025-06-28</td><td><label class="switch"><input type="checkbox"><span></span></label></td><td class="r">3,241</td><td><span class="badge badge-ok">게시 중</span></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+            <tr><td>15</td><td class="txt">정기 점검 안내 (2025-06-15 02:00~04:00)</td><td>2025-06-13</td><td><label class="switch"><input type="checkbox"><span></span></label></td><td class="r">942</td><td><span class="badge badge-line">종료</span></td><td><button class="btn btn-sm" type="button">수정</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-sync" aria-labelledby="m-sync" hidden>
+    <div class="page-head">
+      <div><h1>데이터 동기화</h1><p>외부 API 배치 현황</p></div>
+      <span class="grow"></span>
+      <button class="btn btn-sm" type="button">전체 수동 실행</button>
+    </div>
+
+    <section class="card" style="margin-bottom:16px">
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th class="txt" scope="col">작업</th><th class="txt" scope="col">출처</th><th scope="col">주기</th>
+            <th scope="col">마지막 실행</th><th class="r" scope="col">처리 건수</th>
+            <th scope="col">상태</th><th scope="col"></th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="txt">일봉 수집</td><td class="txt">Alpaca (SIP)</td><td>매일 06:10</td><td>08-05 06:10</td><td class="r">6,412</td><td><span class="badge badge-ok">성공</span></td><td><button class="btn btn-sm" type="button">실행</button></td></tr>
+            <tr><td class="txt">환율 수집</td><td class="txt">한국수출입은행</td><td>영업일 11:00</td><td>08-05 11:02</td><td class="r">1</td><td><span class="badge badge-ok">성공</span></td><td><button class="btn btn-sm" type="button">실행</button></td></tr>
+            <tr><td class="txt">배당 일정</td><td class="txt">Alpaca Corporate Actions</td><td>매일 06:30</td><td>08-05 06:30</td><td class="r">418</td><td><span class="badge badge-ok">성공</span></td><td><button class="btn btn-sm" type="button">실행</button></td></tr>
+            <tr><td class="txt">기업 재무</td><td class="txt">SEC EDGAR</td><td>매일 06:00</td><td>08-05 06:00</td><td class="r">2,209</td><td><span class="badge badge-ok">성공</span></td><td><button class="btn btn-sm" type="button">실행</button></td></tr>
+            <tr><td class="txt">종목 뉴스</td><td class="txt">Finnhub Company News</td><td>1시간</td><td>08-05 13:40</td><td class="r">0</td><td><span class="badge badge-warn">지연</span></td><td><button class="btn btn-sm" type="button">실행</button></td></tr>
+            <tr><td class="txt">경제 캘린더</td><td class="txt">Finnhub Economic Calendar</td><td>매일 07:00</td><td>08-05 07:00</td><td class="r">36</td><td><span class="badge badge-ok">성공</span></td><td><button class="btn btn-sm" type="button">실행</button></td></tr>
+            <tr><td class="txt">자산 스냅샷</td><td class="txt">내부 배치</td><td>매일 07:30</td><td>08-05 07:30</td><td class="r">1,284</td><td><span class="badge badge-ok">성공</span></td><td><button class="btn btn-sm" type="button">실행</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2 style="margin:0 0 12px;font-size:var(--fs-section)">API 호출 한도</h2>
+      <p class="row-between" style="margin:0 0 6px"><span style="flex:1">한국수출입은행 · 일 1,000회</span><span class="num">158 / 1,000</span></p>
+      <div class="progress" style="margin-bottom:14px"><i style="width:15.8%"></i></div>
+      <p class="row-between" style="margin:0 0 6px"><span style="flex:1">Finnhub · 분당 60회</span><span class="num">41 / 60</span></p>
+      <div class="progress" style="margin-bottom:14px"><i style="width:68.3%;background:var(--warn)"></i></div>
+      <p class="row-between" style="margin:0 0 6px"><span style="flex:1">Alpaca · 분당 200회</span><span class="num">62 / 200</span></p>
+      <div class="progress"><i style="width:31%"></i></div>
+      <p class="info info-warn">Finnhub 한도가 68%입니다. 지연이 계속되면 뉴스 갱신 주기를 늘려야 합니다.</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-stats" aria-labelledby="m-stats" hidden>
+    <div class="page-head">
+      <div><h1>통계</h1><p>2025년 7월 기준</p></div>
+      <span class="grow"></span>
+      <div class="pills" data-toggle-group>
+        <button type="button" data-value="1M" aria-pressed="true">월간</button>
+        <button type="button" data-value="1W" aria-pressed="false">주간</button>
+        <button type="button" data-value="1D" aria-pressed="false">일간</button>
+      </div>
+    </div>
+
+    <section class="card stat-strip" style="margin-bottom:16px">
+      <div><span class="k">신규 가입</span><span class="v">184</span><span class="s">전월 대비 +23%</span></div>
+      <div><span class="k">재방문율</span><span class="v">61%</span><span class="s">7일 기준</span></div>
+      <div><span class="k">기록 작성률</span><span class="v">73%</span><span class="s">매매 중 이유 남긴 비율</span></div>
+      <div><span class="k">회고 작성</span><span class="v">1,042</span><span class="s">전월 대비 +8%</span></div>
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2 class="card-head">인기 종목 <span class="sub">관심 등록 기준</span></h2>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th scope="col">순위</th><th scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="r" scope="col">관심</th><th class="r" scope="col">보유 회원</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>NVDA</td><td class="txt">NVIDIA Corp.</td><td class="r">638</td><td class="r">412</td></tr>
+              <tr><td>2</td><td>AAPL</td><td class="txt">Apple Inc.</td><td class="r">412</td><td class="r">388</td></tr>
+              <tr><td>3</td><td>SCHD</td><td class="txt">Schwab US Dividend ETF</td><td class="r">294</td><td class="r">261</td></tr>
+              <tr><td>4</td><td>TSLA</td><td class="txt">Tesla Inc.</td><td class="r">277</td><td class="r">198</td></tr>
+              <tr><td>5</td><td>MSFT</td><td class="txt">Microsoft Corp.</td><td class="r">241</td><td class="r">224</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card card-pad">
+        <h2 style="margin:0 0 14px;font-size:var(--fs-section)">화면별 방문 비중</h2>
+        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">대시보드</span><span class="num">38%</span></p>
+        <div class="progress" style="margin-bottom:14px"><i style="width:38%"></i></div>
+        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">종목 상세</span><span class="num">24%</span></p>
+        <div class="progress" style="margin-bottom:14px"><i style="width:24%"></i></div>
+        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">커뮤니티</span><span class="num">18%</span></p>
+        <div class="progress" style="margin-bottom:14px"><i style="width:18%"></i></div>
+        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">매매 기록</span><span class="num">12%</span></p>
+        <div class="progress" style="margin-bottom:14px"><i style="width:12%"></i></div>
+        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">기타</span><span class="num">8%</span></p>
+        <div class="progress"><i style="width:8%"></i></div>
+      </section>
+    </div>
+  </section>
+  <section role="tabpanel" id="a-logs" aria-labelledby="m-logs" hidden>
+    <div class="page-head">
+      <div><h1>작업 로그</h1><p>관리자가 수행한 작업 기록 · 90일 보관</p></div>
+      <span class="grow"></span>
+      <button class="btn btn-sm" type="button">CSV 내보내기</button>
+    </div>
+
+    <div class="card card-pad" style="margin-bottom:16px">
+      <div class="row-between">
+        <div class="field" style="flex:1;min-width:200px">
+          <label for="l-admin">관리자</label>
+          <select id="l-admin"><option selected>전체</option><option>정하</option><option>운영자A</option><option>운영자B</option></select>
+        </div>
+        <div class="field" style="flex:1;min-width:200px">
+          <label for="l-type">작업 유형</label>
+          <select id="l-type"><option selected>전체</option><option>회원</option><option>게시글</option><option>신고</option><option>종목</option><option>공지</option><option>설정</option></select>
+        </div>
+        <div class="field" style="flex:1;min-width:200px">
+          <label for="l-from">기간</label>
+          <input id="l-from" type="date" value="2025-08-01">
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th scope="col">시각</th><th class="txt" scope="col">관리자</th><th scope="col">유형</th>
+            <th class="txt" scope="col">작업</th><th class="txt" scope="col">대상</th><th scope="col">IP</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>08-05 14:08</td><td class="txt">정하</td><td><span class="badge badge-fall">신고</span></td><td class="txt">게시글 삭제</td><td class="txt">#3839 무료 리딩방 오픈</td><td>121.***.**.42</td></tr>
+            <tr><td>08-05 14:07</td><td class="txt">정하</td><td><span class="badge badge-fall">회원</span></td><td class="txt">계정 정지 (7일)</td><td class="txt">#0642 차트왕</td><td>121.***.**.42</td></tr>
+            <tr><td>08-05 11:22</td><td class="txt">운영자A</td><td><span class="badge badge-line">종목</span></td><td class="txt">노출 해제</td><td class="txt">SIVB</td><td>58.***.**.17</td></tr>
+            <tr><td>08-05 09:40</td><td class="txt">운영자A</td><td><span class="badge badge-line">공지</span></td><td class="txt">공지 게시</td><td class="txt">#18 환율 도메인 변경 안내</td><td>58.***.**.17</td></tr>
+            <tr><td>08-04 18:03</td><td class="txt">운영자B</td><td><span class="badge badge-accent">설정</span></td><td class="txt">뉴스 갱신 주기 변경 (30분 → 1시간)</td><td class="txt">운영 설정</td><td>203.***.**.91</td></tr>
+            <tr><td>08-04 16:51</td><td class="txt">운영자B</td><td><span class="badge badge-line">게시글</span></td><td class="txt">숨김 처리</td><td class="txt">#3801 수익률 800% 인증</td><td>203.***.**.91</td></tr>
+            <tr><td>08-04 10:14</td><td class="txt">정하</td><td><span class="badge badge-line">회원</span></td><td class="txt">휴면 해제</td><td class="txt">#0871 민서</td><td>121.***.**.42</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="padding:12px 18px">
+        로그는 수정하거나 지울 수 없습니다. 90일이 지나면 자동으로 삭제됩니다.
+      </p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-config" aria-labelledby="m-config" hidden>
+    <div class="page-head"><div><h1>운영 설정</h1><p>서비스 전반 동작 방식</p></div></div>
+
+    <section class="card card-pad" style="margin-bottom:16px">
+      <h2 style="margin:0 0 6px;font-size:var(--fs-section)">데이터 갱신</h2>
+      <div class="setting-row">
+        <span class="txt"><b>뉴스 갱신 주기</b><small>Finnhub 한도에 직접 영향을 줍니다</small></span>
+        <span class="val">
+          <div class="pills" data-toggle-group>
+            <button type="button" data-value="30" aria-pressed="false">30분</button>
+            <button type="button" data-value="60" aria-pressed="true">1시간</button>
+            <button type="button" data-value="180" aria-pressed="false">3시간</button>
+          </div>
+        </span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>환율 대체값 사용</b><small>수집 실패 시 직전 영업일 환율로 대체합니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>실시간 시세 공급</b><small>끄면 전 회원에게 지연 시세만 표시됩니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+      </div>
+    </section>
+
+    <section class="card card-pad" style="margin-bottom:16px">
+      <h2 style="margin:0 0 6px;font-size:var(--fs-section)">커뮤니티</h2>
+      <div class="setting-row">
+        <span class="txt"><b>신규 회원 글쓰기 제한</b><small>가입 후 일정 기간 글을 쓸 수 없게 합니다</small></span>
+        <span class="val">
+          <div class="pills" data-toggle-group>
+            <button type="button" data-value="0" aria-pressed="false">없음</button>
+            <button type="button" data-value="1" aria-pressed="true">1일</button>
+            <button type="button" data-value="3" aria-pressed="false">3일</button>
+          </div>
+        </span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>자동 숨김 기준</b><small>신고가 이 횟수를 넘으면 자동으로 숨깁니다</small></span>
+        <span class="val"><input type="number" value="5" style="width:88px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-mono)"></span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>금칙어 필터</b><small>리딩방·종목 추천 관련 표현 자동 검출</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2 style="margin:0 0 6px;font-size:var(--fs-section)">서비스</h2>
+      <div class="setting-row">
+        <span class="txt"><b>신규 가입 허용</b><small></small></span>
+        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>점검 모드</b><small>켜면 관리자를 제외한 모든 접속이 차단됩니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox"><span></span></label></span>
+      </div>
+      <p class="info info-warn">점검 모드를 켜면 즉시 적용됩니다. 켜기 전에 공지를 먼저 올리세요.</p>
+    </section>
+  </section>
+  </main>
+</div>
+
+<div class="overlay" id="u-detail" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ud-t">
+    <h2 id="ud-t">회원 상세</h2>
+    <p>#1198 수연 · soo***@naver.com</p>
+    <div class="kv">
+      <div><span class="k">가입일</span><span class="v">2025-06-19</span></div>
+      <div><span class="k">최근 접속</span><span class="v">2시간 전</span></div>
+      <div><span class="k">매매 기록</span><span class="v">87건</span></div>
+      <div><span class="k">작성 글 / 댓글</span><span class="v">4 / 19</span></div>
+      <div><span class="k">누적 신고</span><span class="v">0</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>닫기</button>
+      <button class="btn btn-danger" type="button" data-close>계정 정지</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="r-detail" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rd-t">
+    <h2 id="rd-t">신고 처리</h2>
+    <p>게시글 #3839 · 외부 홍보·리딩방 · 누적 신고 5건</p>
+    <p class="memo">💰 무료 리딩방 오픈했습니다 선착순 100명 카톡 오픈채팅 …</p>
+    <div class="field" style="margin-top:16px">
+      <label for="rd-action">조치</label>
+      <select id="rd-action">
+        <option selected>게시글 삭제 + 계정 정지 7일</option>
+        <option>게시글 삭제</option><option>숨김 처리</option><option>신고 반려</option>
+      </select>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label for="rd-memo">처리 메모</label>
+      <textarea id="rd-memo" rows="2" placeholder="작업 로그에 함께 기록됩니다"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-danger" type="button" data-close>처리</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="n-write" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="nw-t">
+    <h2 id="nw-t">공지 작성</h2>
+    <p>게시하면 전체 회원의 대시보드 상단에 표시됩니다.</p>
+    <div class="field" style="margin-bottom:12px">
+      <label for="nw-title">제목</label>
+      <input id="nw-title" type="text" placeholder="공지 제목">
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label for="nw-body">내용</label>
+      <textarea id="nw-body" rows="6"></textarea>
+    </div>
+    <label class="check"><input type="checkbox">상단 고정</label>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-primary" type="button" data-close>게시</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 사이드바 메뉴 전환. ui.js의 탭 처리가 aria-current까지는 안 건드려서 여기서 맞춘다. */
+document.querySelector(".admin-nav ul").addEventListener("click", function (e) {
+  var btn = e.target.closest("button");
+  if (!btn) return;
+  this.querySelectorAll("button").forEach(function (b) {
+    if (b === btn) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+});
+</script>
+<script th:src="@{/js/ui.js}"></script>
+</body>
+</html>

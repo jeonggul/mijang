@@ -1,0 +1,56 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 회원가입</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="auth">
+  <div>
+    <div class="auth-card">
+      <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></p>
+      <h1 style="margin:10px 0 6px;font-size:var(--fs-card)">회원가입</h1>
+      <p class="note">이메일만으로 시작할 수 있습니다</p>
+
+      <form onsubmit="location.href='/';return false">
+        <div class="field">
+          <label for="s-email">이메일</label>
+          <input id="s-email" type="email" value="demo@mijang.app">
+          <!-- 폼 검증 색은 손익 색과 분리한다. 여기서 빨강은 오류지 이익이 아니다. -->
+          <p class="hint ok">사용 가능한 이메일입니다</p>
+        </div>
+        <div class="field">
+          <label for="s-pw">비밀번호</label>
+          <input id="s-pw" type="password" value="password12">
+          <p class="hint">영문·숫자 포함 8자 이상</p>
+        </div>
+        <div class="field">
+          <label for="s-pw2">비밀번호 확인</label>
+          <input id="s-pw2" type="password" value="password12">
+        </div>
+        <div class="field">
+          <label for="s-nick">닉네임</label>
+          <input id="s-nick" type="text" value="정하">
+          <p class="hint">커뮤니티에 표시됩니다 · 2~10자</p>
+        </div>
+        <label class="check"><input type="checkbox" checked>이용약관 및 개인정보 처리방침에 동의합니다</label>
+        <label class="check"><input type="checkbox" checked>미장은 투자 자문을 제공하지 않음을 확인했습니다</label>
+        <button class="btn btn-primary btn-block" type="submit">가입하기</button>
+      </form>
+
+      <p class="auth-foot">이미 계정이 있으신가요? <a th:href="@{/login}">로그인</a></p>
+    </div>
+    <p class="auth-note">본인 확인이나 인증서 절차가 없습니다. 미장은 증권사가 아닙니다.</p>
+  </div>
+</div>
+<script th:src="@{/js/ui.js}"></script>
+</body>
+</html>

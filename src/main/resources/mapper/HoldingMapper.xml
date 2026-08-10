@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(MVC): "HoldingMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.portfolio.mapper.HoldingMapper">
+
+    <select id="findByUser" resultType="com.example.mijang.portfolio.dto.HoldingResponse">
+        SELECT h.symbol,
+               s.name,
+               h.quantity,
+               h.avg_price      AS avgPrice,
+               h.avg_fx_rate    AS avgFxRate,
+               NULL             AS currentPrice,
+               NULL             AS marketValueKrw
+          FROM holdings h
+          JOIN stocks s ON s.symbol = h.symbol
+         WHERE h.user_id = #{userId}
+         ORDER BY h.symbol
+    </select>
+
+</mapper>

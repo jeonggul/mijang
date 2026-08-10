@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 개발명세서(MVC): "DailyPriceMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.stock.mapper.DailyPriceMapper">
+
+    <select id="findByRange" resultType="com.example.mijang.stock.dto.CandleResponse">
+        SELECT trade_date, open, high, low, close, volume
+          FROM daily_prices
+         WHERE symbol = #{symbol}
+           AND trade_date BETWEEN #{from} AND #{to}
+         ORDER BY trade_date
+    </select>
+
+</mapper>
