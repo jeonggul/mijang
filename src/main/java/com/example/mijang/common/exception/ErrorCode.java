@@ -17,6 +17,8 @@ public enum ErrorCode {
 
     // 종목 — STOCK-001~003
     STOCK_NOT_FOUND("STOCK-404-1", HttpStatus.NOT_FOUND, "존재하지 않는 종목입니다"),
+    CIK_NOT_FOUND("STOCK-404-2", HttpStatus.NOT_FOUND, "SEC에 등록되지 않은 종목입니다"),
+    DISCLOSURE_NOT_FOUND("STOCK-404-3", HttpStatus.NOT_FOUND, "공시 정보를 찾을 수 없습니다"),
 
     // 포트폴리오 — PORT-001~005
     TRANSACTION_NOT_FOUND("PORT-404-1", HttpStatus.NOT_FOUND, "존재하지 않는 매매 기록입니다"),
@@ -29,7 +31,11 @@ public enum ErrorCode {
     REPORT_DUPLICATED("COM-409-1", HttpStatus.CONFLICT, "이미 신고한 대상입니다"),
 
     // 공통
-    INVALID_REQUEST("COMMON-400-1", HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다");
+    INVALID_REQUEST("COMMON-400-1", HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다"),
+
+    // 외부 API — 벤더 장애와 우리 쪽 설정 누락을 구분한다. 전자는 재시도, 후자는 사람이 고쳐야 한다.
+    EXTERNAL_API_ERROR("EXT-502-1", HttpStatus.BAD_GATEWAY, "외부 데이터 조회에 실패했습니다"),
+    EXTERNAL_API_NOT_CONFIGURED("EXT-503-1", HttpStatus.SERVICE_UNAVAILABLE, "외부 API 설정이 완료되지 않았습니다");
 
     private final String code;
     private final HttpStatus status;
