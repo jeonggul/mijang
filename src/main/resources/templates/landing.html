@@ -1,0 +1,60 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko" data-theme="dark" data-theme-lock>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 기록하는 투자</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="landing">
+
+<section class="hero">
+  <div class="card hero-copy">
+    <h1>기록하는 투자</h1>
+    <p class="lead">MIJANG은 단순한 시세 조회 서비스를 넘어, 투자의 이유와 결과를 함께 기록하는 미국 주식 아카이브입니다.
+목표가부터 매수 이유, 당시 생각까지 남기고 주가와 환율이 수익에 어떤 영향을 주었는지 한눈에 분석해보세요.</p>
+    <div class="cta">
+      <a class="btn btn-primary" th:href="@{/login}">로그인하기</a>
+      <a class="btn" th:href="@{/search}">종목 먼저 둘러보기</a>
+    </div>
+    <p class="fine">가입 없이도 종목 검색과 시세 조회는 가능합니다</p>
+  </div>
+
+  <div class="card chart-box">
+    <!-- 상승 추세 캔들 데모. 값은 장식이며 실데이터가 아니다. -->
+    <svg viewBox="0 0 516 320" width="100%" height="320" role="img" aria-label="상승 추세 주가 차트">
+      <g stroke="var(--line)" stroke-width="1">
+        <line x1="0" y1="0"   x2="516" y2="0"/>
+        <line x1="0" y1="80"  x2="516" y2="80"/>
+        <line x1="0" y1="160" x2="516" y2="160"/>
+        <line x1="0" y1="240" x2="516" y2="240"/>
+        <line x1="0" y1="320" x2="516" y2="320"/>
+      </g>
+      <g id="demo-candles"></g>
+    </svg>
+  </div>
+</section>
+
+<div class="features">
+  <article>
+    <h2>Why MIJANG</h2>
+    <p>관심 종목과 보유 종목의 실시간 가격을 빠르게 확인하세요.</p>
+  </article>
+  <article>
+    <h2>수익률 리포트</h2>
+    <p>일별 자산 스냅샷을 기반으로 다음을 직관적으로 확인할 수 있습니다.</p>
+    <ul><li>기간별 수익률</li><li>자산 변화</li><li>투자 성과</li></ul>
+  </article>
+  <article>
+    <h2>투자 기록 · 회고</h2>
+    <p>매수 이유와 목표가, 당시의 심리까지 함께 기록하여 시간이 지난 뒤에도 판단을 되돌아볼 수 있으며, 과거의 판단과 실제 결과를 비교하며 더 나은 투자 습관을 만들어갈 수 있습니다.</p>
+  </article>
+</div>
+<script th:src="@{/js/ui.js}"></script>
+</body>
+</html>

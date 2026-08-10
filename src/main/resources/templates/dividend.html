@@ -1,0 +1,187 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 배당 일정</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header class="header">
+  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+
+  <nav class="nav" aria-label="주요 메뉴">
+    <a th:href="@{/}" aria-current="page">대시보드</a>
+    <a th:href="@{/portfolio}">포트폴리오</a>
+    <a th:href="@{/search}">종목</a>
+    <a th:href="@{/community}">커뮤니티</a>
+  </nav>
+
+  <div class="spacer"></div>
+
+  <a class="search" th:href="@{/search}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+      <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <span>티커 또는 종목명 검색</span>
+  </a>
+
+  <p class="market-badge"><span class="dot"></span>정규장 <span class="num sub">마감 3:24</span></p>
+
+  <button class="icon-btn" type="button" data-theme-toggle aria-label="다크모드 전환">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"
+            stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="menu-anchor">
+    <button class="icon-btn" type="button" aria-label="알림" data-open="notif-menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="dropdown notif" id="notif-menu" hidden>
+      <p class="head">알림 <button type="button">모두 읽음</button></p>
+      <ul>
+        <li><a class="row" th:href="@{/stock}">
+          <span class="meta"><span class="kind">목표가 도달</span><time datetime="2025-08-05T21:32">10분 전</time></span>
+          <span class="body">AAPL이 목표가 $218.00에 도달했습니다</span>
+        </a></li>
+        <li><a class="row" th:href="@{/stock}">
+          <span class="meta"><span class="kind">급등락</span><time datetime="2025-08-05T19:40">2시간 전</time></span>
+          <span class="body">NVDA가 오늘 +6.2% 움직였습니다</span>
+        </a></li>
+        <li><a class="row" th:href="@{/dividend}">
+          <span class="meta"><span class="kind">배당</span><time datetime="2025-08-04">어제</time></span>
+          <span class="body">SCHD 배당락일이 8월 12일입니다</span>
+        </a></li>
+        <li><a class="row" th:href="@{/report}">
+          <span class="meta"><span class="kind">재계산 완료</span><time datetime="2025-08-03">2일 전</time></span>
+          <span class="body">2025-03-14 이후 손익 재계산이 끝났습니다</span>
+        </a></li>
+      </ul>
+      <p class="foot">목표가 알림은 매도 권유가 아닙니다. 회고 화면으로 이동합니다.</p>
+    </div>
+  </div>
+
+  <button class="icon-btn" type="button" aria-label="설정" onclick="location.href='/settings'">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.53 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.53a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.47 9c.24.6.81 1 1.46 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"
+            stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
+  <div class="menu-anchor">
+    <button class="avatar-btn" type="button" data-open="user-menu">
+      <span class="ava" aria-hidden="true"></span>정하
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="dropdown" id="user-menu" hidden>
+      <a class="row" th:href="@{/mypage}">마이페이지</a>
+      <a class="row" th:href="@{/record-list}">매매 기록</a>
+      <a class="row" th:href="@{/retrospect}">투자 회고</a>
+      <a class="row" th:href="@{/watchlist}">관심 종목</a>
+      <a class="row" th:href="@{/settings}">설정</a>
+      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-head">
+    <div><h1>배당 일정</h1><p>보유 종목 기준 · 세후 예상액</p></div>
+    <span class="grow"></span>
+    <div class="pills" data-toggle-group>
+      <button type="button" data-value="UP" aria-pressed="true">예정</button>
+      <button type="button" data-value="DONE" aria-pressed="false">수령 완료</button>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="stack-v">
+      <section class="card">
+        <h2 class="card-head">다가오는 배당 <span class="sub num">3</span></h2>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th scope="col">배당락일</th><th scope="col">지급일</th><th class="txt" scope="col">종목</th>
+              <th class="r" scope="col">주당</th><th class="r" scope="col">보유</th>
+              <th class="r" scope="col">세후 예상</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>2025-08-11</td><td>2025-08-14</td><td class="txt">AAPL</td>
+                  <td class="r">$0.26</td><td class="r">12</td><td class="r">3,730원</td></tr>
+              <tr><td>2025-09-05</td><td>2025-09-12</td><td class="txt">MSFT</td>
+                  <td class="r">$0.83</td><td class="r">6</td><td class="r">5,955원</td></tr>
+              <tr><td>2025-09-24</td><td>2025-09-29</td><td class="txt">SCHD</td>
+                  <td class="r">$0.27</td><td class="r">22</td><td class="r">7,102원</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note" style="padding:12px 18px">
+          배당락일 전에 매도하면 받지 못합니다. 원화 금액은 오늘 환율 기준 추정치입니다.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-head">수령 이력</h2>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th scope="col">지급일</th><th class="txt" scope="col">종목</th>
+              <th class="r" scope="col">세전(USD)</th><th class="r" scope="col">원천징수</th>
+              <th class="r" scope="col">적용 환율</th><th class="r" scope="col">실수령(원)</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>2025-06-13</td><td class="txt">SCHD</td><td class="r">$5.94</td><td class="r">$0.89</td><td class="r">1,377.20</td><td class="r">6,955</td></tr>
+              <tr><td>2025-05-15</td><td class="txt">AAPL</td><td class="r">$3.12</td><td class="r">$0.47</td><td class="r">1,386.40</td><td class="r">3,673</td></tr>
+              <tr><td>2025-03-13</td><td class="txt">MSFT</td><td class="r">$4.98</td><td class="r">$0.75</td><td class="r">1,452.10</td><td class="r">6,144</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="stack-v">
+      <section class="card card-pad">
+        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">올해 배당 요약</h2>
+        <div class="kv">
+          <div><span class="k">수령 완료</span><span class="v">31,200원</span></div>
+          <div><span class="k">예정</span><span class="v">16,787원</span></div>
+          <div><span class="k">연간 예상</span><span class="v">47,987원</span></div>
+          <div><span class="k">포트폴리오 배당률</span><span class="v">0.37%</span></div>
+        </div>
+        <p class="info info-warn">지급일이 지나지 않은 건은 예상값입니다. 실제 금액은 지급일 환율에 따라 달라집니다.</p>
+      </section>
+
+      <section class="card card-pad">
+        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">배당 알림</h2>
+        <div class="setting-row">
+          <span class="txt"><b>배당락일 알림</b><small>3일 전에 알려드립니다</small></span>
+          <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+        </div>
+        <div class="setting-row">
+          <span class="txt"><b>지급 완료 알림</b><small>입금 예정일에 알려드립니다</small></span>
+          <span class="val"><label class="switch"><input type="checkbox"><span></span></label></span>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script th:src="@{/js/ui.js}"></script>
+</body>
+</html>

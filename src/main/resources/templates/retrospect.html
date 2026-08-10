@@ -1,0 +1,205 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 투자 회고</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header class="header">
+  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+
+  <nav class="nav" aria-label="주요 메뉴">
+    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/portfolio}">포트폴리오</a>
+    <a th:href="@{/search}">종목</a>
+    <a th:href="@{/community}">커뮤니티</a>
+  </nav>
+
+  <div class="spacer"></div>
+
+  <a class="search" th:href="@{/search}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+      <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <span>티커 또는 종목명 검색</span>
+  </a>
+
+  <p class="market-badge"><span class="dot"></span>정규장 <span class="num sub">마감 3:24</span></p>
+
+  <button class="icon-btn" type="button" data-theme-toggle aria-label="다크모드 전환">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"
+            stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="menu-anchor">
+    <button class="icon-btn" type="button" aria-label="알림" data-open="notif-menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="dropdown notif" id="notif-menu" hidden>
+      <p class="head">알림 <button type="button">모두 읽음</button></p>
+      <ul>
+        <li><a class="row" th:href="@{/stock}">
+          <span class="meta"><span class="kind">목표가 도달</span><time datetime="2025-08-05T21:32">10분 전</time></span>
+          <span class="body">AAPL이 목표가 $218.00에 도달했습니다</span>
+        </a></li>
+        <li><a class="row" th:href="@{/stock}">
+          <span class="meta"><span class="kind">급등락</span><time datetime="2025-08-05T19:40">2시간 전</time></span>
+          <span class="body">NVDA가 오늘 +6.2% 움직였습니다</span>
+        </a></li>
+        <li><a class="row" th:href="@{/dividend}">
+          <span class="meta"><span class="kind">배당</span><time datetime="2025-08-04">어제</time></span>
+          <span class="body">SCHD 배당락일이 8월 12일입니다</span>
+        </a></li>
+        <li><a class="row" th:href="@{/report}">
+          <span class="meta"><span class="kind">재계산 완료</span><time datetime="2025-08-03">2일 전</time></span>
+          <span class="body">2025-03-14 이후 손익 재계산이 끝났습니다</span>
+        </a></li>
+      </ul>
+      <p class="foot">목표가 알림은 매도 권유가 아닙니다. 회고 화면으로 이동합니다.</p>
+    </div>
+  </div>
+
+  <button class="icon-btn" type="button" aria-label="설정" onclick="location.href='/settings'">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.53 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.53a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.47 9c.24.6.81 1 1.46 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"
+            stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
+  <div class="menu-anchor">
+    <button class="avatar-btn" type="button" data-open="user-menu">
+      <span class="ava" aria-hidden="true"></span>정하
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="dropdown" id="user-menu" hidden>
+      <a class="row" th:href="@{/mypage}">마이페이지</a>
+      <a class="row" th:href="@{/record-list}">매매 기록</a>
+      <a class="row" th:href="@{/retrospect}">투자 회고</a>
+      <a class="row" th:href="@{/watchlist}">관심 종목</a>
+      <a class="row" th:href="@{/settings}">설정</a>
+      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    </div>
+  </div>
+</header>
+
+<div class="page" style="max-width:900px">
+  <div class="page-head">
+    <div><h1>투자 회고</h1><p>11건 · 매수 당시 판단과 실제 결과를 나란히 봅니다</p></div>
+    <span class="grow"></span>
+    <button class="btn btn-primary btn-sm" type="button" data-open="new-retro">＋ 회고 작성</button>
+  </div>
+
+  <div class="card card-pad" style="margin-bottom:16px">
+    <div class="pills" data-toggle-group>
+      <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+      <button type="button" data-value="HIT" aria-pressed="false">판단 적중</button>
+      <button type="button" data-value="MISS" aria-pressed="false">빗나감</button>
+      <button type="button" data-value="HOLD" aria-pressed="false">보유 중</button>
+    </div>
+  </div>
+
+  <div class="stack-v">
+    <article class="card card-pad">
+      <div class="row-between" style="margin-bottom:12px">
+        <span class="num" style="font-size:var(--fs-num-md);font-weight:600">NVDA</span>
+        <span class="badge badge-rise">판단 적중</span>
+        <span class="spacer" style="flex:1"></span>
+        <span class="note">매수 2025-07-22 · 회고 2025-08-04</span>
+      </div>
+      <p class="note" style="margin:0 0 6px">당시 판단</p>
+      <p class="memo">데이터센터 수요가 한두 분기로 끝날 게 아니라고 봤다. 목표가 $150.</p>
+      <p class="note" style="margin:16px 0 6px">지금 보니</p>
+      <p class="memo">근거는 맞았는데 비중을 너무 작게 잡았다. 확신이 있으면 크기도 확신에 맞춰야 한다는 걸 배웠다.</p>
+      <div class="kv" style="margin-top:14px">
+        <div><span class="k">매수가 → 현재가</span><span class="v">$121.40 → $138.90</span></div>
+        <div><span class="k">주가손익</span><span class="v rise">+512,800원</span></div>
+        <div><span class="k">환차손익</span><span class="v fall">−73,200원</span></div>
+      </div>
+    </article>
+
+    <article class="card card-pad">
+      <div class="row-between" style="margin-bottom:12px">
+        <span class="num" style="font-size:var(--fs-num-md);font-weight:600">TSLA</span>
+        <span class="badge badge-fall">빗나감</span>
+        <span class="spacer" style="flex:1"></span>
+        <span class="note">매수 2024-11-05 · 회고 2025-06-30</span>
+      </div>
+      <p class="note" style="margin:0 0 6px">당시 판단</p>
+      <p class="memo">신차 사이클과 FSD 기대감. 목표가 $320. 심리는 "추격 매수"로 기록해뒀다.</p>
+      <p class="note" style="margin:16px 0 6px">지금 보니</p>
+      <p class="memo">기록해둔 심리가 정확했다. 이미 오른 걸 보고 들어갔다. 목표가 근거도 남의 리포트를 옮겨 적은 것이었다.</p>
+      <div class="kv" style="margin-top:14px">
+        <div><span class="k">매수가 → 현재가</span><span class="v">$248.30 → $221.70</span></div>
+        <div><span class="k">주가손익</span><span class="v fall">−141,400원</span></div>
+        <div><span class="k">환차손익</span><span class="v fall">−62,100원</span></div>
+      </div>
+    </article>
+
+    <article class="card card-pad">
+      <div class="row-between" style="margin-bottom:12px">
+        <span class="num" style="font-size:var(--fs-num-md);font-weight:600">AAPL</span>
+        <span class="badge badge-accent">보유 중</span>
+        <span class="spacer" style="flex:1"></span>
+        <span class="note">매수 2025-03-14 · 회고 없음</span>
+      </div>
+      <p class="note" style="margin:0 0 6px">당시 판단</p>
+      <p class="memo">서비스 매출 비중이 분기마다 올라가는 게 확인돼서 담았다. 목표가 $220.</p>
+      <p class="info info-accent" style="margin-top:14px">
+        매수한 지 4개월이 지났습니다. 지금 판단이 어떤지 적어두면 다음에 비교할 수 있습니다.
+      </p>
+      <button class="btn btn-sm" type="button" data-open="new-retro" style="margin-top:12px">회고 작성</button>
+    </article>
+  </div>
+</div>
+
+<div class="overlay" id="new-retro" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="nr-t">
+    <h2 id="nr-t">회고 작성</h2>
+    <p>당시 기록은 자동으로 불러옵니다. 지금 시점의 생각만 적으면 됩니다.</p>
+
+    <div class="field" style="margin-bottom:14px">
+      <label for="nr-sym">종목</label>
+      <select id="nr-sym"><option selected>AAPL — Apple Inc.</option><option>MSFT — Microsoft Corp.</option><option>SCHD — Schwab US Dividend</option></select>
+    </div>
+
+    <p class="note" style="margin:0 0 6px">당시 판단 (2025-03-14)</p>
+    <p class="memo" style="margin-bottom:16px">서비스 매출 비중이 분기마다 올라가는 게 확인돼서 담았다. 목표가 $220.</p>
+
+    <div class="field" style="margin-bottom:14px">
+      <label for="nr-now">지금 보니 어떤가</label>
+      <textarea id="nr-now" rows="4" placeholder="근거가 맞았는지, 무엇을 놓쳤는지"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="nr-verdict">판정</label>
+      <select id="nr-verdict"><option>판단 적중</option><option>빗나감</option><option selected>아직 판단하기 이름</option></select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-primary" type="button" data-close>저장</button>
+    </div>
+  </div>
+</div>
+<script th:src="@{/js/ui.js}"></script>
+</body>
+</html>
