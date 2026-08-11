@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/dashboard}">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,18 +84,20 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
       <a class="row danger" th:href="@{/login}">로그아웃</a>
     </div>
   </div>
@@ -123,22 +125,22 @@
           <span class="val"><span class="sub">변경 불가</span></span>
         </div>
         <div class="setting-row">
-          <span class="txt"><b>비밀번호</b><small>마지막 변경 2025-02-11</small></span>
+          <span class="txt"><b>비밀번호</b><small>마지막 변경 2025년 3월</small></span>
           <span class="val"><a class="btn btn-sm " th:href="@{/password-reset}">변경</a></span>
         </div>
         <div class="setting-row">
-          <span class="txt"><b>소셜 계정 연동</b><small>연결된 계정 없음</small></span>
+          <span class="txt"><b>소셜 계정 연동</b><small>Google · Kakao 계정으로 로그인</small></span>
           <span class="val"><button class="btn btn-sm " type="button">연동 관리</button></span>
         </div>
       </section>
 
       <section class="card"><h2 class="card-head">계정 정리</h2>
         <div class="setting-row">
-          <span class="txt"><b>로그아웃</b><small>이 기기에서만 로그아웃합니다</small></span>
+          <span class="txt"><b>로그아웃</b><small>이 브라우저에서 로그아웃합니다</small></span>
           <span class="val"><a class="btn btn-sm " th:href="@{/login}">로그아웃</a></span>
         </div>
         <div class="setting-row">
-          <span class="txt"><b>회원 탈퇴</b><small>모든 기록이 삭제되며 되돌릴 수 없습니다</small></span>
+          <span class="txt"><b>회원 탈퇴</b><small>매매 기록과 작성 글이 모두 삭제됩니다. 되돌릴 수 없습니다</small></span>
           <span class="val"><button class="btn btn-sm btn-danger" type="button" data-open="quit-modal">탈퇴</button></span>
         </div>
       </section>
@@ -182,7 +184,7 @@
 
       <section class="card"><h2 class="card-head">수신 시간</h2>
         <div class="setting-row">
-          <span class="txt"><b>야간 수신 제한</b><small>밤 23시부터 아침 7시까지 알림을 보내지 않습니다</small></span>
+          <span class="txt"><b>야간 수신 제한</b><small>한국시간 00:00~07:00 알림을 보내지 않습니다</small></span>
           <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
         </div>
         <div class="setting-row">
@@ -198,18 +200,18 @@
 
       <section class="card"><h2 class="card-head">통화</h2>
         <div class="setting-row">
-          <span class="txt"><b>기본 통화</b><small>금액을 어느 통화로 먼저 보여줄지 정합니다</small></span>
+          <span class="txt"><b>기본 통화</b><small>금액을 처음 표시할 기준입니다</small></span>
           <span class="val"><div class="pills" data-toggle-group><button type="button" data-value="원화" aria-pressed="true">원화</button><button type="button" data-value="달러" aria-pressed="false">달러</button></div></span>
         </div>
         <div class="setting-row">
-          <span class="txt"><b>달러 병기</b><small>원화 옆에 달러 금액을 함께 표시합니다</small></span>
+          <span class="txt"><b>달러 병기</b><small>원화 옆에 달러를 함께 표시합니다</small></span>
           <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
         </div>
       </section>
 
       <section class="card"><h2 class="card-head">색상</h2>
         <div class="setting-row">
-          <span class="txt"><b>등락 색상</b><small>상승과 하락에 쓸 색을 정합니다</small></span>
+          <span class="txt"><b>등락 색상</b><small>상승 빨강 · 하락 파랑 (국내 증권사 관례)</small></span>
           <span class="val"><div class="pills" data-toggle-group><button type="button" data-value="국내식" aria-pressed="true">국내식</button><button type="button" data-value="미국식" aria-pressed="false">미국식</button></div></span>
         </div>
         <div class="setting-row">
@@ -220,7 +222,7 @@
 
       <section class="card"><h2 class="card-head">테마</h2>
         <div class="setting-row">
-          <span class="txt"><b>다크모드</b><small>어두운 배경으로 전환합니다</small></span>
+          <span class="txt"><b>다크모드</b><small>시스템 설정을 따릅니다</small></span>
           <span class="val"><button class="btn btn-sm" type="button" data-theme-toggle>전환</button></span>
         </div>
         <div class="setting-row">
@@ -261,30 +263,30 @@
 
       <section class="card">
         <h2 class="card-head">FAQ <span class="sub num">9개</span></h2>
-        <ul class="list">
-          <li><div class="row" style="display:block">
-            <p style="margin:0 0 6px;font-weight:500">미장에서 실제로 주식을 살 수 있나요?</p>
-            <p class="note" style="line-height:1.7">아니요. 미장은 증권사가 아니며 주문 기능이 없습니다. 이미 체결한 거래를 기록하고 되돌아보는 곳입니다.</p>
+                <ul class="list faq">
+          <li><div class="qa">
+            <p class="q"><span class="mark">Q</span>미장에서 실제로 주식을 살 수 있나요?</p>
+            <p class="a"><span class="mark">A</span>아니요. 미장은 조회와 기록만 하는 서비스입니다. 매수·매도는 증권사 앱에서 하시고, 체결된 내역을 미장에 입력하시면 됩니다.</p>
           </div></li>
-          <li><div class="row" style="display:block">
-            <p style="margin:0 0 6px;font-weight:500">증권사 계좌를 연결할 수 있나요?</p>
-            <p class="note" style="line-height:1.7">연결하지 않습니다. 매매 내역은 직접 입력하거나 CSV로 가져옵니다.</p>
+          <li><div class="qa">
+            <p class="q"><span class="mark">Q</span>증권사 계좌를 연결할 수 있나요?</p>
+            <p class="a"><span class="mark">A</span>개인 개발자가 쓸 수 있는 계좌 연동 수단이 없어 지원하지 않습니다. 대신 직접 입력하는 만큼 매수 사유와 목표가를 함께 남길 수 있습니다.</p>
           </div></li>
-          <li><div class="row" style="display:block">
-            <p style="margin:0 0 6px;font-weight:500">환차손익이 무엇인가요?</p>
-            <p class="note" style="line-height:1.7">주가는 그대로여도 환율이 움직이면 원화 평가액이 달라집니다. 그 차이를 주가 요인과 분리해 보여주는 값입니다.</p>
+          <li><div class="qa">
+            <p class="q"><span class="mark">Q</span>환차손익이 무엇인가요?</p>
+            <p class="a"><span class="mark">A</span>같은 주식을 들고 있어도 원달러 환율이 변하면 원화 기준 손익이 달라집니다. 미장은 이 부분을 주가 요인과 나눠서 보여줍니다.</p>
           </div></li>
-          <li><div class="row" style="display:block">
-            <p style="margin:0 0 6px;font-weight:500">실시간 시세가 다른 앱과 조금 달라요</p>
-            <p class="note" style="line-height:1.7">화면의 실시간 값은 IEX 체결분 기준이라 전체 거래량의 약 2%만 반영합니다. 손익 계산에는 SIP 정산 종가를 씁니다.</p>
+          <li><div class="qa">
+            <p class="q"><span class="mark">Q</span>실시간 시세가 다른 앱과 조금 달라요</p>
+            <p class="a"><span class="mark">A</span>무료 데이터는 IEX 거래소 기준이라 전체 시장 최종가와 차이가 날 수 있습니다. 평가손익 계산은 일봉 종가를 씁니다.</p>
           </div></li>
-          <li><div class="row" style="display:block">
-            <p style="margin:0 0 6px;font-weight:500">주말에 환율이 안 바뀌어요</p>
-            <p class="note" style="line-height:1.7">환율은 한국수출입은행이 영업일 오전에 한 번만 고시합니다. 주말과 공휴일에는 직전 영업일 값을 씁니다.</p>
+          <li><div class="qa">
+            <p class="q"><span class="mark">Q</span>주말에 환율이 안 바뀌어요</p>
+            <p class="a"><span class="mark">A</span>한국수출입은행 환율은 영업일에만 갱신됩니다. 주말·공휴일은 직전 영업일 값으로 표시됩니다.</p>
           </div></li>
-          <li><div class="row" style="display:block">
-            <p style="margin:0 0 6px;font-weight:500">과거 거래를 뒤늦게 입력하면 어떻게 되나요?</p>
-            <p class="note" style="line-height:1.7">입력한 체결일 이후의 평단가와 손익을 다시 계산합니다. 완료되면 알림으로 알려드립니다.</p>
+          <li><div class="qa">
+            <p class="q"><span class="mark">Q</span>과거 거래를 뒤늦게 입력하면 어떻게 되나요?</p>
+            <p class="a"><span class="mark">A</span>그 날짜 이후의 손익이 다시 계산됩니다. 기간에 따라 시간이 걸릴 수 있고, 완료되면 알림을 보냅니다.</p>
           </div></li>
         </ul>
       </section>
@@ -297,15 +299,24 @@
 
 <div class="overlay" id="quit-modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="qm-t">
-    <h2 id="qm-t">정말 탈퇴하시겠습니까?</h2>
-    <p>매매 기록 42건과 회고 11건이 즉시 삭제됩니다. 복구할 수 없습니다.</p>
+    <h2 id="qm-t">정말 탈퇴하시겠어요?</h2>
+    <p>탈퇴하면 아래 데이터가 모두 삭제됩니다. 되돌릴 수 없습니다.</p>
+
+    <!-- 무엇이 지워지는지 건수로 보여준다 (화면설계서 SR-012-5) -->
+    <ul class="kv">
+      <li><span class="k">매매 기록</span><span class="v num">38건</span></li>
+      <li><span class="k">판단 메모</span><span class="v num">31건</span></li>
+      <li><span class="k">작성 글 · 댓글</span><span class="v num">12건 · 47건</span></li>
+    </ul>
+
     <div class="field">
-      <label for="qm-confirm">확인을 위해 <b>탈퇴합니다</b>를 입력하세요</label>
-      <input id="qm-confirm" type="text" placeholder="탈퇴합니다">
+      <label for="qm-confirm">확인을 위해 &#39;탈퇴&#39;를 입력해주세요</label>
+      <input id="qm-confirm" type="text" placeholder="탈퇴">
     </div>
+    <p class="note">계정은 30일간 보관 후 완전히 삭제됩니다. 그 전까지는 작성 글의 작성자 표시가 유지됩니다.</p>
     <div class="modal-actions">
       <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-danger" type="button" data-close>탈퇴하기</button>
+      <button class="btn btn-danger" type="button" data-close>탈퇴</button>
     </div>
   </div>
 </div>

@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/dashboard}">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}" aria-current="page">커뮤니티</a>
@@ -84,71 +84,89 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
       <a class="row danger" th:href="@{/login}">로그아웃</a>
     </div>
   </div>
 </header>
 
-<div class="page" style="max-width:780px">
-  <div class="page-head">
-    <div><h1>글쓰기</h1><p>기록과 근거가 있는 글이 오래 읽힙니다</p></div>
-  </div>
+<div class="layout no-panel">
 
-  <form class="card card-pad" onsubmit="location.href='/community-post';return false">
-    <div class="field" style="margin-bottom:14px">
-      <label for="w-cat">분류</label>
-      <select id="w-cat"><option selected>종목 토론</option><option>기록 공유</option><option>질문</option></select>
+  <aside class="card sidebar">
+    <a class="btn-record" th:href="@{/community-write}">글쓰기</a>
+
+    <p class="nav-label">내 보유 종목</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/community}"><span class="tk">AAPL</span><span class="pc">128</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">NVDA</span><span class="pc">342</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">MSFT</span><span class="pc">76</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">TSLA</span><span class="pc">512</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">SCHD</span><span class="pc">41</span></a></li>
+    </ul>
+
+    <p class="nav-label">인기 게시판</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/community}"><span class="tk">PLTR</span><span class="pc">881</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">AMD</span><span class="pc">604</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">COIN</span><span class="pc">497</span></a></li>
+    </ul>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>글쓰기</h1><p>등록하면 작성 시점 주가가 함께 저장됩니다</p></div>
     </div>
 
-    <div class="field" style="margin-bottom:14px">
-      <label for="w-title">제목</label>
-      <input id="w-title" type="text" placeholder="무엇에 대한 글인지 한 줄로">
-      <p class="hint">60자 이내</p>
-    </div>
+    <form class="card card-pad" onsubmit="location.href='/community-post';return false">
+      <h2 class="form-sec">내용</h2>
 
-    <div class="field" style="margin-bottom:14px">
-      <label for="w-sym">관련 종목</label>
-      <input id="w-sym" type="text" placeholder="NVDA">
-      <p class="hint">입력하면 해당 종목 페이지에서도 이 글이 보입니다 · 선택 사항</p>
-    </div>
+      <div class="field" style="margin-bottom:14px">
+        <label for="board">게시판</label>
+        <select id="board"><option selected>AAPL</option><option>NVDA</option>
+          <option>MSFT</option><option>TSLA</option><option>SCHD</option></select>
+      </div>
 
-    <div class="field" style="margin-bottom:14px">
-      <label for="w-body">본문</label>
-      <textarea id="w-body" rows="14" placeholder="근거가 되는 숫자나 자료가 있으면 함께 적어주세요"></textarea>
-    </div>
+      <div class="field" style="margin-bottom:14px">
+        <label for="ttl">제목</label>
+        <input id="ttl" type="text" value="인도 생산 확대 뉴스 어떻게 보시나요" maxlength="150">
+        <p class="hint"><span class="count num">24 / 150</span></p>
+      </div>
 
-    <div class="setting-row">
-      <span class="txt"><b>내 매매 기록 첨부</b><small>수량과 금액은 가려지고 매수 이유만 공유됩니다</small></span>
-      <span class="val"><label class="switch"><input type="checkbox"><span></span></label></span>
-    </div>
-    <div class="setting-row">
-      <span class="txt"><b>댓글 허용</b><small></small></span>
-      <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
-    </div>
+      <div class="field" style="margin-bottom:14px">
+        <label for="bd">본문</label>
+        <textarea id="bd" rows="7" maxlength="2000">환율 때문에 원화 수익률은 생각보다 별로네요. 그래도 장기로는 서비스 매출 비중이 계속 커질 것 같아서 들고 갈 생각입니다. 인도 생산 확대가 공급망 리스크를 얼마나 줄여줄지가 관건 같은데, 다들 어떻게 보시나요?</textarea>
+        <p class="hint"><span class="count num">142 / 2,000</span></p>
+      </div>
 
-    <p class="info info-warn">
-      매수·매도 권유, 수익 인증, 외부 리딩방 홍보는 삭제 대상입니다.
-    </p>
+      <div class="setting-row" style="padding-left:0;padding-right:0">
+        <span class="txt"><b>보유 여부 배지 표시</b><small>AAPL 12주 보유 중임을 글에 표시합니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+      </div>
 
-    <div class="modal-actions">
-      <a class="btn" th:href="@{/community}">취소</a>
-      <button class="btn btn-ghost" type="button">임시 저장</button>
-      <button class="btn btn-primary" type="submit">등록</button>
-    </div>
-  </form>
+      <p class="info info-accent">작성 시점 주가 $196.40 이 함께 저장됩니다<br>
+        <span class="note">등록 후 수정되지 않습니다. 나중에 이 글이 얼마나 맞았는지 대조할 수 있습니다</span></p>
+
+      <div class="modal-actions" style="margin:0">
+        <a class="btn" th:href="@{/community}">취소</a>
+        <button class="btn btn-primary" type="submit">등록</button>
+      </div>
+    </form>
+  </main>
 </div>
+
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>
