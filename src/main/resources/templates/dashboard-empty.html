@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}" aria-current="page">대시보드</a>
+    <a th:href="@{/dashboard}" aria-current="page">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,51 +84,101 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
       <a class="row danger" th:href="@{/login}">로그아웃</a>
     </div>
   </div>
 </header>
 
-<div class="page">
-  <div class="page-head">
-    <div><h1>대시보드</h1><p>아직 기록이 없습니다</p></div>
-  </div>
+<!-- 보유 0건이어도 골격은 대시보드와 같다. 사이드바 손익만 —로 비운다 (화면설계서 SR-003-1) -->
+<div class="layout">
 
-  <div class="empty" style="margin-bottom:16px">
-    <h2>첫 매매를 기록해보세요</h2>
-    <p>보유 종목과 체결 내역을 입력하면 주가와 환율이 수익에 각각 얼마나 기여했는지 바로 보여드립니다.</p>
-    <a class="btn btn-primary" th:href="@{/record-new}">매매 기록 추가</a>
-  </div>
+  <aside class="card sidebar">
+    <button class="switcher" type="button">
+      전체 포트폴리오<span class="spacer"></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
 
-  <div class="grid-3">
-    <section class="card card-pad">
-      <h2 style="margin:0 0 8px;font-size:var(--fs-card)">1. 종목 찾기</h2>
-      <p class="note" style="line-height:1.8">티커나 종목명으로 검색해 관심 종목에 담아둡니다.</p>
-      <a class="btn btn-sm btn-block" th:href="@{/search}" style="margin-top:12px">종목 검색</a>
+    <ul class="stat-list">
+      <li><span class="k">종목 수</span><span class="v num">—</span></li>
+      <li><span class="k">주가손익</span><span class="v num">—</span></li>
+      <li><span class="k">환차손익</span><span class="v num">—</span></li>
+    </ul>
+
+    <p class="nav-label">보유 종목</p>
+    <ul class="holdings-nav">
+      <li><span class="note">아직 보유 종목이 없습니다</span></li>
+    </ul>
+
+    <a class="btn-record" th:href="@{/record-new}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      매매 기록 추가
+    </a>
+  </aside>
+
+  <main>
+    <!-- 빈 화면이 아니라 다음 행동을 제시한다 -->
+    <div class="empty">
+      <h2>첫 매매 기록을 남겨보세요</h2>
+      <p>증권사에서 체결한 내역을 입력하면 손익이 주가 요인과 환율 요인으로 나뉘어 보입니다.
+         왜 샀는지도 함께 적어두면 나중에 그 판단을 되돌아볼 수 있습니다.</p>
+      <a class="btn btn-primary" th:href="@{/record-new}">첫 매매 기록 추가하기</a>
+    </div>
+  </main>
+
+  <aside class="panel">
+    <section class="card">
+      <h2 class="card-head">원달러 환율 <span class="sub">오늘 11:02</span></h2>
+      <p class="fx-row"><b>1,408.40</b><span class="num rise">+3.20</span></p>
+      <p class="note">한국수출입은행 · 영업일 1회 갱신</p>
     </section>
-    <section class="card card-pad">
-      <h2 style="margin:0 0 8px;font-size:var(--fs-card)">2. 체결 입력</h2>
-      <p class="note" style="line-height:1.8">수량·단가·체결일을 넣으면 환율은 자동으로 채워집니다.</p>
-      <a class="btn btn-sm btn-block" th:href="@{/record-new}" style="margin-top:12px">기록 추가</a>
+
+    <section class="card">
+      <h2 class="card-head">관심 종목 <span class="sub num">4</span></h2>
+      <ul class="watch">
+        <li><a th:href="@{/stock}"><span class="tk">GOOGL</span><span class="px">$174.32</span><span class="pc rise">+0.82%</span></a></li>
+        <li><a th:href="@{/stock}"><span class="tk">AMD</span><span class="px">$118.05</span><span class="pc fall">−2.14%</span></a></li>
+        <li><a th:href="@{/stock}"><span class="tk">COST</span><span class="px">$892.10</span><span class="pc rise">+0.34%</span></a></li>
+        <li><a th:href="@{/stock}"><span class="tk">JEPI</span><span class="px">$56.88</span><span class="pc fall">−0.11%</span></a></li>
+      </ul>
+      <span class="tag">IEX 기준 · 실시간</span>
     </section>
-    <section class="card card-pad">
-      <h2 style="margin:0 0 8px;font-size:var(--fs-card)">3. 이유 남기기</h2>
-      <p class="note" style="line-height:1.8">왜 샀는지 한 줄이면 충분합니다. 나중에 이 문장이 기준이 됩니다.</p>
-      <a class="btn btn-sm btn-block" th:href="@{/retrospect}" style="margin-top:12px">회고 보기</a>
+
+    <section class="card">
+      <h2 class="card-head">보유 종목 뉴스</h2>
+      <ul class="news">
+        <li>
+          <p class="meta"><span class="tk">NVDA</span><time datetime="2025-08-05T19:00">2시간 전</time></p>
+          <p>Nvidia beats Q3 estimates on data center demand</p>
+        </li>
+        <li>
+          <p class="meta"><span class="tk">AAPL</span><time datetime="2025-08-05T16:00">5시간 전</time></p>
+          <p>Apple expands India manufacturing footprint</p>
+        </li>
+        <li>
+          <p class="meta"><span class="tk">TSLA</span><time datetime="2025-08-04">어제</time></p>
+          <p>Tesla cuts Model Y price in European markets</p>
+        </li>
+      </ul>
     </section>
-  </div>
+  </aside>
 </div>
 <script th:src="@{/js/ui.js}"></script>
 </body>

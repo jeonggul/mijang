@@ -17,7 +17,13 @@ public class PageController {
 
     /* ── 소개 · 인증 ─────────────────────────────────────────── */
 
-    @GetMapping("/landing")
+    /**
+     * 서비스 진입점. 화면설계서 3장 "첫 방문 → 랜딩" 흐름이라 루트가 SR-001 이다.
+     *
+     * <p>인증이 붙으면(P1) 여기서 로그인 여부로 갈라 로그인 상태면 대시보드로 보낸다.
+     * 지금은 인증 전이라 항상 랜딩을 렌더한다.
+     */
+    @GetMapping("/")
     public String landing() {
         return "landing";
     }
@@ -44,7 +50,7 @@ public class PageController {
 
     /* ── 대시보드 · 포트폴리오 ───────────────────────────────── */
 
-    @GetMapping("/")
+    @GetMapping("/dashboard")
     public String dashboard() {
         return "index";
     }
