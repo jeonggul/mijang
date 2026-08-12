@@ -521,33 +521,57 @@ table.holdings .stack { display: grid; gap: 3px; }
 .divider { display: flex; align-items: center; gap: 12px; color: var(--text-sub); font-size: var(--fs-badge); }
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
-/* ── 랜딩 ──────────────────────────────────────────────────── */
+/* ── 랜딩 ────────────────────────────────────────────────────
+   소개 화면은 대시보드가 쓰는 재료로만 만든다 — 가는 선, 고정폭 숫자,
+   0축에서 갈라지는 막대. 소개용 장식을 따로 들이지 않는다. */
 .hero {
-  display: grid; grid-template-columns: 1fr minmax(0, 560px);
-  gap: 56px; align-items: center;
-  padding: 104px 100px 64px; max-width: 1440px; margin: 0 auto;
+  display: grid;
+  /* 오른쪽을 560px 로 못박으면 폭이 1000px 근처일 때 남는 자리를 전부 차지해
+     왼쪽이 짓눌리고 제목이 두 글자씩 쪼개진다. 넓을 때만 560px 을 쓰고
+     좁아지면 비율로 같이 줄어들게 한다. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(560px, 46%));
+  gap: 56px;
+  padding: 104px 100px 84px; max-width: 1440px; margin: 0 auto;
+
+  /* stretch 라서 두 카드가 같은 높이로 맞는다. center 로 두면 각자 제 내용만큼만
+     높아져 좌우 길이가 어긋난다. 대신 각 카드 안에서 내용을 세로 가운데로 둔다. */
+  align-items: stretch;
 }
-.hero h1 { margin: 0; font-size: 54px; line-height: 1.32; letter-spacing: -1px; }
-.hero .lead { margin: 20px 0 0; font-size: 16px; line-height: 1.8; color: var(--text-sub); white-space: pre-line; }
-.hero .cta { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+.hero > .card { display: grid; align-content: center; }
+/* 세로로 쌓인 카드 사이를 벌리는 .card + .card 규칙이 여기서는 나란히 놓인
+   두 번째 카드에까지 걸려, 오른쪽 박스만 --gap 만큼 낮고 짧아졌다. */
+.hero > .card + .card { margin-top: 0; }
+.hero h1 {
+  margin: 0; font-weight: 600;
+  font-size: clamp(38px, 5vw, 58px); line-height: 1.2; letter-spacing: -1.6px;
+}
+/* 한글은 어절 안에서 끊기면 읽는 속도가 떨어진다. 줄바꿈은 띄어쓰기에서만 일어나게 둔다 */
+.hero .lead, .features p, .features li { word-break: keep-all; }
+.hero .lead {
+  margin: 22px 0 0; max-width: 45ch;
+  font-size: 16px; line-height: 1.85; color: var(--text-sub); white-space: pre-line;
+}
+.hero .cta { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
 .hero .fine { margin-top: 12px; font-size: var(--fs-label); color: var(--text-sub); }
-.features {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px; padding: 0 100px 72px; max-width: 1440px; margin: 0 auto;
-}
+
+/* 기능 소개는 카드 세 장이 아니라 원장의 줄이다.
+   배경이 이미 괘선이라 같은 재료로 이어진다. */
+.features { padding: 0 100px 88px; max-width: 1440px; margin: 0 auto; }
 .features article {
-  display: grid; grid-template-rows: auto 1fr; gap: 12px; min-height: 219px;
-  padding: 24px; background: var(--surface);
-  border: 1px solid var(--line); border-radius: 14px;
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 10px 48px;
+  padding: 26px 0; border-top: 1px solid var(--line);
 }
-.features h2 { margin: 0; font-size: 16px; }
-.features p  { margin: 0; align-self: center; color: var(--text-sub); line-height: 1.72; }
-.features ul { margin: 0; align-self: center; padding-left: 18px; color: var(--text); line-height: 1.9; }
+.features article:last-child { border-bottom: 1px solid var(--line); }
+.features h2 { margin: 0; font-size: var(--fs-card); font-weight: 600; }
+.features p  { margin: 0; max-width: 62ch; color: var(--text-sub); line-height: 1.8; }
+.features ul { margin: 9px 0 0; padding-left: 17px; color: var(--text-sub); line-height: 1.9; }
 .features ul::marker { color: var(--record); }
+/* minmax(0, …) 로 두지 않으면 기록 카드의 최소 너비가 열을 밀어내
+   화면 밖으로 넘친다. 1fr 은 minmax(auto, 1fr) 이라 줄어들지 못한다. */
 @media (max-width: 960px) {
-  .hero { grid-template-columns: 1fr; padding: 60px 24px 40px; }
-  .hero h1 { font-size: 38px; }
-  .features { padding: 0 24px 48px; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding: 60px 24px 44px; }
+  .features { padding: 0 24px 52px; }
+  .features article { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 22px 0; }
 }
 
 /* ── 관리자 ────────────────────────────────────────────────── */
@@ -648,22 +672,81 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ── 소개 화면 ──────────────────────────────────────────────
-   피그마 SR-001은 어두운 남색 배경 위의 유리 카드다.
-   배경 이미지는 이 저장소에 없어서 같은 계열 그라디언트로 대체했다.
-   실제 이미지를 쓰려면 아래 background 자리에 넣으면 된다. */
+   피그마 SR-001은 배경 이미지 위에 유리 카드를 얹은 화면이다.
+   이미지가 저장소에 없던 동안은 그라디언트로 대신했는데, 이제 실제
+   이미지(static/img/index-bg.jpg)가 들어와 원래 의도대로 돌아왔다.
+   배경 아래쪽은 괘선을 깐 남색 면이다. 34px 는 원장 한 줄 높이다. */
 body.landing {
   min-height: 100vh;
-  background:
-    radial-gradient(1100px 620px at 22% 12%, rgba(58, 84, 136, .38), transparent 62%),
-    radial-gradient(900px 540px at 82% 78%, rgba(35, 58, 102, .34), transparent 60%),
-    linear-gradient(160deg, #0B1730 0%, #080E1B 58%, #0A1428 100%);
+  background-color: #0A1220;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(168, 190, 224, .075) 0 1px,
+    transparent 1px 34px
+  );
 }
-body.landing .card,
-body.landing .features article {
+
+/* 배경 이미지는 히어로 높이에만 깐다. 세로로 긴 페이지 전체에 늘리면
+   16:9 사진이 뭉개지고, 아래 기능 설명 글이 사진 위에 얹혀 안 읽힌다.
+   .hero 에는 max-width 가 걸려 있어 화면 끝까지 채우지 못하므로
+   전체 폭 밴드로 한 겹 감싼다. 100vw 로 넓히는 방법은 세로 스크롤바
+   폭(보통 15px)까지 세어 가로 스크롤을 만든다.
+
+   위에 덮는 층이 스크림이다. 사진이 오른쪽 위로 갈수록 밝아 그대로 두면
+   흰 글씨가 묻고, 아래는 괘선 남색 면으로 이어 붙여야 한다. */
+.hero-band {
+  background-image:
+    linear-gradient(to bottom,
+      rgba(10, 18, 32, .34) 0%,
+      rgba(10, 18, 32, .44) 52%,
+      rgba(10, 18, 32, .92) 88%,
+      #0A1220 100%),
+    url("../img/index-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 사진 위의 카드는 유리로 둔다. 불투명하게 막으면 배경을 깐 의미가 없고,
+   그냥 비추기만 하면 사진의 잔선이 글자와 겹쳐 읽기 힘들다. */
+body.landing .card {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 .hero-copy { padding: 32px; border-radius: 16px; }
+
+/* ── 소개 화면 진입 모션 ─────────────────────────────────────
+   들어올 때마다 한 번 흐른다. 카드가 아래에서 올라오고, 이어서 캔들이
+   왼쪽부터 차례로 바닥에서 솟는다.
+
+   캔들의 순차 등장은 장식이 아니라 시간축이다. 차트의 왼쪽이 과거이므로
+   왼→오른쪽 순서로 그려지는 것이 값이 쌓이는 순서와 같다.
+   전체 1.3초 안에 끝낸다. 더 끌면 읽으려는 사람을 기다리게 만든다. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: none; }
+}
+/* 봉은 자기 밑동을 붙잡고 위로 자란다 */
+@keyframes candle-rise {
+  from { opacity: 0; transform: translateY(9px) scaleY(.05); }
+  to   { opacity: 1; transform: none; }
+}
+
+.hero-copy       { animation: rise-in .62s cubic-bezier(.2, .8, .3, 1) .05s both; }
+.hero .chart-box { animation: rise-in .62s cubic-bezier(.2, .8, .3, 1) .15s both; }
+/* 아래 설명은 줄마다 따로 흘리지 않고 덩어리째 한 번만 올린다 */
+.features        { animation: rise-in .62s cubic-bezier(.2, .8, .3, 1) .26s both; }
+
+.candle {
+  transform-box: fill-box;          /* 기준을 봉 자신의 바운딩 박스로 잡는다 */
+  transform-origin: 50% 100%;
+  animation: candle-rise .42s cubic-bezier(.2, .8, .3, 1) both;
+  animation-delay: calc(.34s + var(--i) * 11ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy, .hero .chart-box, .features, .candle { animation: none; }
+}
 
 /* ── 종목 검색 (SR-004) ─────────────────────────────────────
    피그마는 본문(1056)과 인기 검색 패널(320)의 2열이다. .grid-2 를 그대로 쓴다. */
@@ -1110,11 +1193,6 @@ body.landing .features article {
   from { opacity: .4; transform: scaleY(0); }
   to   { opacity: 1;  transform: scaleY(1); }
 }
-@keyframes dropdown-row {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 .dropdown { --row-base: 0s; }
 /* 아바타가 다 늘어난 뒤에 메뉴가 나온다 */
 .user-menu { --row-base: .2s; }
@@ -1127,30 +1205,13 @@ body.landing .features article {
   transform-origin: top center;
   animation: menu-unfold .22s cubic-bezier(.2, .8, .3, 1) var(--row-base) both;
 }
-.dropdown:not([hidden]) > .account,
-.dropdown:not([hidden]) > .row,
-.dropdown:not([hidden]) > .head,
-.dropdown:not([hidden]) > .foot,
-.dropdown:not([hidden]) > ul > li {
-  animation: dropdown-row .24s both cubic-bezier(.2, .8, .3, 1);
-}
-.dropdown:not([hidden]) > :nth-child(1),
-.dropdown:not([hidden]) > ul > li:nth-child(1) { animation-delay: calc(var(--row-base) + .04s); }
-.dropdown:not([hidden]) > :nth-child(2),
-.dropdown:not([hidden]) > ul > li:nth-child(2) { animation-delay: calc(var(--row-base) + .07s); }
-.dropdown:not([hidden]) > :nth-child(3),
-.dropdown:not([hidden]) > ul > li:nth-child(3) { animation-delay: calc(var(--row-base) + .10s); }
-.dropdown:not([hidden]) > :nth-child(4),
-.dropdown:not([hidden]) > ul > li:nth-child(4) { animation-delay: calc(var(--row-base) + .13s); }
-.dropdown:not([hidden]) > :nth-child(5) { animation-delay: calc(var(--row-base) + .16s); }
-.dropdown:not([hidden]) > :nth-child(6) { animation-delay: calc(var(--row-base) + .19s); }
-.dropdown:not([hidden]) > :nth-child(7) { animation-delay: calc(var(--row-base) + .22s); }
+/* 항목을 한 줄씩 시차를 두고 떨어뜨리던 규칙은 걷어냈다.
+   메뉴는 이미 통째로 펼쳐지는데 그 안에서 줄이 또 따로 흘러내리면
+   여는 동작이 두 번 일어나는 것처럼 보이고, 읽기도 그만큼 늦어진다. */
 
 @media (prefers-reduced-motion: reduce) {
   .avatar-btn { transition: none; }
-  .dropdown:not([hidden]),
-  .dropdown:not([hidden]) > *,
-  .dropdown:not([hidden]) > ul > li { animation: none; }
+  .dropdown:not([hidden]) { animation: none; }
 }
 
 /* ── 약관·개인정보 문서 (SR-002-1 에서 새 탭으로 연다) ────────── */

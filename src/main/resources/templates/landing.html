@@ -13,13 +13,14 @@
 </head>
 <body class="landing">
 
+<div class="hero-band">
 <section class="hero">
   <div class="card hero-copy">
     <h1>기록하는 투자</h1>
-    <p class="lead">MIJANG은 단순한 시세 조회 서비스를 넘어, 투자의 이유와 결과를 함께 기록하는 미국 주식 아카이브입니다.
-목표가부터 매수 이유, 당시 생각까지 남기고 주가와 환율이 수익에 어떤 영향을 주었는지 한눈에 분석해보세요.</p>
+    <p class="lead">미국 주식을 살 때 남긴 이유와 목표가를 시세 옆에 같이 둡니다.
+수익은 주가와 환율로 나눠서 보여주기 때문에, 종목을 고른 판단이 맞았는지 환율이 도운 것인지 구분됩니다.</p>
     <div class="cta">
-      <a class="btn btn-primary" th:href="@{/login}">로그인하기</a>
+      <a class="btn btn-primary" th:href="@{/login}">로그인</a>
       <a class="btn" th:href="@{/search}">종목 먼저 둘러보기</a>
     </div>
     <p class="fine">가입 없이도 종목 검색과 시세 조회는 가능합니다</p>
@@ -39,20 +40,27 @@
     </svg>
   </div>
 </section>
+</div>
 
 <div class="features">
   <article>
-    <h2>Why MIJANG</h2>
-    <p>관심 종목과 보유 종목의 실시간 가격을 빠르게 확인하세요.</p>
+    <h2>시세와 환율</h2>
+    <div>
+      <p>보유 종목과 관심 종목의 가격을 원화로 환산해 같이 보여줍니다. 달러 가격과 그날의 환율이 같은 줄에 놓입니다.</p>
+    </div>
   </article>
   <article>
     <h2>수익률 리포트</h2>
-    <p>일별 자산 스냅샷을 기반으로 다음을 직관적으로 확인할 수 있습니다.</p>
-    <ul><li>기간별 수익률</li><li>자산 변화</li><li>투자 성과</li></ul>
+    <div>
+      <p>일별 자산 스냅샷을 쌓아 기간 수익률을 냅니다.</p>
+      <ul><li>기간별 수익률</li><li>자산 변화</li><li>주가·환율 기여도</li></ul>
+    </div>
   </article>
   <article>
-    <h2>투자 기록 · 회고</h2>
-    <p>매수 이유와 목표가, 당시의 심리까지 함께 기록하여 시간이 지난 뒤에도 판단을 되돌아볼 수 있으며, 과거의 판단과 실제 결과를 비교하며 더 나은 투자 습관을 만들어갈 수 있습니다.</p>
+    <h2>기록과 회고</h2>
+    <div>
+      <p>매수 이유와 목표가, 그때의 판단을 함께 남깁니다. 몇 달 뒤 결과가 나왔을 때 당시 기록과 나란히 놓고 볼 수 있습니다.</p>
+    </div>
   </article>
 </div>
 <script th:src="@{/js/ui.js}"></script>

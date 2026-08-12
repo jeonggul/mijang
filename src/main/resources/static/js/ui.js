@@ -115,11 +115,15 @@
     var col = up ? "var(--rise)" : "var(--fall)";
     var top = parseFloat(y(Math.max(b.o, b.c)));
     var bot = parseFloat(y(Math.min(b.o, b.c)));
-    return '<line x1="' + cx + '" y1="' + y(b.h) + '" x2="' + cx + '" y2="' + y(b.l) +
+    /* 캔들 하나를 g 로 묶는다. 진입 모션에서 왼쪽부터 차례로 솟게 하려면
+       CSS 가 --i(몇 번째 봉인지)로 지연을 계산할 수 있어야 한다. */
+    return '<g class="candle" style="--i:' + i + '">' +
+      '<line x1="' + cx + '" y1="' + y(b.h) + '" x2="' + cx + '" y2="' + y(b.l) +
       '" stroke="' + col + '" stroke-width="1.7"/>' +
       '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) +
       '" width="' + bw + '" height="' + Math.max(2.5, bot - top).toFixed(1) +
-      '" rx="1.2" fill="' + col + '"/>';
+      '" rx="1.2" fill="' + col + '"/>' +
+      '</g>';
   }).join("");
 })();
 
