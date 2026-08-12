@@ -32,11 +32,11 @@
       <li><button role="tab" id="m-stats" aria-controls="a-stats" aria-selected="false">통계</button></li>
       <li><button role="tab" id="m-config" aria-controls="a-config" aria-selected="false">운영 설정</button></li>
     </ul>
-    <a class="logout" th:href="@{/login}">
+    <button class="logout" type="button" data-logout>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M15 17l5-5-5-5M20 12H9M12 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"
               stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>로그아웃</a>
+      </svg>로그아웃</button>
   </nav>
 
   <main class="admin-main">

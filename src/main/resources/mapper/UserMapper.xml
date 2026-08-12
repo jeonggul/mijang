@@ -4,10 +4,68 @@
 <!-- 개발명세서(MVC): "UserMapper XML id 일치" -->
 <mapper namespace="com.example.mijang.user.mapper.UserMapper">
 
+    <!-- User 가 record 라 setter 가 없다. constructor 로 매핑해야 한다.
+         arg 순서가 record 선언 순서와 정확히 같아야 하며, 어긋나면 컴파일은 되고 값만 뒤바뀐다 -->
+    <resultMap id="userMap" type="com.example.mijang.user.domain.User">
+        <constructor>
+            <idArg   column="id"                javaType="java.lang.Long"/>
+            <arg     column="email"             javaType="java.lang.String"/>
+            <arg     column="password_hash"     javaType="java.lang.String"/>
+            <arg     column="nickname"          javaType="java.lang.String"/>
+            <arg     column="profile_image_url" javaType="java.lang.String"/>
+            <arg     column="role"              javaType="java.lang.String"/>
+            <arg     column="base_currency"     javaType="java.lang.String"/>
+            <arg     column="theme"             javaType="java.lang.String"/>
+            <arg     column="status"            javaType="java.lang.String"/>
+            <arg     column="created_at"        javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <!-- 조회 컬럼을 한 곳에 모은다. 컬럼이 늘면 여기만 고치면 된다 -->
+    <sql id="cols">
+        id, email, password_hash, nickname, profile_image_url,
+        role, base_currency, theme, status, created_at
+    </sql>
+
+    <!-- AUTH-001 이메일 중복 판정. 탈퇴 계정도 세는 것이 맞다.
+         uk_users_email 이 UNIQUE 라 탈퇴자 이메일도 재사용할 수 없다 -->
     <select id="countByEmail" parameterType="string" resultType="int">
         SELECT COUNT(*)
           FROM users
          WHERE email = #{email}
     </select>
+
+    <!-- AUTH-001 닉네임 중복 판정. 탈퇴자가 쓰던 닉네임은 다시 쓸 수 있게 제외한다.
+         DB 에 UNIQUE 가 없어 이 검사만으로는 동시 가입에서 뚫린다(2.2 주의) -->
+    <select id="countByNickname" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM users
+         WHERE nickname = #{nickname}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 탈퇴 계정은 로그인 대상이 아니다. 정지 계정은 조회한 뒤 서비스에서 따로 막는다 -->
+    <select id="findByEmail" parameterType="string" resultMap="userMap">
+        SELECT <include refid="cols"/>
+          FROM users
+         WHERE email = #{email}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 프로필 조회와 토큰 갱신에서 쓴다. 갱신 때 상태를 다시 보기 위해 필요하다 -->
+    <select id="findById" parameterType="long" resultMap="userMap">
+        SELECT <include refid="cols"/>
+          FROM users
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 나머지 컬럼(role·base_currency·theme·status)은 스키마 DEFAULT 에 맡긴다.
+         여기서 값을 적으면 기본값이 두 군데에 생겨 어긋나기 시작한다 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id"
+            parameterType="com.example.mijang.user.mapper.UserMapper$UserInsert">
+        INSERT INTO users (email, password_hash, nickname)
+        VALUES (#{email}, #{passwordHash}, #{nickname})
+    </insert>
 
 </mapper>

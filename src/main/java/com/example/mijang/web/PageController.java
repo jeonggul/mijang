@@ -48,6 +48,18 @@ public class PageController {
         return "password-reset";
     }
 
+    /** 이용약관. 가입 화면에서 새 탭으로 연다. 비로그인도 볼 수 있어야 한다. */
+    @GetMapping("/terms")
+    public String terms() {
+        return "terms";
+    }
+
+    /** 개인정보 처리방침. */
+    @GetMapping("/privacy")
+    public String privacy() {
+        return "privacy";
+    }
+
     /* ── 대시보드 · 포트폴리오 ───────────────────────────────── */
 
     @GetMapping("/dashboard")
