@@ -20,30 +20,48 @@
       <h1 style="margin:10px 0 6px;font-size:var(--fs-card)">회원가입</h1>
       <p class="note">이메일만으로 시작할 수 있습니다</p>
 
-      <form onsubmit="location.href='/';return false">
+      <form id="signup-form" novalidate>
         <div class="field">
           <label for="s-email">이메일</label>
-          <input id="s-email" type="email" value="demo@mijang.app">
-          <!-- 폼 검증 색은 손익 색과 분리한다. 여기서 빨강은 오류지 이익이 아니다. -->
-          <p class="hint ok">사용 가능한 이메일입니다</p>
+          <input id="s-email" type="email" autocomplete="email" placeholder="you@example.com">
+          <!-- 조건을 만족했을 때만 뜬다. 처음부터 고정으로 띄우지 않는다 -->
+          <p class="msg" id="m-email" hidden></p>
         </div>
+
         <div class="field">
           <label for="s-pw">비밀번호</label>
-          <input id="s-pw" type="password" value="password12">
-          <p class="hint">영문·숫자 포함 8자 이상</p>
+          <input id="s-pw" type="password" autocomplete="new-password" maxlength="16" placeholder="비밀번호 입력">
+          <p class="hint">영문과 숫자를 모두 포함해 8~16자</p>
+          <p class="msg" id="m-pw" hidden></p>
         </div>
+
         <div class="field">
           <label for="s-pw2">비밀번호 확인</label>
-          <input id="s-pw2" type="password" value="password12">
+          <input id="s-pw2" type="password" autocomplete="new-password" maxlength="16" placeholder="비밀번호 확인">
+          <p class="msg" id="m-pw2" hidden></p>
         </div>
+
         <div class="field">
           <label for="s-nick">닉네임</label>
-          <input id="s-nick" type="text" value="정하">
-          <p class="hint">커뮤니티에 표시됩니다 · 2~10자</p>
+          <div class="with-btn">
+            <input id="s-nick" type="text" maxlength="10" placeholder="한글·영문·숫자 2~10자">
+            <button class="btn btn-sm" type="button" id="btn-nick">중복 확인</button>
+          </div>
+          <p class="msg" id="m-nick" hidden></p>
         </div>
-        <label class="check"><input type="checkbox" checked>이용약관 및 개인정보 처리방침에 동의합니다</label>
-        <label class="check"><input type="checkbox" checked>미장은 투자 자문을 제공하지 않음을 확인했습니다</label>
-        <button class="btn btn-primary btn-block" type="submit">가입하기</button>
+
+        <label class="check">
+          <input id="s-terms" type="checkbox">
+          <span><a th:href="@{/terms}" target="_blank" rel="noopener">이용약관</a> 및
+            <a th:href="@{/privacy}" target="_blank" rel="noopener">개인정보 처리방침</a>에 동의합니다</span>
+        </label>
+        <label class="check">
+          <input id="s-advice" type="checkbox">
+          <span>미장은 투자 자문을 제공하지 않음을 확인했습니다</span>
+        </label>
+
+        <!-- 모든 조건을 만족하기 전까지 눌리지 않는다 -->
+        <button class="btn btn-primary btn-block" type="submit" id="btn-signup" disabled>가입하기</button>
       </form>
 
       <p class="auth-foot">이미 계정이 있으신가요? <a th:href="@{/login}">로그인</a></p>
@@ -52,5 +70,144 @@
   </div>
 </div>
 <script th:src="@{/js/ui.js}"></script>
+<script>
+/* 회원가입 폼 검증.
+
+   화면 검사는 사용자를 돕기 위한 것이고, 판정의 근거는 서버(SignupPolicy)다.
+   여기 규칙만 고치고 서버를 그대로 두면 우회된다. 두 곳을 함께 본다. */
+(function () {
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var PW    = /^(?=.*[A-Za-z])(?=.*[0-9])[!-~]{8,16}$/;   // 영문+숫자, 8~16자
+  var NICK  = /^[가-힣a-zA-Z0-9]{2,10}$/;
+
+  var el = function (id) { return document.getElementById(id); };
+  var email = el("s-email"), pw = el("s-pw"), pw2 = el("s-pw2"), nick = el("s-nick");
+  var terms = el("s-terms"), advice = el("s-advice"), submit = el("btn-signup");
+
+  /* 각 칸의 통과 여부. 닉네임만 "확인 버튼을 눌러 통과한 경우"에 true 가 된다 */
+  var pass = { email: false, pw: false, pw2: false, nick: false };
+  var checkedNick = null;          // 중복 확인을 통과한 시점의 닉네임 값
+
+  /** 입력 아래 메시지를 띄운다. ok=true 면 초록, false 면 빨강 */
+  function say(id, text, ok, input) {
+    var m = el(id);
+    m.textContent = text;
+    m.className = "msg " + (ok ? "ok" : "err");
+    m.hidden = false;
+    if (input) {
+      if (ok) input.removeAttribute("aria-invalid");
+      else input.setAttribute("aria-invalid", "true");
+    }
+  }
+  function hide(id, input) {
+    el(id).hidden = true;
+    if (input) input.removeAttribute("aria-invalid");
+  }
+
+  /** 모든 조건이 충족돼야 가입 버튼이 열린다 */
+  function sync() {
+    submit.disabled = !(pass.email && pass.pw && pass.pw2 && pass.nick
+                        && terms.checked && advice.checked);
+  }
+
+  /* ── 이메일 — 형식만 본다 ──
+     가입 여부는 여기서 묻지 않는다. 인증 없이 부를 수 있는 조회를 두면
+     "이 주소가 가입돼 있는가"를 알려 주는 통로가 되고, 로그인 오류를 하나로 합쳐
+     막아 둔 계정 존재 여부가 그쪽으로 새어 나간다.
+     중복은 가입 버튼을 눌렀을 때 서버가 409 로 알려 주고, 그 문구를 이 칸에 붙인다. */
+  email.addEventListener("input", function () {
+    if (!email.value) { pass.email = false; hide("m-email", email); sync(); return; }
+    pass.email = EMAIL.test(email.value);
+    say("m-email",
+        pass.email ? "사용 가능한 이메일 형식입니다" : "이메일 형식이 올바르지 않습니다",
+        pass.email, email);
+    sync();
+  });
+
+  /* ── 비밀번호 ── */
+  pw.addEventListener("input", function () {
+    if (!pw.value) { pass.pw = false; hide("m-pw", pw); sync(); recheckPw2(); return; }
+    pass.pw = PW.test(pw.value);
+    say("m-pw",
+        pass.pw ? "사용 가능한 비밀번호입니다" : "영문과 숫자를 모두 포함해 8~16자로 입력해주세요",
+        pass.pw, pw);
+    recheckPw2();
+    sync();
+  });
+
+  /* ── 비밀번호 확인 — 일치하면 그 사실을 알려 준다 ── */
+  function recheckPw2() {
+    if (!pw2.value) { pass.pw2 = false; hide("m-pw2", pw2); sync(); return; }
+    pass.pw2 = pw.value === pw2.value;
+    say("m-pw2", pass.pw2 ? "비밀번호가 일치합니다" : "비밀번호가 일치하지 않습니다", pass.pw2, pw2);
+    sync();
+  }
+  pw2.addEventListener("input", recheckPw2);
+
+  /* ── 닉네임 — 확인 버튼을 눌러야 통과한다 ── */
+  nick.addEventListener("input", function () {
+    /* 확인 뒤에 값을 바꾸면 통과를 취소한다. 안 그러면 확인한 닉네임과 가입할 닉네임이 달라진다 */
+    if (checkedNick !== nick.value) { pass.nick = false; hide("m-nick", nick); }
+    sync();
+  });
+
+  el("btn-nick").addEventListener("click", async function () {
+    if (!NICK.test(nick.value)) {
+      pass.nick = false;
+      say("m-nick", "한글·영문·숫자 2~10자로 입력해주세요", false, nick);
+      sync();
+      return;
+    }
+    try {
+      var res  = await fetch("/api/auth/check-nickname?nickname=" + encodeURIComponent(nick.value));
+      var body = await res.json();
+      if (!body.success) return;
+      pass.nick   = body.data.available;
+      checkedNick = body.data.available ? nick.value : null;
+      say("m-nick", body.data.message, body.data.available, nick);
+    } catch (e) {
+      pass.nick = false;
+      say("m-nick", "확인에 실패했습니다. 잠시 후 다시 시도해주세요", false, nick);
+    }
+    sync();
+  });
+
+  terms.addEventListener("change", sync);
+  advice.addEventListener("change", sync);
+
+  /* ── 제출 ── */
+  document.getElementById("signup-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    submit.disabled = true;
+
+    var body;
+    try {
+      var res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.value, password: pw.value, nickname: nick.value })
+      });
+      body = await res.json();
+    } catch (err) {
+      /* 네트워크가 끊기거나 서버가 JSON 이 아닌 응답을 주면 여기로 온다.
+         잡지 않으면 아래 sync() 까지 오지 못해 버튼이 잠긴 채로 남는다. */
+      say("m-email", "가입 요청을 보내지 못했습니다. 잠시 후 다시 시도해주세요", false, email);
+      sync();
+      return;
+    }
+
+    if (body.success) { location.href = "/login"; return; }
+
+    /* 서버가 error.field 로 어느 칸이 문제인지 알려 준다 (미장-API명세서 1.1).
+       이메일 중복은 여기서 처음 드러난다 */
+    var field = body.error && body.error.field;
+    var text  = body.error ? body.error.message : "가입에 실패했습니다";
+    if (field === "email")         { pass.email = false; say("m-email", text, false, email); }
+    else if (field === "nickname") { pass.nick  = false; say("m-nick",  text, false, nick);  }
+    else                           { say("m-email", text, false, email); }
+    sync();
+  });
+})();
+</script>
 </body>
 </html>

@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/dashboard}">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,90 +84,72 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page" style="max-width:960px">
-  <div class="page-head">
-    <div><h1>마이페이지</h1><p>계정과 활동 내역</p></div>
-  </div>
+<div class="page-wide">
+  <section class="card card-pad profile-head">
+    <span class="ava-lg" aria-hidden="true"></span>
+    <div class="info">
+      <h1>정하</h1>
+      <p class="note">dlwjdgkw@gmail.com · 2025년 1월 가입</p>
+      <ul class="stats">
+        <li><span class="k">매매 기록</span><span class="v num">38건</span></li>
+        <li><span class="k">보유 종목</span><span class="v num">5종목</span></li>
+        <li><span class="k">작성 글</span><span class="v num">12개</span></li>
+        <li><span class="k">기록한 판단</span><span class="v num">31개</span></li>
+      </ul>
+    </div>
+    <a class="btn btn-sm" th:href="@{/profile-edit}">프로필 수정</a>
+  </section>
 
   <div class="grid-2">
-    <div class="stack-v">
-      <section class="card card-pad">
-        <div class="row-between">
-          <span class="ava" aria-hidden="true"
-                style="width:56px;height:56px;border-radius:50%;background:var(--record);display:block"></span>
-          <div style="flex:1">
-            <p style="margin:0;font-size:var(--fs-section);font-weight:600">정하</p>
-            <p class="note" style="margin:2px 0 0">demo@mijang.app · 2024-01-08 가입</p>
-          </div>
-          <a class="btn btn-sm" th:href="@{/profile-edit}">프로필 수정</a>
-        </div>
-      </section>
+    <section class="card">
+      <h2 class="card-head">보유 요약 <span class="sub num">5종목</span></h2>
+      <ul class="watch" style="padding:0 18px 16px">
+        <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="px">3,318,700원</span><span class="pc rise">+6.7%</span></a></li>
+        <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="px">2,965,300원</span><span class="pc rise">+17.4%</span></a></li>
+        <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="px">3,486,900원</span><span class="pc rise">+2.1%</span></a></li>
+        <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="px">1,595,800원</span><span class="pc fall">−11.3%</span></a></li>
+        <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="px">1,480,600원</span><span class="pc fall">−0.8%</span></a></li>
+      </ul>
+    </section>
 
-      <section class="card">
-        <h2 class="card-head">내 활동</h2>
-        <ul class="list">
-          <li><a th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">42건</span></a></li>
-          <li><a th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">11건</span></a></li>
-          <li><a th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">4종목</span></a></li>
-          <li><a th:href="@{/community}"><span class="ttl">작성한 글</span><span class="meta">6건</span></a></li>
-          <li><a th:href="@{/community}"><span class="ttl">작성한 댓글</span><span class="meta">23건</span></a></li>
-          <li><a th:href="@{/community}"><span class="ttl">스크랩</span><span class="meta">9건</span></a></li>
-        </ul>
-      </section>
-
-      <section class="card">
-        <h2 class="card-head">바로가기</h2>
-        <ul class="list">
-          <li><a th:href="@{/report}"><span class="ttl">수익률 리포트</span><span class="meta">›</span></a></li>
-          <li><a th:href="@{/tax}"><span class="ttl">양도소득세 추정</span><span class="meta">›</span></a></li>
-          <li><a th:href="@{/dividend}"><span class="ttl">배당 일정</span><span class="meta">›</span></a></li>
-          <li><a th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">›</span></a></li>
-        </ul>
-      </section>
-    </div>
-
-    <div class="stack-v">
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">투자 요약</h2>
-        <div class="kv">
-          <div><span class="k">투자 기간</span><span class="v">1년 7개월</span></div>
-          <div><span class="k">총 평가금액</span><span class="v">12,847,300원</span></div>
-          <div><span class="k">누적 수익률</span><span class="v rise">+4.08%</span></div>
-          <div><span class="k">기록률</span><span class="v">88%</span></div>
-        </div>
-        <p class="note" style="margin-top:12px">기록률은 매매 건수 중 이유를 남긴 비율입니다.</p>
-      </section>
-
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">기록 습관</h2>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">매수 이유 작성</span><span class="num">88%</span></p>
-        <div class="progress" style="margin-bottom:14px"><i style="width:88%"></i></div>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">목표가 설정</span><span class="num">64%</span></p>
-        <div class="progress" style="margin-bottom:14px"><i style="width:64%"></i></div>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">매도 후 회고</span><span class="num">37%</span></p>
-        <div class="progress"><i style="width:37%"></i></div>
-        <p class="info info-accent">매도한 뒤에도 회고를 남기면 판단이 맞았는지 확인할 수 있습니다.</p>
-      </section>
-    </div>
+    <section class="card">
+      <h2 class="card-head">작성 글 <span class="sub num">12개</span></h2>
+      <ul class="list">
+        <li><a th:href="@{/community-post}">
+          <span class="nm">인도 생산 확대 뉴스 어떻게 보시나요</span>
+          <span class="meta">AAPL · 3시간 전</span></a></li>
+        <li><a th:href="@{/community-post}">
+          <span class="nm">$200 넘으면 일부 정리 예정</span>
+          <span class="meta">AAPL · 어제</span></a></li>
+        <li><a th:href="@{/community-post}">
+          <span class="nm">AI 수요 지속성에 대한 생각</span>
+          <span class="meta">NVDA · 1주 전</span></a></li>
+      </ul>
+    </section>
   </div>
+
+  <p class="note" style="margin-top:14px">계정·알림 설정은 설정 화면에서 관리합니다</p>
 </div>
+
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>

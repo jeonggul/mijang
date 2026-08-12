@@ -21,7 +21,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1'
+
+	// JWT — jjwt 는 api/impl/jackson 세 개로 나뉜다. 컴파일에는 api 만 필요하다
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -29,6 +35,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.1'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -37,4 +44,12 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+
+	// application-secret.properties 는 git 미추적이라 새 클론·CI 에는 없다.
+	// JwtProvider 가 secret 없이는 기동을 막으므로 @SpringBootTest 가 컨텍스트 로딩에서
+	// 실패한다. 테스트에서만 쓸 값을 여기서 넣어 준다.
+	// src/test/resources/application.properties 로 넣으면 메인 설정 파일을 통째로
+	// 가려 datasource.url 까지 사라진다 — 그래서 시스템 프로퍼티로 준다.
+	systemProperty 'mijang.jwt.secret',
+			System.getenv('MIJANG_JWT_SECRET') ?: 'test-only-secret-key-not-for-production-32+'
 }

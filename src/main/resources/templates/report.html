@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}" aria-current="page">대시보드</a>
+    <a th:href="@{/dashboard}" aria-current="page">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,118 +84,163 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page">
-  <div class="page-head">
-    <div><h1>수익률 리포트</h1><p>일별 자산 스냅샷 기준 · 2025-08-05까지</p></div>
-    <span class="grow"></span>
-    <div class="pills" data-toggle-group>
-      <button type="button" data-value="1M" aria-pressed="false">1개월</button>
-      <button type="button" data-value="3M" aria-pressed="false">3개월</button>
-      <button type="button" data-value="YTD" aria-pressed="true">올해</button>
-      <button type="button" data-value="ALL" aria-pressed="false">전체</button>
-    </div>
-  </div>
+<div class="layout no-panel">
 
-  <div class="stack-v">
-    <section class="card card-pad">
-      <h2 style="margin:0 0 4px;font-size:var(--fs-section)">자산 추이</h2>
-      <p class="note" style="margin-bottom:16px">매일 장 마감 후 한 번 기록됩니다. 입출금은 수익률에서 제외됩니다.</p>
-      <svg viewBox="0 0 900 260" width="100%" height="260" preserveAspectRatio="none" role="img" aria-label="올해 자산 추이">
-        <g stroke="var(--line)" stroke-width="1">
-          <line x1="0" y1="52"  x2="900" y2="52"/>
-          <line x1="0" y1="104" x2="900" y2="104"/>
-          <line x1="0" y1="156" x2="900" y2="156"/>
-          <line x1="0" y1="208" x2="900" y2="208"/>
-        </g>
-        <path d="M0 214 L75 206 L150 220 L225 188 L300 196 L375 160 L450 172
-                 L525 134 L600 148 L675 106 L750 120 L825 78 L900 66"
-              fill="none" stroke="var(--rise)" stroke-width="2.6" stroke-linejoin="round"/>
-        <path d="M0 214 L75 206 L150 220 L225 188 L300 196 L375 160 L450 172
-                 L525 134 L600 148 L675 106 L750 120 L825 78 L900 66 L900 260 L0 260 Z"
-              fill="var(--rise)" opacity=".08"/>
-        <!-- 투자원금 기준선. 이 선 위가 이익이다. -->
-        <line x1="0" y1="214" x2="900" y2="214" stroke="var(--axis)" stroke-width="2" stroke-dasharray="5 5"/>
+  <aside class="card sidebar">
+    <div class="menu-anchor">
+      <button class="switcher" type="button" data-open="pf-menu">
+        전체 포트폴리오<span class="spacer"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="dropdown pf-menu" id="pf-menu" hidden>
+        <button class="row" type="button"><span class="ttl">전체 포트폴리오</span><span class="meta">5종목 · 12,847,300원</span></button>
+        <button class="row" type="button"><span class="ttl">연금계좌용</span><span class="meta">3종목 · 8,240,100원</span></button>
+        <button class="row" type="button"><span class="ttl">단기매매용</span><span class="meta">2종목 · 4,607,200원</span></button>
+        <button class="row add" type="button" data-open="new-pf">+ 포트폴리오 추가</button>
+      </div>
+    </div>
+
+    <ul class="stat-list">
+      <li><span class="k">종목 수</span><span class="v num">5</span></li>
+      <li><span class="k">주가손익</span><span class="v num rise">+822,400</span></li>
+      <li><span class="k">환차손익</span><span class="v num fall">−318,900</span></li>
+    </ul>
+
+    <p class="nav-label">보유 종목</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="pc rise">+6.7%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="pc rise">+17.4%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="pc rise">+2.1%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="pc fall">−11.3%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="pc fall">−0.8%</span></a></li>
+    </ul>
+
+    <a class="btn-record" th:href="@{/record-new}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
       </svg>
-      <p class="row-between" style="margin-top:10px">
-        <span class="note">— 평가금액</span>
-        <span class="note">--- 투자원금</span>
-      </p>
+      매매 기록 추가
+    </a>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>수익률 리포트</h1><p>일별 스냅샷 기준 · 장 마감 후 갱신</p></div>
+      <span class="grow"></span>
+      <div class="pills" data-toggle-group>
+        <button type="button" data-value="1M" aria-pressed="false">1개월</button>
+        <button type="button" data-value="3M" aria-pressed="false">3개월</button>
+        <button type="button" data-value="6M" aria-pressed="true">6개월</button>
+        <button type="button" data-value="1Y" aria-pressed="false">1년</button>
+        <button type="button" data-value="ALL" aria-pressed="false">전체</button>
+      </div>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:14px">
+      <p class="total-label">총 평가금액</p>
+      <p class="total-row"><span class="total-krw">12,847,300원</span><span class="total-usd">$9,120.44</span></p>
+      <p class="note">예수금·현금 자산은 포함되지 않습니다</p>
+      <hr class="rule">
+      <div class="section-row"><h2 style="margin:0;font-size:var(--fs-card)">손익 요인 분해</h2>
+        <span class="chip">상쇄</span></div>
+      <div class="kv" style="margin-top:12px">
+        <div><span class="k">주가 요인</span><span class="v rise">+822,400원</span></div>
+        <div><span class="k">환율 요인</span><span class="v fall">−318,900원</span></div>
+      </div>
+      <hr class="rule">
+      <div class="total-pnl">
+        <span class="lab"><strong>총손익</strong><small>주가 + 환율</small></span>
+        <span class="amt"><b class="rise">+503,500원</b><i class="rise">+4.08%</i></span>
+      </div>
     </section>
 
-    <div class="grid-3">
-      <section class="card card-pad">
-        <p class="note">기간 수익률</p>
-        <p class="num rise" style="font-size:var(--fs-num-lg);margin:6px 0">+4.08%</p>
-        <p class="note">동기간 S&amp;P 500 +6.12%</p>
-      </section>
-      <section class="card card-pad">
-        <p class="note">실현 손익</p>
-        <p class="num rise" style="font-size:var(--fs-num-lg);margin:6px 0">+128,400원</p>
-        <p class="note">매도 3건 기준</p>
-      </section>
-      <section class="card card-pad">
-        <p class="note">미실현 손익</p>
-        <p class="num rise" style="font-size:var(--fs-num-lg);margin:6px 0">+503,500원</p>
-        <p class="note">보유 5종목 기준</p>
-      </section>
-      <section class="card card-pad">
-        <p class="note">최대 낙폭</p>
-        <p class="num fall" style="font-size:var(--fs-num-lg);margin:6px 0">−11.4%</p>
-        <p class="note">2025-04-08 저점</p>
-      </section>
+    <section class="card card-pad" style="margin-bottom:14px">
+      <div class="row-between" style="margin-bottom:14px">
+        <h2 style="margin:0;font-size:var(--fs-card)">누적 손익 추이</h2>
+        <span class="spacer" style="flex:1"></span>
+        <p class="legend"><span class="sw sw-price"></span>주가 요인<span class="sw sw-fx"></span>환율 요인<span class="sw sw-total"></span>합계</p>
+      </div>
+      <div class="chart-box" style="padding:0">
+        <svg viewBox="0 0 1040 250" width="100%" height="250" preserveAspectRatio="none" role="img" aria-label="누적 손익 추이">
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="0" y1="50" x2="1040" y2="50"/><line x1="0" y1="100" x2="1040" y2="100"/>
+            <line x1="0" y1="150" x2="1040" y2="150"/><line x1="0" y1="200" x2="1040" y2="200"/>
+          </g>
+          <path d="M0 200 L208 168 L416 140 L624 104 L832 72 L1040 40" fill="none" stroke="var(--rise)" stroke-width="2.4"/>
+          <path d="M0 200 L208 210 L416 218 L624 228 L832 236 L1040 244" fill="none" stroke="var(--fall)" stroke-width="2.4"/>
+          <path d="M0 200 L208 182 L416 166 L624 144 L832 124 L1040 108" fill="none" stroke="var(--record)" stroke-width="2.4" stroke-dasharray="5 4"/>
+        </svg>
+      </div>
+      <p class="axis-dates"><span>24.09</span><span>24.12</span><span>25.03</span><span>25.06</span><span>25.08</span></p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-head">월별 손익 <span class="sub">최근 6개월</span></h2>
+      <div class="table-wrap">
+        <table class="tbl tbl-band">
+          <thead><tr>
+            <th scope="col">기간</th><th class="r" scope="col">주가손익</th>
+            <th class="r" scope="col">환차손익</th><th class="r" scope="col">총손익</th>
+            <th class="r" scope="col">수익률</th>
+          </tr></thead>
+          <tbody>
+              <tr><td>2025.08</td><td class="r rise">+132,000</td><td class="r fall">−37,000</td>
+                <td class="r rise">+95,000</td><td class="r rise">+0.75%</td></tr>
+              <tr><td>2025.07</td><td class="r rise">+138,000</td><td class="r fall">−44,000</td>
+                <td class="r rise">+94,000</td><td class="r rise">+0.76%</td></tr>
+              <tr><td>2025.06</td><td class="r rise">+86,000</td><td class="r fall">−42,000</td>
+                <td class="r rise">+44,000</td><td class="r rise">+0.36%</td></tr>
+              <tr><td>2025.05</td><td class="r rise">+76,000</td><td class="r fall">−28,000</td>
+                <td class="r rise">+48,000</td><td class="r rise">+0.40%</td></tr>
+              <tr><td>2025.04</td><td class="r rise">+136,000</td><td class="r fall">−38,000</td>
+                <td class="r rise">+98,000</td><td class="r rise">+0.82%</td></tr>
+              <tr><td>2025.03</td><td class="r rise">+118,000</td><td class="r fall">−52,000</td>
+                <td class="r rise">+66,000</td><td class="r rise">+0.55%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="info info-accent" style="margin-top:14px">환차손익은 6개월 내내 손실이었습니다. 원화 기준 수익률이 달러 기준보다 낮은 이유입니다.</p>
+  </main>
+</div>
+
+<div class="overlay" id="new-pf" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pf-t">
+    <h2 id="pf-t">포트폴리오 추가</h2>
+    <p>목적별로 나눠 담으면 손익을 따로 볼 수 있습니다.</p>
+    <div class="field">
+      <label for="pf-name">이름</label>
+      <input id="pf-name" type="text" placeholder="예: 배당 적립">
     </div>
-
-    <div class="grid-2">
-      <section class="card">
-        <h2 class="card-head">종목별 기여도</h2>
-        <div class="table-wrap">
-          <table class="tbl">
-            <thead><tr>
-              <th class="txt" scope="col">종목</th><th class="r" scope="col">주가 기여</th>
-              <th class="r" scope="col">환율 기여</th><th class="r" scope="col">합계</th>
-              <th class="r" scope="col">전체 대비</th>
-            </tr></thead>
-            <tbody>
-              <tr><td class="txt">NVDA</td><td class="r rise">+512,800</td><td class="r fall">−73,200</td><td class="r rise">+439,600</td><td class="r">87.3%</td></tr>
-              <tr><td class="txt">AAPL</td><td class="r rise">+306,900</td><td class="r fall">−98,400</td><td class="r rise">+208,500</td><td class="r">41.4%</td></tr>
-              <tr><td class="txt">MSFT</td><td class="r rise">+122,400</td><td class="r fall">−51,600</td><td class="r rise">+70,800</td><td class="r">14.1%</td></tr>
-              <tr><td class="txt">SCHD</td><td class="r rise">+21,700</td><td class="r fall">−33,600</td><td class="r fall">−11,900</td><td class="r">−2.4%</td></tr>
-              <tr><td class="txt">TSLA</td><td class="r fall">−141,400</td><td class="r fall">−62,100</td><td class="r fall">−203,500</td><td class="r">−40.4%</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">기간 요약</h2>
-        <div class="kv">
-          <div><span class="k">기초 평가금액</span><span class="v">9,820,000원</span></div>
-          <div><span class="k">기간 중 추가 입금</span><span class="v">2,523,800원</span></div>
-          <div><span class="k">기말 평가금액</span><span class="v">12,847,300원</span></div>
-          <div><span class="k">배당 수령</span><span class="v">31,200원</span></div>
-        </div>
-        <p class="info">추가 입금은 수익률 계산에서 제외됩니다. 돈을 더 넣어서 늘어난 자산은 수익이 아닙니다.</p>
-      </section>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-primary" type="button" data-close>추가</button>
     </div>
   </div>
 </div>
+
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>

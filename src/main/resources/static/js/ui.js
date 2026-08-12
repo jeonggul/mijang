@@ -98,7 +98,7 @@
     var t = i / (N - 1);
     var base = 146 + 72 * Math.pow(t, 1.12);
     var wave = 7.6 * Math.sin(i * .42) + 4.3 * Math.sin(i * 1.07)
-             + 2.5 * Math.sin(i * 2.63) + 1.7 * Math.cos(i * 3.91);
+      + 2.5 * Math.sin(i * 2.63) + 1.7 * Math.cos(i * 3.91);
     var close = base + wave, open = prev;
     var amp = 1.1 + 1.9 * Math.abs(Math.sin(i * 1.37));
     bars.push({ o: open, c: close, h: Math.max(open, close) + amp, l: Math.min(open, close) - amp * .92 });
@@ -116,9 +116,21 @@
     var top = parseFloat(y(Math.max(b.o, b.c)));
     var bot = parseFloat(y(Math.min(b.o, b.c)));
     return '<line x1="' + cx + '" y1="' + y(b.h) + '" x2="' + cx + '" y2="' + y(b.l) +
-           '" stroke="' + col + '" stroke-width="1.7"/>' +
-           '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) +
-           '" width="' + bw + '" height="' + Math.max(2.5, bot - top).toFixed(1) +
-           '" rx="1.2" fill="' + col + '"/>';
+      '" stroke="' + col + '" stroke-width="1.7"/>' +
+      '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) +
+      '" width="' + bw + '" height="' + Math.max(2.5, bot - top).toFixed(1) +
+      '" rx="1.2" fill="' + col + '"/>';
   }).join("");
+})();
+
+/* ── 로그아웃 ────────────────────────────────────────────────
+   쿠키가 HttpOnly 라 JS 가 지울 수 없다. 서버에 요청해야만 지워진다. */
+(function () {
+  document.addEventListener("click", function (e) {
+    /* 위임으로 건다 — 헤더가 20개 템플릿에 복제돼 있어 페이지마다 붙이면 빠뜨린다 */
+    if (!e.target.closest("[data-logout]")) return;
+    fetch("/api/auth/logout", { method: "POST" }).then(function () {
+      location.href = "/login";
+    });
+  });
 })();

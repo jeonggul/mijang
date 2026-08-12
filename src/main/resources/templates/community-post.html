@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/dashboard}">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}" aria-current="page">커뮤니티</a>
@@ -84,130 +84,130 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page" style="max-width:820px">
-  <p style="margin:0 0 14px"><a th:href="@{/community}" class="note">‹ 커뮤니티</a></p>
+<div class="layout no-panel">
 
-  <article class="card card-pad">
-    <span class="badge badge-line">종목 토론</span>
-    <h1 style="margin:12px 0 10px;font-size:22px;line-height:1.45">
-      NVDA 지금 들어가도 될까요? 데이터센터 매출 추이 정리해봤습니다
-    </h1>
-    <div class="row-between" style="margin-bottom:20px">
-      <span class="ava" aria-hidden="true"
-            style="width:28px;height:28px;border-radius:50%;background:var(--record);display:block"></span>
-      <span style="font-weight:500">지훈</span>
-      <span class="note">2시간 전 · 조회 842</span>
-      <span class="spacer" style="flex:1"></span>
-      <a class="badge badge-accent" th:href="@{/stock}">NVDA</a>
-    </div>
+  <aside class="card sidebar">
+    <a class="btn-record" th:href="@{/community-write}">글쓰기</a>
 
-    <hr class="rule">
-
-    <div style="line-height:1.9;font-size:var(--fs-body)">
-      <p>최근 네 분기 데이터센터 매출을 정리해봤습니다. 증가율이 꺾이는지가 관심사였는데,
-      절대 금액은 계속 늘지만 전분기 대비 증가율은 확실히 완만해지고 있습니다.</p>
-      <div class="table-wrap" style="margin:18px 0">
-        <table class="tbl">
-          <thead><tr><th scope="col">분기</th><th class="r" scope="col">데이터센터 매출</th><th class="r" scope="col">QoQ</th></tr></thead>
-          <tbody>
-            <tr><td>2025 Q2</td><td class="r">$26.3B</td><td class="r rise">+16%</td></tr>
-            <tr><td>2025 Q1</td><td class="r">$22.6B</td><td class="r rise">+23%</td></tr>
-            <tr><td>2024 Q4</td><td class="r">$18.4B</td><td class="r rise">+27%</td></tr>
-            <tr><td>2024 Q3</td><td class="r">$14.5B</td><td class="r rise">+41%</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p>지금 밸류에이션이 증가율 40%를 전제로 한 거라면 조정이 있을 수 있다고 봅니다.
-      다만 저는 이미 보유 중이라 추가 매수는 안 하고 지켜보려 합니다.</p>
-      <p class="note">출처: SEC EDGAR 10-Q</p>
-    </div>
-
-    <div class="row-between" style="margin-top:24px">
-      <button class="btn btn-sm" type="button">공감 38</button>
-      <button class="btn btn-sm" type="button">스크랩</button>
-      <span class="spacer" style="flex:1"></span>
-      <button class="btn btn-sm btn-ghost" type="button" data-open="report-post">신고</button>
-    </div>
-  </article>
-
-  <section class="card" style="margin-top:16px">
-    <h2 class="card-head">댓글 <span class="sub num">14</span></h2>
-
-    <div class="card-pad" style="border-bottom:1px solid var(--line)">
-      <div class="field">
-        <label for="cm">댓글 쓰기</label>
-        <textarea id="cm" rows="3" placeholder="근거 없는 종목 추천은 삭제됩니다"></textarea>
-      </div>
-      <div class="modal-actions" style="margin-top:10px">
-        <button class="btn btn-primary btn-sm" type="button">등록</button>
-      </div>
-    </div>
-
-    <ul class="list">
-      <li style="padding:16px 22px">
-        <p class="row-between" style="margin:0 0 6px">
-          <span style="font-weight:500">민서</span><span class="note">1시간 전</span>
-          <span class="spacer" style="flex:1"></span>
-          <button class="btn btn-sm btn-ghost" type="button">답글</button>
-        </p>
-        <p style="margin:0;line-height:1.8">증가율 둔화는 맞는데 기저효과도 있어서요. 절대 금액 기준으로는 아직 꺾였다고 보기 어렵다고 생각합니다.</p>
-      </li>
-      <li style="padding:16px 22px 16px 48px">
-        <p class="row-between" style="margin:0 0 6px">
-          <span style="font-weight:500">지훈</span><span class="note">52분 전</span>
-        </p>
-        <p style="margin:0;line-height:1.8">맞습니다. 그래서 저도 파는 건 아니고 추가 매수만 멈춘 상태입니다.</p>
-      </li>
-      <li style="padding:16px 22px">
-        <p class="row-between" style="margin:0 0 6px">
-          <span style="font-weight:500">현우</span><span class="note">40분 전</span>
-          <span class="spacer" style="flex:1"></span>
-          <button class="btn btn-sm btn-ghost" type="button">답글</button>
-        </p>
-        <p style="margin:0;line-height:1.8">정리 감사합니다. 이런 글이 많아졌으면 좋겠네요.</p>
-      </li>
+    <p class="nav-label">내 보유 종목</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/community}"><span class="tk">AAPL</span><span class="pc">128</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">NVDA</span><span class="pc">342</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">MSFT</span><span class="pc">76</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">TSLA</span><span class="pc">512</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">SCHD</span><span class="pc">41</span></a></li>
     </ul>
-  </section>
+
+    <p class="nav-label">인기 게시판</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/community}"><span class="tk">PLTR</span><span class="pc">881</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">AMD</span><span class="pc">604</span></a></li>
+      <li><a th:href="@{/community}"><span class="tk">COIN</span><span class="pc">497</span></a></li>
+    </ul>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>AAPL 게시판</h1></div>
+      <span class="grow"></span>
+      <a class="btn btn-sm" th:href="@{/community}">목록으로</a>
+    </div>
+
+    <article class="card card-pad" style="margin-bottom:14px">
+      <h2 style="margin:0 0 10px;font-size:var(--fs-section)">인도 생산 확대 뉴스 어떻게 보시나요</h2>
+      <p class="meta post-meta">
+        <span class="who">정하</span><span class="badge badge-line">보유 12주</span>
+        <time>3시간 전 · 조회 218</time>
+        <span class="spacer"></span>
+        <span class="at">작성 시점 <b class="num">$182.40</b> <i class="num rise">+7.7%</i></span>
+      </p>
+
+      <p class="post-body">환율 때문에 원화 수익률은 생각보다 별로네요. 그래도 장기로는 서비스 매출 비중이 계속 커질 것 같아서 들고 갈 생각입니다. 인도 생산 확대가 공급망 리스크를 얼마나 줄여줄지가 관건 같은데, 다들 어떻게 보시나요? 저는 평단 $178.20에 12주 들고 있습니다.</p>
+
+      <div class="post-actions">
+        <button class="btn btn-sm" type="button">좋아요 24</button>
+        <button class="btn btn-sm" type="button">스크랩</button>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn btn-sm" type="button">수정 · 삭제</button>
+        <button class="btn btn-sm" type="button" data-open="report-modal">신고</button>
+      </div>
+    </article>
+
+    <section class="card">
+      <h2 class="card-head">댓글 <span class="sub num">8개</span></h2>
+
+      <div class="card-pad" style="padding-top:0">
+        <div class="field">
+          <label for="cmt" class="sr-only">댓글</label>
+          <textarea id="cmt" rows="3" placeholder="댓글을 남겨보세요"></textarea>
+        </div>
+        <div class="modal-actions" style="margin-top:10px">
+          <button class="btn btn-primary btn-sm" type="button">댓글 등록</button>
+        </div>
+      </div>
+
+      <ul class="comment-list">
+        <li>
+          <p class="meta"><span class="who">김선호</span><time>2시간 전</time>
+            <span class="spacer"></span><span class="react">좋아요 6</span><button class="link" type="button">답글</button></p>
+          <p class="body">저도 비슷하게 봅니다. 다만 환율이 1,400원대라 신규 진입은 부담스럽네요.</p>
+        </li>
+        <li class="reply">
+          <p class="meta"><span class="arrow">↳</span><span class="who">정하</span>
+            <span class="badge badge-line">보유 12주</span><time>1시간 전</time>
+            <span class="spacer"></span><span class="react">좋아요 2</span><button class="link" type="button">답글</button></p>
+          <p class="body">맞습니다. 그래서 분할로 접근 중입니다.</p>
+        </li>
+        <li>
+          <p class="meta"><span class="who">박도윤</span><time>40분 전</time>
+            <span class="spacer"></span><span class="react">좋아요 1</span><button class="link" type="button">답글</button></p>
+          <p class="body">공급망 얘기는 이미 주가에 반영된 것 같은데요</p>
+        </li>
+      </ul>
+    </section>
+
+    <p class="note" style="margin-top:14px">작성 시점 주가는 등록 시 저장되며 수정되지 않습니다</p>
+  </main>
 </div>
 
-<div class="overlay" id="report-post" hidden>
+<div class="overlay" id="report-modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rp-t">
-    <h2 id="rp-t">게시글 신고</h2>
-    <p>신고 사유를 선택하면 운영자가 검토합니다.</p>
-    <div class="field" style="margin-bottom:12px">
-      <label for="rp-reason">사유</label>
-      <select id="rp-reason">
-        <option selected>매수·매도 권유</option><option>외부 홍보·리딩방</option>
-        <option>허위 정보</option><option>욕설·비방</option><option>기타</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="rp-note">상세 설명</label>
-      <textarea id="rp-note" rows="3" placeholder="선택 사항"></textarea>
-    </div>
+    <h2 id="rp-t">이 게시글을 신고할까요?</h2>
+    <p>신고 내용은 관리자만 확인합니다.</p>
+    <fieldset class="reason-set">
+      <legend>신고 사유</legend>
+      <label><input type="radio" name="reason" checked>스팸 · 홍보</label>
+      <label><input type="radio" name="reason">욕설 · 비방</label>
+      <label><input type="radio" name="reason">허위 정보</label>
+      <label><input type="radio" name="reason">기타</label>
+    </fieldset>
+    <p class="note">같은 게시글을 중복 신고할 수 없습니다.</p>
     <div class="modal-actions">
       <button class="btn" type="button" data-close>취소</button>
       <button class="btn btn-danger" type="button" data-close>신고</button>
     </div>
   </div>
 </div>
+
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>

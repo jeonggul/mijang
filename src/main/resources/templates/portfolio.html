@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/dashboard}">대시보드</a>
     <a th:href="@{/portfolio}" aria-current="page">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,121 +84,145 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page">
-  <div class="page-head">
-    <div><h1>포트폴리오</h1><p>보유 종목 5개 · 2025-08-05 종가 기준</p></div>
-    <span class="grow"></span>
-    <button class="btn btn-sm" type="button" data-open="new-pf">＋ 포트폴리오 추가</button>
-  </div>
+<div class="layout no-panel">
 
-  <div class="grid-2">
-    <div class="stack-v">
-      <section class="card card-pad">
-        <h2 style="margin:0 0 14px;font-size:var(--fs-section)">종목별 비중</h2>
-        <ul class="list" style="margin:0">
-          <li style="padding:12px 0;border:0">
-            <p class="row-between" style="margin:0 0 6px"><span style="flex:1;font-weight:500">MSFT</span><span class="num">27.1%</span></p>
-            <div class="progress"><i style="width:27.1%"></i></div>
-          </li>
-          <li style="padding:12px 0;border:0">
-            <p class="row-between" style="margin:0 0 6px"><span style="flex:1;font-weight:500">AAPL</span><span class="num">25.8%</span></p>
-            <div class="progress"><i style="width:25.8%"></i></div>
-          </li>
-          <li style="padding:12px 0;border:0">
-            <p class="row-between" style="margin:0 0 6px"><span style="flex:1;font-weight:500">NVDA</span><span class="num">23.1%</span></p>
-            <div class="progress"><i style="width:23.1%"></i></div>
-          </li>
-          <li style="padding:12px 0;border:0">
-            <p class="row-between" style="margin:0 0 6px"><span style="flex:1;font-weight:500">TSLA</span><span class="num">12.4%</span></p>
-            <div class="progress"><i style="width:12.4%"></i></div>
-          </li>
-          <li style="padding:12px 0;border:0">
-            <p class="row-between" style="margin:0 0 6px"><span style="flex:1;font-weight:500">SCHD</span><span class="num">11.6%</span></p>
-            <div class="progress"><i style="width:11.6%"></i></div>
-          </li>
-        </ul>
-      </section>
+  <aside class="card sidebar">
+    <div class="menu-anchor">
+      <button class="switcher" type="button" data-open="pf-menu">
+        전체 포트폴리오<span class="spacer"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="dropdown pf-menu" id="pf-menu" hidden>
+        <button class="row" type="button"><span class="ttl">전체 포트폴리오</span><span class="meta">5종목 · 12,847,300원</span></button>
+        <button class="row" type="button"><span class="ttl">연금계좌용</span><span class="meta">3종목 · 8,240,100원</span></button>
+        <button class="row" type="button"><span class="ttl">단기매매용</span><span class="meta">2종목 · 4,607,200원</span></button>
+        <button class="row add" type="button" data-open="new-pf">+ 포트폴리오 추가</button>
+      </div>
+    </div>
 
-      <section class="card">
-        <h2 class="card-head">보유 종목 상세</h2>
-        <div class="table-wrap">
-          <table class="tbl">
-            <thead><tr>
-              <th class="txt" scope="col">종목</th><th class="r" scope="col">수량</th>
-              <th class="r" scope="col">평단</th><th class="r" scope="col">평균 매수환율</th>
+    <ul class="stat-list">
+      <li><span class="k">종목 수</span><span class="v num">5</span></li>
+      <li><span class="k">주가손익</span><span class="v num rise">+822,400</span></li>
+      <li><span class="k">환차손익</span><span class="v num fall">−318,900</span></li>
+    </ul>
+
+    <p class="nav-label">보유 종목</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="pc rise">+6.7%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="pc rise">+17.4%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="pc rise">+2.1%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="pc fall">−11.3%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="pc fall">−0.8%</span></a></li>
+    </ul>
+
+    <a class="btn-record" th:href="@{/record-new}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      매매 기록 추가
+    </a>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>보유 현황</h1><p>매매 기록에서 자동 계산됩니다 · 예수금은 포함되지 않습니다</p></div>
+      <span class="grow"></span>
+      <div class="pills" data-toggle-group>
+        <button type="button" data-value="KRW" aria-pressed="true">원화</button>
+        <button type="button" data-value="USD" aria-pressed="false">달러</button>
+      </div>
+    </div>
+
+    <div class="summary-strip">
+      <div><span class="k">총 평가금액</span><b class="num">12,847,300원</b><span class="s num">$9,120.44</span></div>
+      <div><span class="k">주가손익</span><b class="num rise">+822,400원</b><span class="s">전 종목 합계</span></div>
+      <div><span class="k">환차손익</span><b class="num fall">−318,900원</b><span class="s">전 종목 합계</span></div>
+      <div><span class="k">총손익</span><b class="num rise">+503,500원</b><span class="s num rise">+4.08%</span></div>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">보유 종목 <span class="sub num">5종목</span></h2>
+      <div class="table-wrap">
+        <table class="tbl tbl-band">
+          <thead>
+            <tr>
+              <th class="txt" scope="col">종목</th><th class="r" scope="col">비중</th>
+              <th class="r" scope="col">보유 · 평단</th><th class="r" scope="col">현재가</th>
               <th class="r" scope="col">평가금액</th><th class="r" scope="col">주가손익</th>
-              <th class="r" scope="col">환차손익</th>
-            </tr></thead>
-            <tbody>
-              <tr><td class="txt">AAPL</td><td class="r">12</td><td class="r">$178.20</td><td class="r">1,382.10</td>
-                  <td class="r">3,318,700</td><td class="r rise">+306,900</td><td class="r fall">−98,400</td></tr>
-              <tr><td class="txt">NVDA</td><td class="r">8</td><td class="r">$102.40</td><td class="r">1,391.20</td>
-                  <td class="r">2,965,300</td><td class="r rise">+512,800</td><td class="r fall">−73,200</td></tr>
-              <tr><td class="txt">MSFT</td><td class="r">6</td><td class="r">$398.10</td><td class="r">1,368.80</td>
-                  <td class="r">3,486,900</td><td class="r rise">+122,400</td><td class="r fall">−51,600</td></tr>
-              <tr><td class="txt">TSLA</td><td class="r">9</td><td class="r">$248.30</td><td class="r">1,376.40</td>
-                  <td class="r">1,595,800</td><td class="r fall">−141,400</td><td class="r fall">−62,100</td></tr>
-              <tr><td class="txt">SCHD</td><td class="r">22</td><td class="r">$79.40</td><td class="r">1,402.50</td>
-                  <td class="r">1,480,600</td><td class="r rise">+21,700</td><td class="r fall">−33,600</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="note" style="padding:12px 18px">
-          평균 매수환율은 금액가중 평균입니다. 많이 산 날의 환율이 더 크게 반영됩니다.
-        </p>
-      </section>
-    </div>
+              <th class="r" scope="col">환차손익</th><th class="r" scope="col">수익률</th>
+            </tr>
+          </thead>
+          <tbody>
+              <tr>
+                <td><a th:href="@{/stock}">AAPL</a> <span class="sub">Apple Inc.</span></td>
+                <td class="r">25.8%</td><td class="r">12주 · $178.20</td><td class="r">$196.40</td>
+                <td class="r">3,318,700원</td>
+                <td class="r rise">+306,900</td>
+                <td class="r fall">−98,400</td>
+                <td class="r rise">+6.7%</td>
+              </tr>
+              <tr>
+                <td><a th:href="@{/stock}">NVDA</a> <span class="sub">NVIDIA Corp.</span></td>
+                <td class="r">23.1%</td><td class="r">8주 · $102.40</td><td class="r">$138.90</td>
+                <td class="r">2,965,300원</td>
+                <td class="r rise">+512,800</td>
+                <td class="r fall">−73,200</td>
+                <td class="r rise">+17.4%</td>
+              </tr>
+              <tr>
+                <td><a th:href="@{/stock}">MSFT</a> <span class="sub">Microsoft Corp.</span></td>
+                <td class="r">27.1%</td><td class="r">6주 · $398.10</td><td class="r">$412.60</td>
+                <td class="r">3,486,900원</td>
+                <td class="r rise">+122,400</td>
+                <td class="r fall">−51,600</td>
+                <td class="r rise">+2.1%</td>
+              </tr>
+              <tr>
+                <td><a th:href="@{/stock}">TSLA</a> <span class="sub">Tesla Inc.</span></td>
+                <td class="r">12.4%</td><td class="r">9주 · $248.30</td><td class="r">$221.70</td>
+                <td class="r">1,595,800원</td>
+                <td class="r fall">−141,400</td>
+                <td class="r fall">−62,100</td>
+                <td class="r fall">−11.3%</td>
+              </tr>
+              <tr>
+                <td><a th:href="@{/stock}">SCHD</a> <span class="sub">Schwab US Dividend</span></td>
+                <td class="r">11.6%</td><td class="r">22주 · $79.40</td><td class="r">$80.10</td>
+                <td class="r">1,480,600원</td>
+                <td class="r rise">+21,700</td>
+                <td class="r fall">−33,600</td>
+                <td class="r fall">−0.8%</td>
+              </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-    <div class="stack-v">
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">요약</h2>
-        <div class="kv">
-          <div><span class="k">총 평가금액</span><span class="v">12,847,300원</span></div>
-          <div><span class="k">총 투자원금</span><span class="v">12,343,800원</span></div>
-          <div><span class="k">주가손익</span><span class="v rise">+822,400</span></div>
-          <div><span class="k">환차손익</span><span class="v fall">−318,900</span></div>
-          <div><span class="k">총손익</span><span class="v rise">+503,500</span></div>
-        </div>
-        <p class="info info-accent">주가는 올랐지만 환율이 내려 이익의 일부가 상쇄됐습니다.</p>
-      </section>
-
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">섹터 비중</h2>
-        <div class="kv">
-          <div><span class="k">Technology</span><span class="v">76.0%</span></div>
-          <div><span class="k">Consumer Cyclical</span><span class="v">12.4%</span></div>
-          <div><span class="k">ETF (혼합)</span><span class="v">11.6%</span></div>
-        </div>
-        <p class="info info-warn">기술 섹터 비중이 76%입니다. 한 업종에 몰려 있습니다.</p>
-      </section>
-
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">내 포트폴리오</h2>
-        <ul class="list">
-          <li><button class="row" type="button"><span class="ttl">전체 포트폴리오</span><span class="meta">5종목</span></button></li>
-          <li><button class="row" type="button"><span class="ttl">배당 적립</span><span class="meta">1종목</span></button></li>
-          <li><button class="row" type="button"><span class="ttl">단기 관찰</span><span class="meta">0종목</span></button></li>
-        </ul>
-      </section>
-    </div>
-  </div>
+    <p class="note" style="margin-top:14px">비중은 평가금액 기준입니다. 미장은 매수·매도를 권하지 않습니다.</p>
+    <!-- SR-008-1 달러 기준 상태에서만 노출한다 -->
+    <p class="note" id="usd-note" hidden>달러 기준입니다. 환차손익은 원화 기준 개념이므로 달러 표시에서는 참고값입니다.</p>
+  </main>
 </div>
 
 <div class="overlay" id="new-pf" hidden>
@@ -215,6 +239,7 @@
     </div>
   </div>
 </div>
+
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>

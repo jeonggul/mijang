@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}" aria-current="page">대시보드</a>
+    <a th:href="@{/dashboard}" aria-current="page">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,99 +84,126 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page" style="max-width:960px">
-  <div class="page-head">
-    <div><h1>양도소득세 추정</h1><p>2025년 귀속 · 확정 신고액이 아닙니다</p></div>
-    <span class="grow"></span>
-    <div class="pills" data-toggle-group>
-      <button type="button" data-value="2025" aria-pressed="true">2025</button>
-      <button type="button" data-value="2024" aria-pressed="false">2024</button>
-    </div>
-  </div>
+<div class="layout no-panel">
 
-  <p class="info info-warn" style="margin-bottom:16px">
-    이 화면은 참고용 추정치입니다. 미장은 세무 자문을 제공하지 않으며, 실제 신고는 증권사 자료와 국세청 기준을 따라야 합니다.
-  </p>
-
-  <div class="grid-2">
-    <div class="stack-v">
-      <section class="card">
-        <h2 class="card-head">실현 손익 내역 <span class="sub">매도 3건</span></h2>
-        <div class="table-wrap">
-          <table class="tbl">
-            <thead><tr>
-              <th scope="col">매도일</th><th class="txt" scope="col">종목</th>
-              <th class="r" scope="col">수량</th><th class="r" scope="col">양도가액</th>
-              <th class="r" scope="col">취득가액</th><th class="r" scope="col">손익</th>
-            </tr></thead>
-            <tbody>
-              <tr><td>2025-06-30</td><td class="txt">TSLA</td><td class="r">2</td><td class="r">683,671</td><td class="r">612,400</td><td class="r rise">+71,271</td></tr>
-              <tr><td>2025-05-08</td><td class="txt">AMD</td><td class="r">5</td><td class="r">812,300</td><td class="r">744,900</td><td class="r rise">+67,400</td></tr>
-              <tr><td>2025-02-19</td><td class="txt">PLTR</td><td class="r">10</td><td class="r">418,200</td><td class="r">428,471</td><td class="r fall">−10,271</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="note" style="padding:12px 18px">
-          양도가액·취득가액 모두 각 체결일 환율로 원화 환산한 값입니다. 환율 차이도 과세 대상에 포함됩니다.
-        </p>
-      </section>
+  <aside class="card sidebar">
+    <div class="menu-anchor">
+      <button class="switcher" type="button" data-open="pf-menu">
+        전체 포트폴리오<span class="spacer"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="dropdown pf-menu" id="pf-menu" hidden>
+        <button class="row" type="button"><span class="ttl">전체 포트폴리오</span><span class="meta">5종목 · 12,847,300원</span></button>
+        <button class="row" type="button"><span class="ttl">연금계좌용</span><span class="meta">3종목 · 8,240,100원</span></button>
+        <button class="row" type="button"><span class="ttl">단기매매용</span><span class="meta">2종목 · 4,607,200원</span></button>
+        <button class="row add" type="button" data-open="new-pf">+ 포트폴리오 추가</button>
+      </div>
     </div>
 
-    <div class="stack-v">
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">추정 계산</h2>
-        <div class="kv">
-          <div><span class="k">연간 실현 손익</span><span class="v rise">+128,400</span></div>
-          <div><span class="k">기본 공제</span><span class="v">−2,500,000</span></div>
-          <div><span class="k">과세 표준</span><span class="v">0</span></div>
-          <div><span class="k">세율</span><span class="v">22%</span></div>
-          <div><span class="k">추정 세액</span><span class="v">0원</span></div>
-        </div>
-        <p class="info">실현 손익이 기본 공제 250만 원에 못 미쳐 추정 세액이 없습니다.</p>
-      </section>
+    <ul class="stat-list">
+      <li><span class="k">종목 수</span><span class="v num">5</span></li>
+      <li><span class="k">주가손익</span><span class="v num rise">+822,400</span></li>
+      <li><span class="k">환차손익</span><span class="v num fall">−318,900</span></li>
+    </ul>
 
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">신고 일정</h2>
-        <div class="kv">
-          <div><span class="k">신고 기간</span><span class="v">2026-05</span></div>
-          <div><span class="k">대상 기간</span><span class="v">2025-01 ~ 12</span></div>
-        </div>
-        <p class="note" style="margin-top:12px">
-          해외주식 양도소득은 연 1회 확정신고 대상입니다. 손실만 있어도 신고하면 이월공제를 받을 수 있습니다.
-        </p>
-      </section>
+    <p class="nav-label">보유 종목</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="pc rise">+6.7%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="pc rise">+17.4%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="pc rise">+2.1%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="pc fall">−11.3%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="pc fall">−0.8%</span></a></li>
+    </ul>
 
-      <section class="card card-pad">
-        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">배당소득</h2>
-        <div class="kv">
-          <div><span class="k">연간 배당(세전)</span><span class="v">36,700원</span></div>
-          <div><span class="k">미국 원천징수 15%</span><span class="v">−5,500원</span></div>
-          <div><span class="k">실수령</span><span class="v">31,200원</span></div>
-        </div>
-        <p class="note" style="margin-top:12px">
-          배당소득은 양도소득과 별개로 금융소득종합과세 대상에 포함됩니다.
-        </p>
-      </section>
+    <a class="btn-record" th:href="@{/record-new}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      매매 기록 추가
+    </a>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>양도소득세 참고 계산</h1><p>입력된 매매 기록만으로 계산한 참고값입니다</p></div>
+      <span class="grow"></span>
+      <div class="pills" data-toggle-group>
+        <button type="button" data-value="1M" aria-pressed="false">1개월</button>
+        <button type="button" data-value="3M" aria-pressed="false">3개월</button>
+        <button type="button" data-value="6M" aria-pressed="false">6개월</button>
+        <button type="button" data-value="1Y" aria-pressed="true">1년</button>
+        <button type="button" data-value="ALL" aria-pressed="false">전체</button>
+      </div>
+    </div>
+
+    <p class="info info-warn">이 계산은 세무 자문이 아닙니다. 실제 신고 자료로 사용할 수 없습니다.
+       증권사에서 발급하는 자료를 기준으로 신고하세요.</p>
+
+    <section class="card" style="margin-bottom:14px">
+      <h2 class="card-head">2025년 실현손익</h2>
+      <ul class="calc-list">
+        <li><span class="k">매도 건수</span><span class="v num">4건</span></li>
+        <li><span class="k">실현 이익</span><span class="v num rise">+1,842,000원</span></li>
+        <li><span class="k">실현 손실</span><span class="v num fall">−318,400원</span></li>
+        <li class="sum"><span class="k">통산 실현손익</span><span class="v num rise">+1,523,600원</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="card-head">과세 추정</h2>
+      <ul class="calc-list">
+        <li><span class="k">기본공제</span><span class="v num">−2,500,000원</span></li>
+        <li><span class="k">과세표준</span><span class="v num">0원</span></li>
+        <li><span class="k">세율</span><span class="v num">22% (지방소득세 포함)</span></li>
+        <li class="sum big"><span class="k">예상 세액</span><span class="v num">0원</span></li>
+      </ul>
+    </section>
+
+    <ul class="note-list">
+      <li>실현손익은 원화 기준으로 계산합니다. 환차손익이 포함된 금액입니다.</li>
+      <li>해외주식 양도소득 기본공제는 연 250만원입니다.</li>
+      <li>수수료를 입력하지 않은 기록은 0원으로 계산됩니다.</li>
+      <li>배당소득은 양도소득과 별개이며 이 계산에 포함되지 않습니다.</li>
+    </ul>
+  </main>
+</div>
+
+<div class="overlay" id="new-pf" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pf-t">
+    <h2 id="pf-t">포트폴리오 추가</h2>
+    <p>목적별로 나눠 담으면 손익을 따로 볼 수 있습니다.</p>
+    <div class="field">
+      <label for="pf-name">이름</label>
+      <input id="pf-name" type="text" placeholder="예: 배당 적립">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-primary" type="button" data-close>추가</button>
     </div>
   </div>
 </div>
+
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>

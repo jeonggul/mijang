@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/dashboard}">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,89 +84,69 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page" style="max-width:640px">
-  <div class="page-head">
-    <div><h1>프로필 수정</h1><p>커뮤니티에 보이는 정보입니다</p></div>
-  </div>
+<div class="page-wide">
+  <section class="card card-pad profile-head">
+    <span class="ava-lg" aria-hidden="true"></span>
+    <div class="info">
+      <h1>정하</h1>
+      <p class="note">dlwjdgkw@gmail.com · 2025년 1월 가입</p>
+      <ul class="stats">
+        <li><span class="k">매매 기록</span><span class="v num">38건</span></li>
+        <li><span class="k">보유 종목</span><span class="v num">5종목</span></li>
+        <li><span class="k">작성 글</span><span class="v num">12개</span></li>
+        <li><span class="k">기록한 판단</span><span class="v num">31개</span></li>
+      </ul>
+    </div>
+    <a class="btn btn-sm" th:href="@{/profile-edit}">프로필 수정</a>
+  </section>
 
-  <form class="card card-pad" onsubmit="location.href='/mypage';return false">
-    <div class="row-between" style="margin-bottom:20px">
-      <span class="ava" aria-hidden="true"
-            style="width:64px;height:64px;border-radius:50%;background:var(--record);display:block"></span>
-      <div style="flex:1">
-        <button class="btn btn-sm" type="button">이미지 변경</button>
-        <button class="btn btn-sm btn-ghost" type="button">삭제</button>
-        <p class="note" style="margin:8px 0 0">JPG·PNG · 2MB 이하</p>
+  <section class="card card-pad">
+    <h2 class="form-sec">프로필 수정</h2>
+
+    <div class="img-row">
+      <span class="ava-lg" aria-hidden="true"></span>
+      <div class="info">
+        <p class="ttl">프로필 이미지</p>
+        <p class="note">JPG · PNG · 2MB 이하</p>
       </div>
+      <button class="btn btn-sm" type="button">이미지 변경</button>
+      <button class="btn btn-sm" type="button">삭제</button>
     </div>
 
-    <div class="field" style="margin-bottom:14px">
-      <label for="p-nick">닉네임</label>
-      <input id="p-nick" type="text" value="정하">
-      <p class="hint">2~10자 · 30일에 한 번 변경할 수 있습니다</p>
+    <div class="field" style="margin-top:18px">
+      <label for="nick">닉네임</label>
+      <input id="nick" type="text" value="정하" maxlength="10">
+      <p class="hint"><span class="count num">2 / 10</span>커뮤니티 글과 댓글에 표시됩니다</p>
     </div>
 
-    <div class="field" style="margin-bottom:14px">
-      <label for="p-email">이메일</label>
-      <input id="p-email" type="email" value="demo@mijang.app" disabled>
-      <p class="hint">이메일은 변경할 수 없습니다</p>
-    </div>
-
-    <div class="field" style="margin-bottom:20px">
-      <label for="p-bio">한 줄 소개</label>
-      <input id="p-bio" type="text" value="장기 보유 위주. 기록 남기는 연습 중.">
-      <p class="hint">커뮤니티 글 옆에 표시됩니다 · 40자 이내</p>
-    </div>
-
-    <hr class="rule">
-
-    <div class="setting-row">
-      <span class="txt"><b>비밀번호 변경</b><small>마지막 변경 2025-02-11</small></span>
-      <span class="val"><a class="btn btn-sm" th:href="@{/password-reset}">변경</a></span>
-    </div>
-    <div class="setting-row">
-      <span class="txt"><b>회원 탈퇴</b><small>모든 기록이 삭제되며 되돌릴 수 없습니다</small></span>
-      <span class="val"><button class="btn btn-sm btn-danger" type="button" data-open="quit">탈퇴</button></span>
-    </div>
-
-    <div class="modal-actions">
+    <div class="modal-actions" style="margin-top:18px">
       <a class="btn" th:href="@{/mypage}">취소</a>
-      <button class="btn btn-primary" type="submit">저장</button>
+      <a class="btn btn-primary" th:href="@{/mypage}">저장</a>
     </div>
-  </form>
+  </section>
+
+  <p class="note" style="margin-top:14px">이메일과 비밀번호는 설정 화면에서 변경합니다</p>
 </div>
 
-<div class="overlay" id="quit" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="q-t">
-    <h2 id="q-t">정말 탈퇴하시겠습니까?</h2>
-    <p>매매 기록 42건과 회고 11건이 즉시 삭제됩니다. 복구할 수 없습니다.</p>
-    <div class="field">
-      <label for="q-confirm">확인을 위해 <b>탈퇴합니다</b>를 입력하세요</label>
-      <input id="q-confirm" type="text" placeholder="탈퇴합니다">
-    </div>
-    <div class="modal-actions">
-      <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-danger" type="button" data-close>탈퇴하기</button>
-    </div>
-  </div>
-</div>
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>

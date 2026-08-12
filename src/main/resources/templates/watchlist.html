@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}">대시보드</a>
+    <a th:href="@{/dashboard}">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}" aria-current="page">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,116 +84,109 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page" style="max-width:960px">
+<div class="page-wide">
   <div class="page-head">
-    <div><h1>관심 종목</h1><p>4종목 · 실시간 시세는 IEX 체결분 기준입니다</p></div>
+    <div><h1>관심 종목</h1><p>등록한 종목은 실시간 구독 대상에 포함됩니다</p></div>
     <span class="grow"></span>
-    <button class="btn btn-sm" type="button" data-open="add-watch">＋ 종목 추가</button>
+    <button class="btn btn-sm" type="button" data-open="grp-modal">그룹 추가</button>
+  </div>
+
+  <div class="pills" data-toggle-group style="margin-bottom:14px">
+    <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+    <button type="button" data-value="SEMI" aria-pressed="false">반도체</button>
+    <button type="button" data-value="DIV" aria-pressed="false">배당주</button>
+    <button type="button" data-value="BIG" aria-pressed="false">빅테크</button>
   </div>
 
   <section class="card">
+    <h2 class="card-head">관심 종목 <span class="sub num">4종목</span></h2>
     <div class="table-wrap">
-      <table class="tbl">
-        <thead><tr>
-          <th scope="col"></th><th class="txt" scope="col">종목</th>
-          <th class="r" scope="col">현재가</th><th class="r" scope="col">등락</th>
-          <th scope="col">최근 추이</th><th class="r" scope="col">목표가</th><th scope="col"></th>
-        </tr></thead>
+      <table class="tbl tbl-band">
+        <thead>
+          <tr>
+            <th scope="col"><span class="sr-only">순서</span></th>
+            <th scope="col">티커</th><th class="txt" scope="col">종목명</th>
+            <th class="r" scope="col">현재가</th><th class="r" scope="col">원화 환산</th>
+            <th class="r" scope="col">등락률</th><th class="r" scope="col"><span class="sr-only">기록</span></th>
+          </tr>
+        </thead>
         <tbody>
-          <tr>
-            <td><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--text-sub)">
-              <circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/>
-            </svg></td>
-            <td class="txt"><a th:href="@{/stock}"><b>GOOGL</b> <span class="sub">Alphabet Inc.</span></a></td>
-            <td class="r">$174.32</td><td class="r rise">+0.82%</td>
-            <td><svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
-              <polyline points="0,32 15,28 30,33 45,24 60,26 75,18 90,21 105,12 120,9"
-                        fill="none" stroke="var(--rise)" stroke-width="2"/></svg></td>
-            <td class="r">$190.00</td>
-            <td><button class="btn btn-sm" type="button">삭제</button></td>
-          </tr>
-          <tr>
-            <td><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--text-sub)">
-              <circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/>
-            </svg></td>
-            <td class="txt"><a th:href="@{/stock}"><b>AMD</b> <span class="sub">Advanced Micro Devices</span></a></td>
-            <td class="r">$118.05</td><td class="r fall">−2.14%</td>
-            <td><svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
-              <polyline points="0,10 15,14 30,11 45,19 60,17 75,24 90,22 105,30 120,33"
-                        fill="none" stroke="var(--fall)" stroke-width="2"/></svg></td>
-            <td class="r sub">—</td>
-            <td><button class="btn btn-sm" type="button">삭제</button></td>
-          </tr>
-          <tr>
-            <td><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--text-sub)">
-              <circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/>
-            </svg></td>
-            <td class="txt"><a th:href="@{/stock}"><b>COST</b> <span class="sub">Costco Wholesale</span></a></td>
-            <td class="r">$892.10</td><td class="r rise">+0.34%</td>
-            <td><svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
-              <polyline points="0,26 15,24 30,27 45,22 60,23 75,19 90,20 105,17 120,15"
-                        fill="none" stroke="var(--rise)" stroke-width="2"/></svg></td>
-            <td class="r sub">—</td>
-            <td><button class="btn btn-sm" type="button">삭제</button></td>
-          </tr>
-          <tr>
-            <td><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--text-sub)">
-              <circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/>
-              <circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/>
-            </svg></td>
-            <td class="txt"><a th:href="@{/stock}"><b>JEPI</b> <span class="sub">JPMorgan Equity Premium Income</span></a></td>
-            <td class="r">$56.88</td><td class="r fall">−0.11%</td>
-            <td><svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
-              <polyline points="0,20 15,21 30,19 45,22 60,20 75,23 90,21 105,24 120,23"
-                        fill="none" stroke="var(--fall)" stroke-width="2"/></svg></td>
-            <td class="r sub">—</td>
-            <td><button class="btn btn-sm" type="button">삭제</button></td>
-          </tr>
+              <tr>
+                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
+                <td><a th:href="@{/stock}">GOOGL</a></td>
+                <td class="txt">Alphabet Inc.</td>
+                <td class="r">$174.32</td><td class="r">245,530원</td>
+                <td class="r rise">+0.82%</td>
+                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
+              </tr>
+              <tr>
+                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
+                <td><a th:href="@{/stock}">AMD</a></td>
+                <td class="txt">Advanced Micro Devices</td>
+                <td class="r">$118.05</td><td class="r">166,260원</td>
+                <td class="r fall">−2.14%</td>
+                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
+              </tr>
+              <tr>
+                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
+                <td><a th:href="@{/stock}">COST</a></td>
+                <td class="txt">Costco Wholesale</td>
+                <td class="r">$892.10</td><td class="r">1,256,240원</td>
+                <td class="r rise">+0.34%</td>
+                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
+              </tr>
+              <tr>
+                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
+                <td><a th:href="@{/stock}">JEPI</a></td>
+                <td class="txt">JPMorgan Equity Premium</td>
+                <td class="r">$56.88</td><td class="r">80,110원</td>
+                <td class="r fall">−0.11%</td>
+                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
+              </tr>
         </tbody>
       </table>
     </div>
-    <p class="note" style="padding:12px 18px">행을 끌어서 순서를 바꿀 수 있습니다. 목표가를 설정하면 도달 시 알림을 받습니다.</p>
   </section>
+
+  <p class="note" style="margin-top:14px">좌측 손잡이를 끌어 순서를 바꿉니다 · 실시간 시세는 IEX 기준입니다</p>
 </div>
 
-<div class="overlay" id="add-watch" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aw-t">
-    <h2 id="aw-t">관심 종목 추가</h2>
-    <p>티커나 종목명으로 찾아 담아두세요.</p>
+<div class="overlay" id="grp-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gm-t">
+    <h2 id="gm-t">관심 그룹 추가</h2>
+    <p>종목을 주제별로 나눠 관리할 수 있습니다.</p>
     <div class="field">
-      <label for="aw-q">종목 검색</label>
-      <input id="aw-q" type="search" placeholder="AAPL, Apple, 애플">
+      <label for="gm-name">그룹 이름</label>
+      <input id="gm-name" type="text" placeholder="예: 반도체">
+      <p class="hint">반도체, 배당주 같은 이름을 붙여보세요 · 최대 10자</p>
     </div>
+    <p class="note">그룹에 담긴 종목은 실시간 구독 대상에 포함됩니다.</p>
     <div class="modal-actions">
       <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-primary" type="button" data-close>추가</button>
+      <button class="btn btn-primary" type="button" data-close>만들기</button>
     </div>
   </div>
 </div>
+
 <script th:src="@{/js/ui.js}"></script>
 </body>
 </html>

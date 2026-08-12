@@ -16,4 +16,7 @@ public class LoginForm {
 
     @NotBlank
     private String password;
+
+    /** 명세서 2장. 지금은 받기만 하고 쓰지 않는다. 켜지면 refresh 수명을 늘리는 자리다. */
+    private boolean rememberMe;
 }

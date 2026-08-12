@@ -14,10 +14,10 @@
 <body>
 
 <header class="header">
-  <a class="logo" th:href="@{/}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
 
   <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/}" aria-current="page">대시보드</a>
+    <a th:href="@{/dashboard}" aria-current="page">대시보드</a>
     <a th:href="@{/portfolio}">포트폴리오</a>
     <a th:href="@{/search}">종목</a>
     <a th:href="@{/community}">커뮤니티</a>
@@ -84,33 +84,67 @@
 
   <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
   <div class="menu-anchor">
+    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
     <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>정하
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="dropdown" id="user-menu" hidden>
-      <a class="row" th:href="@{/mypage}">마이페이지</a>
-      <a class="row" th:href="@{/record-list}">매매 기록</a>
-      <a class="row" th:href="@{/retrospect}">투자 회고</a>
-      <a class="row" th:href="@{/watchlist}">관심 종목</a>
-      <a class="row" th:href="@{/settings}">설정</a>
-      <a class="row danger" th:href="@{/login}">로그아웃</a>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
     </div>
   </div>
 </header>
 
-<div class="page">
-  <div class="page-head">
-    <div><h1>매매 기록</h1><p>전체 42건 · 2024-01-08부터</p></div>
-    <span class="grow"></span>
-    <button class="btn btn-sm" type="button">CSV 내보내기</button>
-    <a class="btn btn-primary btn-sm" th:href="@{/record-new}">＋ 기록 추가</a>
-  </div>
+<div class="layout no-panel">
 
-  <div class="card card-pad" style="margin-bottom:16px">
-    <div class="row-between">
+  <aside class="card sidebar">
+    <button class="switcher" type="button">
+      전체 포트폴리오<span class="spacer"></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <ul class="stat-list">
+      <li><span class="k">종목 수</span><span class="v num">5</span></li>
+      <li><span class="k">주가손익</span><span class="v num rise">+822,400</span></li>
+      <li><span class="k">환차손익</span><span class="v num fall">−318,900</span></li>
+    </ul>
+
+    <p class="nav-label">보유 종목</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="pc rise">+6.7%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="pc rise">+17.4%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="pc rise">+2.1%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="pc fall">−11.3%</span></a></li>
+      <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="pc fall">−0.8%</span></a></li>
+    </ul>
+
+    <a class="btn-record" th:href="@{/record-new}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      매매 기록 추가
+    </a>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>매매 기록</h1><p>입력한 기록의 원장입니다 · 수정하면 보유 현황이 재계산됩니다</p></div>
+      <span class="grow"></span>
+      <button class="btn btn-sm" type="button">CSV 내보내기</button>
+      <a class="btn btn-primary btn-sm" th:href="@{/record-new}">＋ 기록 추가</a>
+    </div>
+
+    <div class="row-between" style="margin-bottom:14px">
       <div class="pills" data-toggle-group>
         <button type="button" data-value="ALL" aria-pressed="true">전체</button>
         <button type="button" data-value="BUY" aria-pressed="false">매수</button>
@@ -118,56 +152,101 @@
       </div>
       <span class="spacer" style="flex:1"></span>
       <div class="pills" data-toggle-group>
-        <button type="button" data-value="3M" aria-pressed="false">3개월</button>
-        <button type="button" data-value="1Y" aria-pressed="true">1년</button>
-        <button type="button" data-value="ALL" aria-pressed="false">전체</button>
+        <button type="button" data-value="2025" aria-pressed="true">2025년</button>
+        <button type="button" data-value="ALL" aria-pressed="false">전체 기간</button>
       </div>
     </div>
-  </div>
 
-  <section class="card">
-    <div class="table-wrap">
-      <table class="tbl">
-        <thead><tr>
-          <th scope="col">체결일</th><th class="txt" scope="col">종목</th><th scope="col">구분</th>
-          <th class="r" scope="col">수량</th><th class="r" scope="col">단가</th>
-          <th class="r" scope="col">환율</th><th class="r" scope="col">원화 금액</th>
-          <th class="txt" scope="col">기록</th><th scope="col"></th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td>2025-07-22</td><td class="txt">NVDA</td><td><span class="badge badge-rise">매수</span></td>
-            <td class="r">3</td><td class="r">$121.40</td><td class="r">1,391.20</td><td class="r">506,660</td>
-            <td class="txt sub">데이터센터 수요 지속</td><td><a class="btn btn-sm" th:href="@{/record-new}">수정</a></td>
-          </tr>
-          <tr>
-            <td>2025-06-30</td><td class="txt">TSLA</td><td><span class="badge badge-fall">매도</span></td>
-            <td class="r">2</td><td class="r">$248.30</td><td class="r">1,376.40</td><td class="r">683,671</td>
-            <td class="txt sub">비중 조절</td><td><a class="btn btn-sm" th:href="@{/record-new}">수정</a></td>
-          </tr>
-          <tr>
-            <td>2025-05-19</td><td class="txt">MSFT</td><td><span class="badge badge-rise">매수</span></td>
-            <td class="r">2</td><td class="r">$398.10</td><td class="r">1,368.80</td><td class="r">1,089,882</td>
-            <td class="txt sub">클라우드 성장률 확인</td><td><a class="btn btn-sm" th:href="@{/record-new}">수정</a></td>
-          </tr>
-          <tr>
-            <td>2025-04-02</td><td class="txt">SCHD</td><td><span class="badge badge-rise">매수</span></td>
-            <td class="r">22</td><td class="r">$79.40</td><td class="r">1,402.50</td><td class="r">2,450,047</td>
-            <td class="txt sub">배당 적립</td><td><a class="btn btn-sm" th:href="@{/record-new}">수정</a></td>
-          </tr>
-          <tr>
-            <td>2025-03-14</td><td class="txt">AAPL</td><td><span class="badge badge-rise">매수</span></td>
-            <td class="r">12</td><td class="r">$178.20</td><td class="r">1,382.10</td><td class="r">2,955,483</td>
-            <td class="txt sub">서비스 매출 비중 상승</td><td><a class="btn btn-sm" th:href="@{/record-new}">수정</a></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+      <article class="record-card">
+        <header>
+          <span class="badge badge-rise">매수</span>
+          <b class="tk">NVDA</b><span class="nm">NVIDIA Corp.</span>
+          <time class="date">2025-07-22</time>
+          <span class="spacer"></span>
+          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
+        </header>
+        <dl class="figures">
+          <div><dt>수량</dt><dd class="num">3.0주</dd></div>
+          <div><dt>단가</dt><dd class="num">$121.40</dd></div>
+          <div><dt>적용 환율</dt><dd class="num">1,391.20원</dd></div>
+          <div><dt>수수료</dt><dd class="num">$0.18</dd></div>
+          <div><dt>원화 환산</dt><dd class="num">506,660원</dd></div>
+        </dl>
+        <p class="memo"><span class="k">사유</span><span class="body">데이터센터 수요가 이어지는 구간이라 판단</span><span class="badge badge-line">목표 $165.00</span><span class="badge">확신</span></p>
+      </article>
+      <article class="record-card">
+        <header>
+          <span class="badge badge-fall">매도</span>
+          <b class="tk">TSLA</b><span class="nm">Tesla Inc.</span>
+          <time class="date">2025-06-30</time>
+          <span class="spacer"></span>
+          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
+        </header>
+        <dl class="figures">
+          <div><dt>수량</dt><dd class="num">2.0주</dd></div>
+          <div><dt>단가</dt><dd class="num">$248.30</dd></div>
+          <div><dt>적용 환율</dt><dd class="num">1,376.40원</dd></div>
+          <div><dt>수수료</dt><dd class="num">$0.25</dd></div>
+          <div><dt>원화 환산</dt><dd class="num">683,671원</dd></div>
+        </dl>
+        <p class="memo"><span class="k">사유</span><span class="body">비중이 과해져 일부만 줄임</span><span class="badge">중립</span></p>
+      </article>
+      <article class="record-card">
+        <header>
+          <span class="badge badge-rise">매수</span>
+          <b class="tk">MSFT</b><span class="nm">Microsoft Corp.</span>
+          <time class="date">2025-05-19</time>
+          <span class="spacer"></span>
+          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
+        </header>
+        <dl class="figures">
+          <div><dt>수량</dt><dd class="num">2.0주</dd></div>
+          <div><dt>단가</dt><dd class="num">$398.10</dd></div>
+          <div><dt>적용 환율</dt><dd class="num">1,368.80원</dd></div>
+          <div><dt>수수료</dt><dd class="num">$0.40</dd></div>
+          <div><dt>원화 환산</dt><dd class="num">1,089,882원</dd></div>
+        </dl>
+        <p class="memo"><span class="k">사유</span><span class="body">클라우드 성장률이 다시 올라온 것을 확인</span><span class="badge badge-line">목표 $470.00</span><span class="badge">확신</span></p>
+      </article>
+      <article class="record-card">
+        <header>
+          <span class="badge badge-rise">매수</span>
+          <b class="tk">SCHD</b><span class="nm">Schwab US Dividend</span>
+          <time class="date">2025-04-02</time>
+          <span class="spacer"></span>
+          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
+        </header>
+        <dl class="figures">
+          <div><dt>수량</dt><dd class="num">22.0주</dd></div>
+          <div><dt>단가</dt><dd class="num">$79.40</dd></div>
+          <div><dt>적용 환율</dt><dd class="num">1,402.50원</dd></div>
+          <div><dt>수수료</dt><dd class="num">$0.44</dd></div>
+          <div><dt>원화 환산</dt><dd class="num">2,450,047원</dd></div>
+        </dl>
+        <p class="memo"><span class="k">사유</span><span class="body">배당 적립 목적. 환율이 높아 분할 매수</span><span class="badge">불안</span></p>
+      </article>
+      <article class="record-card">
+        <header>
+          <span class="badge badge-rise">매수</span>
+          <b class="tk">AAPL</b><span class="nm">Apple Inc.</span>
+          <time class="date">2025-03-14</time>
+          <span class="spacer"></span>
+          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
+        </header>
+        <dl class="figures">
+          <div><dt>수량</dt><dd class="num">12.0주</dd></div>
+          <div><dt>단가</dt><dd class="num">$178.20</dd></div>
+          <div><dt>적용 환율</dt><dd class="num">1,382.50원</dd></div>
+          <div><dt>수수료</dt><dd class="num">$0.71</dd></div>
+          <div><dt>원화 환산</dt><dd class="num">2,955,100원</dd></div>
+        </dl>
+        <p class="memo"><span class="k">사유</span><span class="body">실적 호조가 이어지고 서비스 매출 비중이 커지는 중</span><span class="badge badge-line">목표 $218.00</span><span class="badge">확신</span></p>
+      </article>
 
-  <p class="note" style="text-align:center;margin-top:16px">
-    평단가는 이동평균법으로 계산합니다. 매도해도 남은 수량의 평단가는 바뀌지 않습니다.
-  </p>
+    <p class="note" style="text-align:center;margin-top:16px">
+      기록을 수정하거나 삭제하면 보유 현황과 과거 스냅샷이 다시 계산됩니다
+    </p>
+  </main>
 </div>
 <script th:src="@{/js/ui.js}"></script>
 </body>
