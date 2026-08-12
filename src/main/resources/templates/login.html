@@ -1,15 +1,15 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>미장 — 로그인</title>
-<link rel="icon" th:href="@{/img/favicon.png}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" th:href="@{/css/tokens.css}">
-<link rel="stylesheet" th:href="@{/css/style.css}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>미장 — 로그인</title>
+  <link rel="icon" th:href="@{/img/favicon.png}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/tokens.css}">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
@@ -17,17 +17,19 @@
   <div>
     <div class="auth-card">
       <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></p>
-      <form onsubmit="location.href='/dashboard';return false">
+      <form id="login-form">
         <div class="field">
           <label for="email">이메일</label>
-          <input id="email" type="email" value="demo@mijang.app" autocomplete="email">
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="이메일" required>
+          <!-- 로그인 실패 문구는 여기에 붙는다. 폼 위에 경고 박스를 따로 두지 않는다 -->
+          <p class="msg err" id="login-msg" hidden></p>
         </div>
         <div class="field">
           <label for="pw">비밀번호</label>
-          <input id="pw" type="password" value="password12" autocomplete="current-password">
+          <input id="pw" name="password" type="password" autocomplete="current-password" placeholder="비밀번호" required>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <label class="check" style="flex:1"><input type="checkbox" checked>로그인 상태 유지</label>
+          <label class="check" style="flex:1"><input id="remember" type="checkbox" checked>로그인 상태 유지</label>
           <a th:href="@{/password-forgot}" style="font-size:var(--fs-label);color:var(--record);font-weight:600">비밀번호 찾기</a>
         </div>
         <button class="btn btn-primary btn-block" type="submit">로그인</button>
@@ -43,5 +45,58 @@
   </div>
 </div>
 <script th:src="@{/js/ui.js}"></script>
+<script>
+/* 로그인 — 성공하면 서버가 HttpOnly 쿠키를 굽고, 그 뒤 화면 이동은 쿠키로 인증된다.
+   토큰을 localStorage 에 넣지 않는다. JS 가 읽을 수 있으면 XSS 한 번에 털린다. */
+(function () {
+  var form  = document.getElementById("login-form");
+  var email = document.getElementById("email");
+  var msg   = document.getElementById("login-msg");
+
+  /* 실패 문구는 이메일 칸 아래에 띄우고, 그 칸을 오류 상태로 표시한다.
+     이메일·비밀번호 중 어느 쪽이 틀렸는지는 서버가 알려 주지 않는다(계정 존재 여부 노출 방지).
+     그래서 두 칸 중 위쪽 하나에만 붙인다. */
+  function show(text) {
+    msg.textContent = text;
+    msg.hidden = false;
+    email.setAttribute("aria-invalid", "true");
+  }
+  function clear() {
+    msg.hidden = true;
+    email.removeAttribute("aria-invalid");
+  }
+  form.addEventListener("input", clear);
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    clear();
+
+    var body;
+    try {
+      var res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.value,
+          password: document.getElementById("pw").value,
+          rememberMe: document.getElementById("remember").checked
+        })
+      });
+      /* 실패도 봉투로 오므로 상태 코드가 아니라 success 를 본다 (미장-API명세서 1.1) */
+      body = await res.json();
+    } catch (err) {
+      /* 잡지 않으면 promise 가 거부된 채 끝나 버튼이 아무 반응 없는 것처럼 보인다 */
+      show("서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요");
+      return;
+    }
+
+    if (body.success) {
+      location.href = "/dashboard";
+      return;
+    }
+    show(body.error ? body.error.message : "로그인에 실패했습니다");
+  });
+})();
+</script>
 </body>
 </html>

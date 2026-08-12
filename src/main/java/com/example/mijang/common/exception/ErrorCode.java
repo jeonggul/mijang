@@ -32,6 +32,9 @@ public enum ErrorCode {
             "이미 사용 중인 이메일입니다"),
     AUTH_NICKNAME_DUPLICATED("AUTH_NICKNAME_DUPLICATED", HttpStatus.CONFLICT,
             "이미 사용 중인 닉네임입니다"),
+    /** 사칭·비속어 등 쓸 수 없는 단어. 형식 오류(400)와 구분해 422 로 둔다. */
+    AUTH_NICKNAME_FORBIDDEN("AUTH_NICKNAME_FORBIDDEN", HttpStatus.UNPROCESSABLE_CONTENT,
+            "사용할 수 없는 단어가 포함되어 있습니다"),
     USER_NOT_FOUND("USER_NOT_FOUND", HttpStatus.NOT_FOUND,
             "존재하지 않는 사용자입니다"),
 

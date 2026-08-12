@@ -1,0 +1,93 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 이용약관</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="page legal">
+  <div class="page-head">
+    <div><h1>이용약관</h1><p>시행일 2026년 8월 12일</p></div>
+    <span class="grow"></span>
+    <a class="btn btn-sm" th:href="@{/signup}">가입으로 돌아가기</a>
+  </div>
+
+  <div class="card card-pad legal-body">
+    <p class="info info-warn">미장은 개인 학습·포트폴리오 목적의 프로젝트입니다.
+      투자 자문이나 금융 서비스를 제공하지 않으며, 실제 매매·계좌 연동 기능이 없습니다.</p>
+
+    <h2>제1조 (목적)</h2>
+    <p>이 약관은 미장(이하 "서비스")이 제공하는 미국주식 기록·회고 기능의 이용 조건과 절차,
+      이용자와 서비스의 권리·의무를 정하는 것을 목적으로 합니다.</p>
+
+    <h2>제2조 (정의)</h2>
+    <ol>
+      <li>"이용자"란 이 약관에 동의하고 서비스를 이용하는 자를 말합니다.</li>
+      <li>"매매 기록"이란 이용자가 증권사에서 이미 체결한 거래를 서비스에 직접 입력한 내역을 말합니다.</li>
+      <li>"판단 메모"란 매수 사유·목표가·당시 심리 등 이용자가 기록에 덧붙인 문장을 말합니다.</li>
+    </ol>
+
+    <h2>제3조 (서비스의 성격)</h2>
+    <ol>
+      <li>서비스는 <strong>증권사가 아닙니다.</strong> 주문 실행, 계좌 개설, 자금 이체, 예수금 관리 기능을 제공하지 않습니다.</li>
+      <li>서비스는 <strong>투자 자문업자가 아닙니다.</strong> 화면에 표시되는 어떤 수치·문구도 특정 종목의 매수·매도를 권유하지 않습니다.</li>
+      <li>서비스가 제공하는 시세·환율·공시·뉴스는 외부 제공처의 데이터이며, 지연되거나 실제 시장가와 다를 수 있습니다.</li>
+      <li>손익 계산 결과는 이용자가 입력한 값에 근거한 <strong>참고값</strong>이며, 세무 신고나 법적 증빙으로 사용할 수 없습니다.</li>
+    </ol>
+
+    <h2>제4조 (회원가입)</h2>
+    <ol>
+      <li>가입은 이메일과 비밀번호, 닉네임 입력으로 이루어집니다.</li>
+      <li>다음의 경우 가입을 제한할 수 있습니다.
+        <ul>
+          <li>이미 등록된 이메일로 가입을 신청한 경우</li>
+          <li>타인을 사칭하거나 운영자로 오인될 수 있는 닉네임을 사용한 경우</li>
+          <li>비속어·혐오 표현이 포함된 닉네임을 사용한 경우</li>
+        </ul>
+      </li>
+      <li>본인 확인 절차나 공동인증서 절차는 두지 않습니다.</li>
+    </ol>
+
+    <h2>제5조 (이용자의 의무)</h2>
+    <ol>
+      <li>이용자는 계정 정보를 스스로 관리하며, 관리 소홀로 발생한 결과에 대한 책임은 이용자에게 있습니다.</li>
+      <li>커뮤니티에 다음 내용을 게시할 수 없습니다.
+        <ul>
+          <li>특정 종목의 매수·매도를 권유하거나 수익을 보장하는 내용</li>
+          <li>리딩방·투자자문 등의 홍보</li>
+          <li>허위 정보, 타인에 대한 비방·욕설</li>
+        </ul>
+      </li>
+      <li>위반 게시물은 사전 통지 없이 숨김 처리될 수 있으며, 반복되면 이용이 정지될 수 있습니다.</li>
+    </ol>
+
+    <h2>제6조 (서비스의 변경·중단)</h2>
+    <p>서비스는 개인이 운영하는 프로젝트로, 사전 예고 없이 기능이 변경되거나 운영이 중단될 수 있습니다.
+      외부 데이터 제공처의 정책 변경으로 일부 기능이 제한될 수 있습니다.</p>
+
+    <h2>제7조 (책임의 제한)</h2>
+    <ol>
+      <li>서비스는 이용자의 투자 판단과 그 결과에 대해 어떠한 책임도 지지 않습니다.</li>
+      <li>외부 데이터의 오류·지연·중단으로 발생한 손해에 대해 책임지지 않습니다.</li>
+      <li>이용자가 입력한 값이 잘못되어 발생한 계산 오류에 대해 책임지지 않습니다.</li>
+    </ol>
+
+    <h2>제8조 (약관의 변경)</h2>
+    <p>약관이 변경되는 경우 시행일 7일 전부터 서비스 내 공지사항에 게시합니다.
+      이용자에게 불리한 변경은 30일 전에 게시합니다.</p>
+
+    <p class="note legal-foot">본 약관은 개인 학습 목적으로 작성된 초안이며 법률 검토를 거치지 않았습니다.
+      실제 서비스 운영 시에는 전문가 검토가 필요합니다.</p>
+  </div>
+</div>
+<script th:src="@{/js/ui.js}"></script>
+</body>
+</html>
