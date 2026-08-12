@@ -1,0 +1,87 @@
+name: PR 본문 채우기
+
+# PR 이 열릴 때 커밋에서 본문을 만들어 넣는다.
+# 깃허브는 PR 템플릿이 있으면 커밋 본문 자동 채움을 꺼 버리기 때문에,
+# 템플릿과 자동 채움을 같이 쓰려면 이 워크플로가 필요하다.
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  fill:
+    # 포크에서 올라온 PR 은 토큰이 읽기 전용이라 본문을 쓸 수 없다.
+    # 시도했다가 실패로 빨갛게 뜨느니 아예 건너뛴다.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+
+            // 사람이 이미 뭔가 적었으면 건드리지 않는다.
+            // 제목 줄과 주석을 걷어내고도 남는 글자가 있으면 작성된 것으로 본다.
+            const written = body
+              .replace(/<!--[\s\S]*?-->/g, '')
+              .replace(/^#{1,6}\s.*$/gm, '')
+              .trim();
+            if (written !== '') {
+              core.info('본문이 이미 작성돼 있어 건너뛴다.');
+              return;
+            }
+
+            const all = await github.paginate(
+              github.rest.pulls.listCommits,
+              { ...context.repo, pull_number: pr.number, per_page: 100 }
+            );
+
+            // 머지 커밋은 이 브랜치가 한 일이 아니라 합친 기록이라 뺀다.
+            const commits = all.filter(c => (c.parents || []).length <= 1);
+            if (commits.length === 0) {
+              core.info('채울 커밋이 없어 건너뛴다.');
+              return;
+            }
+
+            const parts = commits.map(c => {
+              const [subject, ...rest] = c.commit.message.split('\n');
+              return { subject: subject.trim(), body: rest.join('\n').trim() };
+            });
+
+            let summary, changes;
+            if (parts.length === 1) {
+              // 커밋 하나 — 제목이 요약, 본문이 변경 사항
+              summary = parts[0].subject;
+              changes = parts[0].body || parts[0].subject;
+            } else {
+              // 여럿 — 본문을 다 이으면 길어지므로 제목만 나열한다
+              summary = pr.title;
+              changes = parts.map(p => `- ${p.subject}`).join('\n');
+            }
+
+            const newBody = [
+              '## 작업 요약',
+              '',
+              summary,
+              '',
+              '## 주요 변경 사항',
+              '',
+              changes,
+              '',
+              '## 참고사항',
+              '',
+              '<!-- 리뷰어가 알아야 할 것. 없으면 "없음".',
+              '     올리기 전에 비밀정보(API 키·DB 비밀번호)가 섞이지 않았는지 확인한다. -->',
+              ''
+            ].join('\n');
+
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number: pr.number,
+              body: newBody
+            });
+            core.info(`본문을 채웠다 (커밋 ${commits.length}개).`);
