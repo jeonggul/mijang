@@ -11,6 +11,9 @@
             <idArg   column="id"                javaType="java.lang.Long"/>
             <arg     column="email"             javaType="java.lang.String"/>
             <arg     column="password_hash"     javaType="java.lang.String"/>
+            <!-- _int 는 원시형 int, int 는 Integer 다. record 가 int 라 별칭을 정확히 써야
+                 생성자를 찾는다. 틀리면 컴파일은 되고 조회 때 NoSuchMethodException 이 난다 -->
+            <arg     column="password_version"  javaType="_int"/>
             <arg     column="nickname"          javaType="java.lang.String"/>
             <arg     column="profile_image_url" javaType="java.lang.String"/>
             <arg     column="role"              javaType="java.lang.String"/>
@@ -23,7 +26,7 @@
 
     <!-- 조회 컬럼을 한 곳에 모은다. 컬럼이 늘면 여기만 고치면 된다 -->
     <sql id="cols">
-        id, email, password_hash, nickname, profile_image_url,
+        id, email, password_hash, password_version, nickname, profile_image_url,
         role, base_currency, theme, status, created_at
     </sql>
 
@@ -67,5 +70,27 @@
         INSERT INTO users (email, password_hash, nickname)
         VALUES (#{email}, #{passwordHash}, #{nickname})
     </insert>
+
+    <!-- 재설정과 변경이 같은 문장을 쓴다. updated_at 은 스키마의 ON UPDATE 가 채운다.
+         password_hash 조건이 동시 요청을 막는다. 확인할 때 본 값과 다르면 이미 누가
+         바꾼 것이므로 0 행이 바뀌고, 서비스가 그것을 보고 거절한다 -->
+    <update id="updatePassword">
+        UPDATE users
+           SET password_hash = #{passwordHash},
+               password_version = password_version + 1
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+           AND password_hash = #{expectedHash}
+    </update>
+
+    <!-- 물리 삭제는 30일 뒤 배치가 한다(schema.sql users 주석).
+         이미 탈퇴한 계정을 다시 눌러도 deleted_at 이 뒤로 밀리지 않도록 조건을 건다 -->
+    <update id="withdraw">
+        UPDATE users
+           SET status = 'WITHDRAWN',
+               deleted_at = CURRENT_TIMESTAMP(3)
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </update>
 
 </mapper>

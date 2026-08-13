@@ -126,7 +126,8 @@
         </div>
         <div class="setting-row">
           <span class="txt"><b>비밀번호</b><small>마지막 변경 2025년 3월</small></span>
-          <span class="val"><a class="btn btn-sm " th:href="@{/password-reset}">변경</a></span>
+          <!-- /password-reset 은 메일 토큰이 있어야 열린다. 로그인한 사람은 모달에서 바로 바꾼다 -->
+          <span class="val"><button class="btn btn-sm" type="button" data-open="pw-modal">변경</button></span>
         </div>
         <div class="setting-row">
           <span class="txt"><b>소셜 계정 연동</b><small>Google · Kakao 계정으로 로그인</small></span>
@@ -297,6 +298,33 @@
   </div>
 </div>
 
+<div class="overlay" id="pw-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pm-t">
+    <h2 id="pm-t">비밀번호 변경</h2>
+    <p>바꾸면 이 기기를 포함해 모든 기기에서 로그아웃됩니다.</p>
+
+    <div class="field">
+      <label for="pm-cur">현재 비밀번호</label>
+      <input id="pm-cur" type="password" autocomplete="current-password" placeholder="현재 비밀번호">
+    </div>
+    <div class="field">
+      <label for="pm-new">새 비밀번호</label>
+      <input id="pm-new" type="password" autocomplete="new-password"
+             placeholder="영문과 숫자를 모두 포함해 8~16자">
+    </div>
+    <div class="field">
+      <label for="pm-new2">새 비밀번호 확인</label>
+      <input id="pm-new2" type="password" autocomplete="new-password" placeholder="한 번 더 입력">
+    </div>
+    <p class="msg" id="pm-msg" hidden></p>
+
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-primary" type="button" id="pm-submit">변경</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="quit-modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="qm-t">
     <h2 id="qm-t">정말 탈퇴하시겠어요?</h2>
@@ -311,16 +339,110 @@
 
     <div class="field">
       <label for="qm-confirm">확인을 위해 &#39;탈퇴&#39;를 입력해주세요</label>
-      <input id="qm-confirm" type="text" placeholder="탈퇴">
+      <input id="qm-confirm" type="text" placeholder="탈퇴" autocomplete="off">
     </div>
+    <!-- 확인 문구는 화면에 적혀 있어 따라 치면 그만이다. 비밀번호까지 받는다 (미장-auth-구현 9.1.3) -->
+    <div class="field">
+      <label for="qm-pw">비밀번호</label>
+      <input id="qm-pw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    </div>
+    <p class="msg err" id="qm-msg" hidden></p>
     <p class="note">계정은 30일간 보관 후 완전히 삭제됩니다. 그 전까지는 작성 글의 작성자 표시가 유지됩니다.</p>
     <div class="modal-actions">
       <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-danger" type="button" data-close>탈퇴</button>
+      <button class="btn btn-danger" type="button" id="qm-submit">탈퇴</button>
     </div>
   </div>
 </div>
 
 <script th:src="@{/js/ui.js}"></script>
+<script>
+/* 비밀번호 변경 (미장-auth-구현 8.4.19).
+   로그인 상태에서 부르는 경로라 현재 비밀번호를 함께 받는다. */
+(function () {
+  var btn  = document.getElementById("pm-submit");
+  var cur  = document.getElementById("pm-cur");
+  var pw   = document.getElementById("pm-new");
+  var pw2  = document.getElementById("pm-new2");
+  var msg  = document.getElementById("pm-msg");
+  if (!btn) return;
+
+  function show(text, ok) {
+    msg.className = ok ? "msg ok" : "msg err";
+    msg.textContent = text;
+    msg.hidden = false;
+  }
+
+  btn.addEventListener("click", async function () {
+    msg.hidden = true;
+    /* 두 값이 다른 것은 서버에 물어볼 필요가 없다 */
+    if (pw.value !== pw2.value) { show("두 비밀번호가 서로 다릅니다"); return; }
+
+    btn.disabled = true;
+    var body;
+    try {
+      var res = await fetch("/api/auth/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: cur.value, newPassword: pw.value })
+      });
+      body = await res.json();
+    } catch (err) {
+      show("서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요");
+      btn.disabled = false;
+      return;
+    }
+    if (body.success) {
+      /* 서버가 쿠키를 지워 보냈다. 이 창도 이미 로그아웃 상태라 로그인 화면으로 보낸다 */
+      show("비밀번호를 바꿨습니다. 다시 로그인해주세요", true);
+      cur.value = pw.value = pw2.value = "";
+      setTimeout(function () { location.href = "/login"; }, 1200);
+      return;
+    }
+    show(body.error ? body.error.message : "비밀번호를 바꾸지 못했습니다");
+    btn.disabled = false;
+  });
+})();
+</script>
+<script>
+/* 회원 탈퇴.
+   확인 문구와 비밀번호를 모두 받아야 버튼이 동작한다. 성공하면 서버가 쿠키를
+   지워 보내므로 화면은 랜딩으로 보내기만 하면 된다. */
+(function () {
+  var btn     = document.getElementById("qm-submit");
+  var confirm = document.getElementById("qm-confirm");
+  var pw      = document.getElementById("qm-pw");
+  var msg     = document.getElementById("qm-msg");
+  if (!btn) return;
+
+  function show(text) { msg.textContent = text; msg.hidden = false; }
+
+  btn.addEventListener("click", async function () {
+    msg.hidden = true;
+
+    /* 서버에 물어볼 것도 없는 두 가지를 먼저 막는다 */
+    if (confirm.value.trim() !== "탈퇴") { show("확인 문구를 정확히 입력해주세요"); return; }
+    if (!pw.value) { show("비밀번호를 입력해주세요"); return; }
+
+    btn.disabled = true;
+    var body;
+    try {
+      var res = await fetch("/api/auth/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw.value })
+      });
+      body = await res.json();
+    } catch (err) {
+      show("서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요");
+      btn.disabled = false;
+      return;
+    }
+    if (body.success) { location.href = "/"; return; }
+    show(body.error ? body.error.message : "탈퇴하지 못했습니다");
+    btn.disabled = false;
+  });
+})();
+</script>
 </body>
 </html>

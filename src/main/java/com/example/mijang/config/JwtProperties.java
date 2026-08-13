@@ -19,6 +19,8 @@ public class JwtProperties {
     private Duration accessTtl = Duration.ofMinutes(30);
     /** refresh 수명. 명세서 1.3 의 14일. */
     private Duration refreshTtl = Duration.ofDays(14);
+
+
     /** access 를 담을 쿠키 이름. 화면 인증에 쓰인다. */
     private String accessCookie = "MIJANG_AT";
     /** refresh 를 담을 쿠키 이름. 갱신에만 쓰인다. */

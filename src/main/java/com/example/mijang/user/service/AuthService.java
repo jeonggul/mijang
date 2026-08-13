@@ -172,6 +172,13 @@ public class AuthService {
         if (user == null || !user.isActive()) {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
+        /* 비밀번호가 바뀐 뒤에 발급된 토큰만 받는다.
+           이 검사가 없으면 비밀번호를 유출당한 사람이 재설정을 해도 공격자의 쿠키가
+           그대로 살아 있고, 갱신 때마다 만료가 다시 14일로 늘어나 사실상 끊기지 않는다.
+           갱신 길목이라 어차피 사용자를 다시 읽으므로 조회가 늘지 않는다. */
+        if (jwtProvider.passwordVersion(claims) != user.passwordVersion()) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED);
+        }
         // 처음 로그인할 때의 유지 선택을 그대로 이어받는다
         return issue(user, jwtProvider.remember(claims));
     }
@@ -184,10 +191,43 @@ public class AuthService {
      */
     private Tokens issue(User user, boolean remember) {
         String access = jwtProvider.createAccessToken(user.id(), user.nickname(), user.role());
-        String refresh = jwtProvider.createRefreshToken(user.id(), remember);
+        String refresh = jwtProvider.createRefreshToken(user.id(), remember, user.passwordVersion());
         var info = new LoginResponse.LoginUserInfo(
                 user.id(), user.nickname(), user.role(), user.baseCurrency());
         return new Tokens(access, refresh, remember, info);
+    }
+
+    /**
+     * AUTH-06 회원 탈퇴.
+     *
+     * <p>행을 지우지 않고 상태만 바꾼다(9.1.1). 매매 기록·게시글이 외래키를 타고
+     * 함께 사라지는 것을 막고, 30일 안에는 되돌릴 여지를 남긴다.
+     *
+     * <p>돌이킬 수 없는 동작이라 비밀번호를 다시 받는다. 소셜 전용 계정은 확인할
+     * 비밀번호가 없어 지금은 탈퇴할 수 없다 — 소셜 로그인(AUTH-07)과 함께 정리한다.
+     *
+     * @throws BusinessException 사용자가 없거나(404) 비밀번호가 틀릴 때(400)
+     */
+    @Transactional
+    public void withdraw(Long userId, String password) {
+        User user = userMapper.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        // 정지된 계정은 남은 access 토큰으로 탈퇴까지 밀어붙일 수 있었다
+        if (!user.isActive()) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+        /* 소셜 전용 계정은 확인할 비밀번호가 없다. "비밀번호가 틀렸다"고 답하면
+           한 번도 만든 적 없는 값을 맞히라는 말이 된다. 사실대로 알려 준다.
+           이 경로로는 탈퇴할 수 없다는 것이 지금의 한계다(10장). */
+        if (!user.hasPassword()) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_NOT_SET);
+        }
+        if (!passwordEncoder.matches(password, user.passwordHash())) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_MISMATCH, "password");
+        }
+        userMapper.withdraw(userId);
     }
 
     /** 컨트롤러가 쿠키를 구울 수 있도록 refresh 까지 함께 넘긴다. */

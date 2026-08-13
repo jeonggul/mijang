@@ -66,7 +66,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("정지 계정도 같은 오류로 막는다 — 상태를 알려 주지 않는다")
     void suspendedAccountGetsSameError() {
-        mapper.stored = new User(1L, "sus@mijang.app", encoder.encode("pw12345678"),
+        mapper.stored = new User(1L, "sus@mijang.app", encoder.encode("pw12345678"), 0,
                 "정지", null, "USER", "KRW", "SYSTEM", "SUSPENDED", LocalDateTime.now());
 
         assertThatThrownBy(() -> authService.login(login("sus@mijang.app", "pw12345678")))
@@ -91,7 +91,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("소셜 전용 계정(비밀번호 없음)은 비밀번호 로그인이 안 된다")
     void socialOnlyAccountCannotPasswordLogin() {
-        mapper.stored = new User(1L, "social@mijang.app", null, "소셜",
+        mapper.stored = new User(1L, "social@mijang.app", null, 0, "소셜",
                 null, "USER", "KRW", "SYSTEM", "ACTIVE", LocalDateTime.now());
 
         assertThatThrownBy(() -> authService.login(login("social@mijang.app", "anything")))
@@ -100,7 +100,7 @@ class AuthServiceTest {
 
     /** ACTIVE·비밀번호 있는 기본 사용자. 각 테스트는 달라지는 부분만 따로 만든다. */
     private User user(String email, String hash) {
-        return new User(1L, email, hash, "정하", null,
+        return new User(1L, email, hash, 0, "정하", null,
                 "USER", "KRW", "SYSTEM", "ACTIVE", LocalDateTime.now());
     }
 
@@ -133,19 +133,50 @@ class AuthServiceTest {
             return stored != null && stored.nickname().equals(nickname) ? 1 : 0;
         }
 
-        /** 이메일이 맞을 때만 돌려준다. 틀리면 null — 실제 매퍼와 같은 계약이다. */
+        /** 이메일이 맞을 때만 돌려준다. 틀리면 null — 실제 매퍼와 같은 계약이다.
+            탈퇴 계정을 거르는 것도 XML 과 같게 맞춘다. */
         @Override public User findByEmail(String email) {
-            return stored != null && stored.email().equals(email) ? stored : null;
+            return live() != null && stored.email().equals(email) ? stored : null;
         }
 
-        /** 갱신 경로에서 쓴다. 식별자는 보지 않는다. */
+        /** 갱신 경로에서 쓴다. 식별자는 보지 않고 탈퇴 여부만 XML 과 같게 본다. */
         @Override public User findById(Long id) {
-            return stored;
+            return live();
+        }
+
+        /** XML 의 status &lt;&gt; 'WITHDRAWN' 에 해당한다. */
+        private User live() {
+            return stored != null && !"WITHDRAWN".equals(stored.status()) ? stored : null;
         }
 
         /** MyBatis 가 하듯 생성된 id 를 파라미터에 되돌려 준다. */
         @Override public int insert(UserInsert param) {
             param.setId(1L);
+            return 1;
+        }
+
+        /**
+         * 실제 문장처럼 해시와 세대를 함께 바꾼다. 세대가 올라가야 이전 refresh 가 막힌다.
+         * expectedHash 가 지금 값과 다르면 0 을 돌려주는 것까지 XML 과 같게 맞춘다.
+         */
+        @Override public int updatePassword(Long id, String passwordHash, String expectedHash) {
+            if (stored == null || !java.util.Objects.equals(stored.passwordHash(), expectedHash)) {
+                return 0;
+            }
+            stored = new User(stored.id(), stored.email(), passwordHash, stored.passwordVersion() + 1,
+                    stored.nickname(), stored.profileImageUrl(), stored.role(),
+                    stored.baseCurrency(), stored.theme(), stored.status(), stored.createdAt());
+            return 1;
+        }
+
+        /** 지우지 않고 상태만 바꾼다. 이후 findById·findByEmail 은 null 을 돌려준다. */
+        @Override public int withdraw(Long id) {
+            if (stored == null) {
+                return 0;
+            }
+            stored = new User(stored.id(), stored.email(), stored.passwordHash(), stored.passwordVersion(),
+                    stored.nickname(), stored.profileImageUrl(), stored.role(),
+                    stored.baseCurrency(), stored.theme(), "WITHDRAWN", stored.createdAt());
             return 1;
         }
     }

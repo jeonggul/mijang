@@ -23,6 +23,22 @@ public interface UserMapper {
 
     User findById(@Param("id") Long id);
 
+    /**
+     * 비밀번호 저장. 재설정과 변경이 같은 문장을 쓴다.
+     *
+     * <p>{@code expectedHash} 는 방금 확인한 값이다. 그 사이에 다른 요청이 먼저 바꿔 놓았다면
+     * 조건이 어긋나 0 행이 바뀐다. 확인과 저장 사이가 벌어져 같은 링크가 두 번 먹히는 것을
+     * 여기서 막는다 — 잠금 없이 조건부 갱신 하나로 끝난다.
+     *
+     * @return 바뀐 행 수. 0 이면 그 사이에 비밀번호가 이미 바뀐 것이다
+     */
+    int updatePassword(@Param("id") Long id,
+                       @Param("passwordHash") String passwordHash,
+                       @Param("expectedHash") String expectedHash);
+
+    /** 탈퇴 처리. 지우지 않고 상태와 시각만 바꾼다. */
+    int withdraw(@Param("id") Long id);
+
     /** 저장 후 생성된 id 를 user.id 가 아니라 별도 홀더로 받는다. */
     int insert(UserInsert param);
 
