@@ -48,6 +48,14 @@ public class JwtProvider {
     /** 로그인 상태 유지 여부. 갱신할 때 이 값을 이어받아 쿠키 수명을 유지한다. */
     private static final String CLAIM_REMEMBER = "rm";
 
+    /**
+     * 발급 당시의 비밀번호 세대. 비밀번호가 바뀌면 DB 값이 올라가 이 값과 어긋난다.
+     *
+     * <p>refresh 에만 담는다. access 는 30분이면 만료되므로 갱신 길목만 막으면
+     * 오래 사는 세션이 끊긴다. 매 요청 DB 를 보지 않기 위한 선택이다.
+     */
+    private static final String CLAIM_PW_VERSION = "pv";
+
     private final SecretKey key;
     private final JwtProperties props;
     /** 애플리케이션이 뜰 때 한 번 만들어지고 죽을 때까지 바뀌지 않는다. */
@@ -103,7 +111,7 @@ public class JwtProvider {
      * <p>식별자만 담는다. 닉네임·권한을 넣으면 14일 동안 옛 값이 남고,
      * 갱신 때 어차피 DB 에서 다시 읽으므로 담을 이유가 없다.
      */
-    public String createRefreshToken(Long userId, boolean remember) {
+    public String createRefreshToken(Long userId, boolean remember, int passwordVersion) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .issuer(props.getIssuer())
@@ -111,10 +119,22 @@ public class JwtProvider {
                 .claim(CLAIM_TYPE, TYPE_REFRESH)
                 .claim(CLAIM_INSTANCE, instanceId)
                 .claim(CLAIM_REMEMBER, remember)
+                .claim(CLAIM_PW_VERSION, passwordVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(props.getRefreshTtl())))
                 .signWith(key)
                 .compact();
+    }
+
+    /**
+     * refresh 토큰이 담고 있는 비밀번호 세대.
+     *
+     * <p>이 클레임이 생기기 전에 발급된 토큰에는 값이 없다. 그때는 0 으로 본다 —
+     * users.password_version 의 기본값과 같아서, 배포 직후 로그인 상태가 풀리지 않는다.
+     */
+    public int passwordVersion(Claims claims) {
+        Integer v = claims.get(CLAIM_PW_VERSION, Integer.class);
+        return v == null ? 0 : v;
     }
 
     /**
@@ -166,4 +186,5 @@ public class JwtProvider {
     public boolean remember(Claims claims) {
         return Boolean.TRUE.equals(claims.get(CLAIM_REMEMBER, Boolean.class));
     }
+
 }

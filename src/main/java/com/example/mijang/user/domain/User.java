@@ -11,6 +11,7 @@ public record User(
         Long id,
         String email,
         String passwordHash,
+        int passwordVersion,
         String nickname,
         String profileImageUrl,
         String role,

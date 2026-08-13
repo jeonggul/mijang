@@ -1229,6 +1229,14 @@ body.landing .card {
    경고를 폼 상단 박스에 모으지 않고 문제가 난 입력 바로 아래에 붙인다.
    어느 칸이 잘못됐는지 눈이 바로 찾는다. */
 .field input[aria-invalid="true"] { border-color: var(--valid-err); }
+
+/* 폼 전체에 붙는 안내도 있다. 모달·인증 화면의 메시지는 .field 밖에 놓이는데,
+   아래 .field .msg 규칙만 있던 동안에는 색이 먹지 않아 성공과 실패가 똑같이 보였다. */
+.msg { margin: 0; font-size: var(--fs-label); }
+.msg[hidden] { display: none; }
+.msg.ok  { color: var(--valid-ok); }
+.msg.err { color: var(--valid-err); }
+
 .field .msg { margin: 0; font-size: var(--fs-label); min-height: 0; }
 .field .msg[hidden] { display: none; }
 .field .msg.ok  { color: var(--valid-ok); }

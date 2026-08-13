@@ -57,9 +57,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 로그아웃은 토큰이 만료됐거나 서버가 재시작된 뒤에도 반드시 성공해야 한다.
                 // 인증을 요구하면 그때 401 이 나고 쿠키가 지워지지 않은 채 남는다.
+                // 비밀번호 재설정은 로그인할 수 없는 사람이 쓰는 경로라 인증을 걸 수 없다.
+                // PATCH /api/auth/password 는 여기 없다 — 그쪽은 로그인 상태에서만 부른다.
                 .requestMatchers("/api/auth/signup", "/api/auth/login",
                                  "/api/auth/refresh", "/api/auth/logout",
-                                 "/api/auth/check-nickname").permitAll()
+                                 "/api/auth/check-nickname",
+                                 "/api/auth/password/forgot", "/api/auth/password/reset").permitAll()
                 // 비로그인도 종목 검색·시세 조회가 가능하다 (미장-기획서 4장).
                 // 반드시 GET 만 연다. 접두사로 열면 같은 경로의 쓰기 API 까지 열린다 —
                 // POST /api/stocks/{symbol}/posts 가 이 아래에 있다.

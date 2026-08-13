@@ -35,6 +35,26 @@ public enum ErrorCode {
     /** 사칭·비속어 등 쓸 수 없는 단어. 형식 오류(400)와 구분해 422 로 둔다. */
     AUTH_NICKNAME_FORBIDDEN("AUTH_NICKNAME_FORBIDDEN", HttpStatus.UNPROCESSABLE_CONTENT,
             "사용할 수 없는 단어가 포함되어 있습니다"),
+    /** 로그인된 사용자가 현재 비밀번호를 틀린 경우. 이미 인증된 상태라 401 이 아니라 400 이다. */
+    AUTH_PASSWORD_MISMATCH("AUTH_PASSWORD_MISMATCH", HttpStatus.BAD_REQUEST,
+            "현재 비밀번호가 올바르지 않습니다"),
+    /** 형식은 맞지만 이전과 같은 값이다. 형식 오류가 아니므로 422다. */
+    AUTH_PASSWORD_UNCHANGED("AUTH_PASSWORD_UNCHANGED", HttpStatus.UNPROCESSABLE_CONTENT,
+            "이전과 다른 비밀번호를 입력해주세요"),
+    /** 만료·위조·이미 사용됨을 구분하지 않는다. 화면이 할 일은 어느 쪽이든 같다. */
+    AUTH_RESET_TOKEN_INVALID("AUTH_RESET_TOKEN_INVALID", HttpStatus.BAD_REQUEST,
+            "재설정 링크가 만료되었거나 이미 사용되었습니다"),
+    /**
+     * 소셜 전용 계정. 바꾸거나 확인할 비밀번호가 없다.
+     *
+     * <p>전에는 USER_NOT_FOUND 를 던져 로그인해 있는 사람에게 "존재하지 않는 사용자"가 나갔다.
+     * 형식이 아니라 계정 상태의 문제라 422다.
+     */
+    AUTH_PASSWORD_NOT_SET("AUTH_PASSWORD_NOT_SET", HttpStatus.UNPROCESSABLE_CONTENT,
+            "비밀번호가 설정되지 않은 계정입니다. 소셜 로그인으로 이용해주세요"),
+    /** 재설정 링크 요청이 너무 잦다. 가입 여부와 무관하게 같은 기준으로 센다. */
+    AUTH_TOO_MANY_REQUESTS("AUTH_TOO_MANY_REQUESTS", HttpStatus.TOO_MANY_REQUESTS,
+            "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요"),
     USER_NOT_FOUND("USER_NOT_FOUND", HttpStatus.NOT_FOUND,
             "존재하지 않는 사용자입니다"),
 

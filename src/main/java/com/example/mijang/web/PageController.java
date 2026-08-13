@@ -1,7 +1,13 @@
 package com.example.mijang.web;
 
+import com.example.mijang.common.exception.BusinessException;
+import com.example.mijang.config.PasswordResetProperties;
+import com.example.mijang.user.service.PasswordService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 화면 라우팅 전용 컨트롤러.
@@ -13,7 +19,11 @@ import org.springframework.web.bind.annotation.GetMapping;
  * <p>오류 화면(templates/error.html)은 Spring Boot 기본 오류 뷰로 동작하므로 여기서 매핑하지 않는다.
  */
 @Controller
+@RequiredArgsConstructor
 public class PageController {
+
+    private final PasswordResetProperties resetProperties;
+    private final PasswordService passwordService;
 
     /* ── 소개 · 인증 ─────────────────────────────────────────── */
 
@@ -43,8 +53,26 @@ public class PageController {
         return "password-forgot";
     }
 
+    /**
+     * 메일 링크로 들어오는 화면.
+     *
+     * <p>토큰을 <b>여기서 미리 확인한다.</b> 확인하지 않으면 만료된 링크로도 입력 화면이
+     * 뜨고, 새 비밀번호를 다 적어 제출한 뒤에야 실패한다.
+     *
+     * <p>유효 시간도 함께 넘긴다. 화면이 "30분"을 글자로 들고 있으면 설정을 바꿨을 때
+     * 거짓말이 된다.
+     */
     @GetMapping("/password-reset")
-    public String passwordReset() {
+    public String passwordReset(@RequestParam(required = false) String token, Model model) {
+        model.addAttribute("resetMinutes", resetProperties.getTokenTtl().toMinutes());
+        try {
+            passwordService.validateToken(token);
+            model.addAttribute("token", token);
+        } catch (BusinessException e) {
+            // 없음·이미 씀·만료를 구분하지 않는다. 화면이 할 일은 어느 쪽이든 같다
+            model.addAttribute("invalid", true);
+            model.addAttribute("errorMessage", e.getMessage());
+        }
         return "password-reset";
     }
 
