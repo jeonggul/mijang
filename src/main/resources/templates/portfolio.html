@@ -116,27 +116,24 @@
         </svg>
       </button>
       <div class="dropdown pf-menu" id="pf-menu" hidden>
-        <button class="row" type="button"><span class="ttl">전체 포트폴리오</span><span class="meta">5종목 · 12,847,300원</span></button>
-        <button class="row" type="button"><span class="ttl">연금계좌용</span><span class="meta">3종목 · 8,240,100원</span></button>
-        <button class="row" type="button"><span class="ttl">단기매매용</span><span class="meta">2종목 · 4,607,200원</span></button>
-        <button class="row add" type="button" data-open="new-pf">+ 포트폴리오 추가</button>
+          <!-- MVP 는 사용자마다 기본 하나만 쓴다(2.8). 복수 포트폴리오(ACCOUNT-08)는 확장이라
+               고를 것이 없으므로 나머지 항목과 "추가" 를 두지 않는다 -->
+          <button class="row" type="button" aria-current="true">
+            <span class="ttl">전체 포트폴리오</span><span class="meta" id="pf-menu-meta">—</span>
+          </button>
       </div>
     </div>
 
+    <!-- 주가손익·환차손익 분해는 PROFIT-03 이고 dashboard 범위다. 자리만 두고 비워 둔다 —
+         계산되지 않는 자리에 그럴듯한 숫자를 남겨두면 실제 값으로 읽힌다 -->
     <ul class="stat-list">
-      <li><span class="k">종목 수</span><span class="v num">5</span></li>
-      <li><span class="k">주가손익</span><span class="v num rise">+822,400</span></li>
-      <li><span class="k">환차손익</span><span class="v num fall">−318,900</span></li>
+      <li><span class="k">종목 수</span><span class="v num" id="pf-count2">—</span></li>
+      <li><span class="k">주가손익</span><span class="v num" id="pf-price-pnl2">—</span></li>
+      <li><span class="k">환차손익</span><span class="v num" id="pf-fx-pnl2">—</span></li>
     </ul>
 
     <p class="nav-label">보유 종목</p>
-    <ul class="holdings-nav">
-      <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="pc rise">+6.7%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="pc rise">+17.4%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="pc rise">+2.1%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="pc fall">−11.3%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="pc fall">−0.8%</span></a></li>
-    </ul>
+    <ul class="holdings-nav" id="pf-nav"><!-- 스크립트가 채운다 --></ul>
 
     <a class="btn-record" th:href="@{/record-new}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -150,21 +147,23 @@
     <div class="page-head">
       <div><h1>보유 현황</h1><p>매매 기록에서 자동 계산됩니다 · 예수금은 포함되지 않습니다</p></div>
       <span class="grow"></span>
-      <div class="pills" data-toggle-group>
+      <!-- data-currency 는 스크립트가 이 그룹을 집어내는 표식이다. 첫 번째 토글 그룹을
+           집는 방식은 화면에 그룹이 하나 더 생기는 순간 조용히 어긋난다 -->
+      <div class="pills" data-toggle-group data-currency>
         <button type="button" data-value="KRW" aria-pressed="true">원화</button>
         <button type="button" data-value="USD" aria-pressed="false">달러</button>
       </div>
     </div>
 
     <div class="summary-strip">
-      <div><span class="k">총 평가금액</span><b class="num">12,847,300원</b><span class="s num">$9,120.44</span></div>
-      <div><span class="k">주가손익</span><b class="num rise">+822,400원</b><span class="s">전 종목 합계</span></div>
-      <div><span class="k">환차손익</span><b class="num fall">−318,900원</b><span class="s">전 종목 합계</span></div>
-      <div><span class="k">총손익</span><b class="num rise">+503,500원</b><span class="s num rise">+4.08%</span></div>
+      <div><span class="k">총 평가금액</span><b class="num" id="pf-total">—</b><span class="s num" id="pf-total-usd">—</span></div>
+      <div><span class="k">주가손익</span><b class="num" id="pf-price-pnl">—</b><span class="s">PROFIT-03 · 준비 중</span></div>
+      <div><span class="k">환차손익</span><b class="num" id="pf-fx-pnl">—</b><span class="s">PROFIT-03 · 준비 중</span></div>
+      <div><span class="k">총손익</span><b class="num" id="pf-pnl">—</b><span class="s num" id="pf-pnl-rate">—</span></div>
     </div>
 
     <section class="card">
-      <h2 class="card-head">보유 종목 <span class="sub num">5종목</span></h2>
+      <h2 class="card-head">보유 종목 <span class="sub num" id="pf-count">—</span></h2>
       <div class="table-wrap">
         <table class="tbl tbl-band">
           <thead>
@@ -175,48 +174,7 @@
               <th class="r" scope="col">환차손익</th><th class="r" scope="col">수익률</th>
             </tr>
           </thead>
-          <tbody>
-              <tr>
-                <td><a th:href="@{/stock}">AAPL</a> <span class="sub">Apple Inc.</span></td>
-                <td class="r">25.8%</td><td class="r">12주 · $178.20</td><td class="r">$196.40</td>
-                <td class="r">3,318,700원</td>
-                <td class="r rise">+306,900</td>
-                <td class="r fall">−98,400</td>
-                <td class="r rise">+6.7%</td>
-              </tr>
-              <tr>
-                <td><a th:href="@{/stock}">NVDA</a> <span class="sub">NVIDIA Corp.</span></td>
-                <td class="r">23.1%</td><td class="r">8주 · $102.40</td><td class="r">$138.90</td>
-                <td class="r">2,965,300원</td>
-                <td class="r rise">+512,800</td>
-                <td class="r fall">−73,200</td>
-                <td class="r rise">+17.4%</td>
-              </tr>
-              <tr>
-                <td><a th:href="@{/stock}">MSFT</a> <span class="sub">Microsoft Corp.</span></td>
-                <td class="r">27.1%</td><td class="r">6주 · $398.10</td><td class="r">$412.60</td>
-                <td class="r">3,486,900원</td>
-                <td class="r rise">+122,400</td>
-                <td class="r fall">−51,600</td>
-                <td class="r rise">+2.1%</td>
-              </tr>
-              <tr>
-                <td><a th:href="@{/stock}">TSLA</a> <span class="sub">Tesla Inc.</span></td>
-                <td class="r">12.4%</td><td class="r">9주 · $248.30</td><td class="r">$221.70</td>
-                <td class="r">1,595,800원</td>
-                <td class="r fall">−141,400</td>
-                <td class="r fall">−62,100</td>
-                <td class="r fall">−11.3%</td>
-              </tr>
-              <tr>
-                <td><a th:href="@{/stock}">SCHD</a> <span class="sub">Schwab US Dividend</span></td>
-                <td class="r">11.6%</td><td class="r">22주 · $79.40</td><td class="r">$80.10</td>
-                <td class="r">1,480,600원</td>
-                <td class="r rise">+21,700</td>
-                <td class="r fall">−33,600</td>
-                <td class="r fall">−0.8%</td>
-              </tr>
-          </tbody>
+          <tbody id="pf-rows"><!-- 스크립트가 채운다 --></tbody>
         </table>
       </div>
     </section>
@@ -244,5 +202,229 @@
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 보유 현황 (ACCOUNT-04·05) · 총 평가금액 (ACCOUNT-07)
+   표 머리가 8칸이라 행도 8칸을 만든다. 주가손익·환차손익 두 칸은 PROFIT-03(dashboard 범위)이라
+   여기서는 채우지 않고 "—" 로 둔다. 빈 자리에 계산되지 않은 숫자를 넣으면 실제 값으로 읽힌다. */
+(function () {
+  var tbody = document.getElementById("pf-rows");
+  if (!tbody) return;
+
+  var COLS = 8;
+  var view = "KRW";          /* 원화/달러 토글의 현재 값 */
+  var held = [];             /* 수량이 남아 있는 종목만 */
+  var totalKrw = null;       /* 서버가 준 총 평가금액(원) */
+
+  function krw(v) {
+    return v == null ? "—" : Math.round(Number(v)).toLocaleString("ko-KR") + "원";
+  }
+  function usd(v) {
+    return v == null ? "—" : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function signedKrw(v) {
+    if (v == null) return "—";
+    return (Number(v) >= 0 ? "+" : "−") +
+      Math.abs(Math.round(Number(v))).toLocaleString("ko-KR") + "원";
+  }
+  function pct(v) {
+    if (v == null) return "—";
+    return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "%";
+  }
+  function tone(el, v) {
+    el.classList.remove("rise", "fall");
+    if (v != null) el.classList.add(Number(v) >= 0 ? "rise" : "fall");
+  }
+  function text(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  /* 이 종목의 평가금액(달러). marketValueKrw 는 원화라 달러 보기에서는 다시 만들어야 한다 */
+  function marketValueUsd(h) {
+    if (h.currentPrice == null) return null;
+    return Number(h.quantity) * Number(h.currentPrice);
+  }
+
+  /* 매입 원가(원). 수익률의 분모다 — 원가 대비 얼마가 붙었는지를 본다 */
+  function costKrw(h) {
+    if (h.avgPrice == null || h.avgFxRate == null) return null;
+    return Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+  }
+
+  function rate(h) {
+    var cost = costKrw(h);
+    if (h.evalPnlKrw == null || cost == null || cost === 0) return null;
+    return (Number(h.evalPnlKrw) / cost) * 100;
+  }
+
+  function row(h, totalForWeight) {
+    var tr = document.createElement("tr");
+    /* 뼈대만 세우고 티커·종목명은 textContent 로 넣는다. 벤더가 준 글자다 */
+    tr.innerHTML =
+      '<td><a></a> <span class="sub"></span></td>' +
+      '<td class="r num"></td>' +
+      '<td class="r num"></td>' +
+      '<td class="r num"></td>' +
+      '<td class="r num"></td>' +
+      '<td class="r num"></td>' +
+      '<td class="r num"></td>' +
+      '<td class="r num"></td>';
+
+    var a = tr.children[0].firstChild;
+    a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+    a.textContent = h.symbol;
+    tr.children[0].querySelector(".sub").textContent = h.name || "";
+
+    /* 비중 — 평가금액 기준. 총액을 못 구했으면 비운다 */
+    var mvKrw = h.marketValueKrw == null ? null : Number(h.marketValueKrw);
+    tr.children[1].textContent =
+      (mvKrw == null || !totalForWeight) ? "—" : (mvKrw / totalForWeight * 100).toFixed(1) + "%";
+
+    /* 보유 · 평단 — 한 칸에 두 값이 들어간다 */
+    tr.children[2].textContent =
+      Number(h.quantity).toLocaleString("ko-KR", { maximumFractionDigits: 6 }) +
+      "주 · " + usd(h.avgPrice);
+
+    tr.children[3].textContent = usd(h.currentPrice);
+    tr.children[4].textContent =
+      view === "USD" ? usd(marketValueUsd(h)) : krw(h.marketValueKrw);
+
+    /* 주가손익 · 환차손익 — PROFIT-03. dashboard 범위가 붙으면 여기가 채워진다 */
+    tr.children[5].textContent = "—";
+    tr.children[6].textContent = "—";
+
+    var r = rate(h);
+    tr.children[7].textContent = pct(r);
+    tone(tr.children[7], r);
+    return tr;
+  }
+
+  function emptyRow() {
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = COLS;
+    td.className = "sub";
+    td.style.padding = "24px";
+    td.style.textAlign = "center";
+    td.appendChild(document.createTextNode("보유 종목이 없습니다. "));
+    var a = document.createElement("a");
+    a.setAttribute("href", "/record-new");
+    a.textContent = "거래를 기록하면";
+    td.appendChild(a);
+    td.appendChild(document.createTextNode(" 여기에 쌓입니다."));
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function navItem(h) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+    var tk = document.createElement("span");
+    tk.className = "tk";
+    tk.textContent = h.symbol;
+    var pc = document.createElement("span");
+    var r = rate(h);
+    pc.className = "pc";
+    pc.textContent = pct(r);
+    tone(pc, r);
+    a.appendChild(tk);
+    a.appendChild(pc);
+    li.appendChild(a);
+    return li;
+  }
+
+  /* 총손익은 종목별 평가손익의 합이다(ACCOUNT-05). 하나라도 시세를 못 구했으면
+     합계가 반쪽이 되므로 아예 비운다 — 일부만 더한 값은 틀린 값이다 */
+  function totals() {
+    var pnl = 0, cost = 0, usdSum = 0, missing = false;
+    held.forEach(function (h) {
+      if (h.evalPnlKrw == null || costKrw(h) == null) { missing = true; return; }
+      pnl += Number(h.evalPnlKrw);
+      cost += costKrw(h);
+      var mv = marketValueUsd(h);
+      if (mv == null) missing = true; else usdSum += mv;
+    });
+    return { pnl: missing ? null : pnl, cost: cost, usd: missing ? null : usdSum };
+  }
+
+  function render() {
+    var t = totals();
+
+    tbody.replaceChildren();
+    if (held.length === 0) {
+      tbody.appendChild(emptyRow());
+    } else {
+      held.forEach(function (h) { tbody.appendChild(row(h, totalKrw)); });
+    }
+
+    var nav = document.getElementById("pf-nav");
+    if (nav) {
+      nav.replaceChildren();
+      held.forEach(function (h) { nav.appendChild(navItem(h)); });
+    }
+
+    text("pf-count", held.length + "종목");
+    text("pf-count2", String(held.length));
+
+    /* 총 평가금액 — 토글에 따라 큰 글씨와 작은 글씨가 자리를 바꾼다 */
+    if (view === "USD") {
+      text("pf-total", usd(t.usd));
+      text("pf-total-usd", krw(totalKrw));
+    } else {
+      text("pf-total", krw(totalKrw));
+      text("pf-total-usd", usd(t.usd));
+    }
+    text("pf-menu-meta", held.length + "종목 · " + krw(totalKrw));
+
+    var pnlEl = document.getElementById("pf-pnl");
+    if (pnlEl) { pnlEl.textContent = signedKrw(t.pnl); tone(pnlEl, t.pnl); }
+    var rateEl = document.getElementById("pf-pnl-rate");
+    if (rateEl) {
+      var r = (t.pnl == null || !t.cost) ? null : (t.pnl / t.cost) * 100;
+      rateEl.textContent = pct(r);
+      tone(rateEl, r);
+    }
+
+    /* SR-008-1 달러 기준일 때만 환차손익 참고 문구를 띄운다 */
+    var note = document.getElementById("usd-note");
+    if (note) note.hidden = view !== "USD";
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (res.status === 401) { location.href = "/login"; return undefined; }
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  async function load() {
+    var holdings = await api("/api/portfolio/holdings");
+    if (holdings === undefined) return;
+
+    /* 수량 0 인 행은 감춘다. 지우지는 않는다 — 실현손익이 거기 남아 있다(2.4) */
+    held = (holdings || []).filter(function (h) { return Number(h.quantity) > 0; });
+
+    var total = await api("/api/portfolio/total");
+    if (total === undefined) return;
+    totalKrw = total;
+
+    render();
+  }
+
+  /* 원화/달러 토글. 표시 단위만 바꾸는 것이라 다시 불러오지 않고 그리기만 한다 */
+  var group = document.querySelector("[data-currency]");
+  if (group) {
+    group.addEventListener("mj:change", function (e) {
+      view = e.detail === "USD" ? "USD" : "KRW";
+      render();
+    });
+  }
+
+  load();
+})();
+</script>
+
 </body>
 </html>
