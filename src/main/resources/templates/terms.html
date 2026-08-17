@@ -88,6 +88,6 @@
       실제 서비스 운영 시에는 전문가 검토가 필요합니다.</p>
   </div>
 </div>
-<script th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 </body>
 </html>

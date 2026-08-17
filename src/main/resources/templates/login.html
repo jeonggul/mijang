@@ -44,8 +44,8 @@
     <p class="auth-note">미장은 증권사가 아닙니다. 본인 확인이나 인증서 절차가 없습니다.</p>
   </div>
 </div>
-<script th:src="@{/js/ui.js}"></script>
-<script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
 /* 로그인 — 성공하면 서버가 HttpOnly 쿠키를 굽고, 그 뒤 화면 이동은 쿠키로 인증된다.
    토큰을 localStorage 에 넣지 않는다. JS 가 읽을 수 있으면 XSS 한 번에 털린다. */
 (function () {

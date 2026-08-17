@@ -1,13 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- 개발명세서(MVC): "FxRateMapper XML id 일치" -->
+
+<!--
+  fx_rates — 그날의 확정 환율.
+
+  레코드는 자리 순서로 매핑되므로 SELECT 컬럼 순서가 FxRate 선언 순서와 같아야 한다.
+    FxRate(rateDate, usdKrw, source, substituted, substitutedFrom)
+  is_substituted 는 TINYINT(1) 인데 레코드는 boolean 이라 그대로 들어간다.
+-->
 <mapper namespace="com.example.mijang.fx.mapper.FxRateMapper">
 
-    <select id="findRateByDate" resultType="java.math.BigDecimal">
-        SELECT usd_krw
+    <sql id="cols">
+        rate_date, usd_krw, source, is_substituted, substituted_from
+    </sql>
+
+    <select id="findByDate" resultType="com.example.mijang.fx.domain.FxRate">
+        SELECT <include refid="cols"/>
           FROM fx_rates
-         WHERE base_date = #{baseDate}
+         WHERE rate_date = #{rateDate}
     </select>
 
+    <!--
+      대체 값을 찾는다. lookbackDays 보다 더 거슬러 오르지 않는다 —
+      무한정 찾으면 몇 년 전 환율로 오늘 손익을 계산하게 된다.
+    -->
+    <select id="findLatestBefore" resultType="com.example.mijang.fx.domain.FxRate">
+        SELECT <include refid="cols"/>
+          FROM fx_rates
+         WHERE rate_date &lt; #{rateDate}
+           AND rate_date &gt;= DATE_SUB(#{rateDate}, INTERVAL #{lookbackDays} DAY)
+         ORDER BY rate_date DESC
+         LIMIT 1
+    </select>
+
+    <!--
+      이미 그날 행이 있으면 넘어간다. 나중 값으로 덮지 않는다 —
+      한 번 확정한 환율을 바꾸면 그것으로 계산해 둔 손익과 어긋난다.
+    -->
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO fx_rates (rate_date, usd_krw, source, is_substituted, substituted_from)
+        VALUES (#{rateDate}, #{usdKrw}, #{source}, #{substituted}, #{substitutedFrom})
+    </insert>
 </mapper>

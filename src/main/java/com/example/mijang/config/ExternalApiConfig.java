@@ -24,9 +24,11 @@ import org.springframework.web.client.RestClient;
 public class ExternalApiConfig {
 
     private final ExternalApiProperties props;
+    private final FxProperties fxProps;
 
-    public ExternalApiConfig(ExternalApiProperties props) {
+    public ExternalApiConfig(ExternalApiProperties props, FxProperties fxProps) {
         this.props = props;
+        this.fxProps = fxProps;
         logConfiguredVendors();
     }
 
@@ -102,6 +104,22 @@ public class ExternalApiConfig {
     }
 
     /**
+     * Wikidata — 한글 종목명을 받는다. 인증이 없다.
+     *
+     * <p>공개 SPARQL 창구라 연락처가 담긴 User-Agent 를 요구한다. 없으면 차단된다.
+     * SEC·BLS 와 같은 값을 쓴다 — 셋 다 "누가 부르는지 밝혀라" 는 같은 요구다.
+     */
+    @Bean
+    public RestClient wikidataSparqlClient() {
+        return RestClient.builder()
+                .baseUrl("https://query.wikidata.org")
+                .requestFactory(requestFactory())
+                .defaultHeader(HttpHeaders.USER_AGENT, props.sec().userAgent())
+                .defaultHeader(HttpHeaders.ACCEPT, "application/sparql-results+json")
+                .build();
+    }
+
+    /**
      * Accept-Encoding 은 일부러 직접 지정하지 않는다. 여기서 쓰는 JDK 커넥션은 gzip 을 스스로 붙이고
      * 응답도 알아서 푸는데, 헤더를 손으로 넣으면 압축 해제를 호출부 책임으로 넘겨버려 파싱이 깨진다.
      */
@@ -121,11 +139,11 @@ public class ExternalApiConfig {
      * 키를 안 채운 채 호출해서 401 을 보고 원인을 찾는 시간을 줄이려는 것이다.
      */
     private void logConfiguredVendors() {
-        log.info("외부 API 설정 — SEC:{} Alpaca:{} Finnhub:{} 수출입은행:{}",
+        log.info("외부 API 설정 — SEC:{} Alpaca:{} Finnhub:{} 환율:{}",
                 mark(props.sec().configured()),
                 mark(props.alpaca().configured()),
                 mark(props.finnhub().configured()),
-                mark(props.koreaexim().configured()));
+                mark(fxProps.getAppId() != null && !fxProps.getAppId().isBlank()));
         if (!props.sec().configured()) {
             log.warn("SEC User-Agent 가 기본 예시값이다. 실제 이메일로 바꾸지 않으면 모든 SEC 요청이 403 이다.");
         }

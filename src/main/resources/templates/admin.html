@@ -274,7 +274,7 @@
   <section role="tabpanel" id="a-notice-new" aria-labelledby="m-notice-new" hidden>
     <div class="page-head"><div><h1>공지 등록</h1><p>등록 즉시 설정 화면 공지사항에 노출됩니다</p></div></div>
 
-    <form class="card card-pad" onsubmit="return false">
+    <form class="card card-pad" data-noop>
       <div class="field" style="margin-bottom:14px">
         <label for="nt-title">제목</label>
         <input id="nt-title" type="text" value="환율 수집 지연 안내 (8/3~8/4)" maxlength="150">
@@ -450,6 +450,6 @@
   </main>
 </div>
 
-<script th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 </body>
 </html>
