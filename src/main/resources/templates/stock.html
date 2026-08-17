@@ -25,13 +25,6 @@
 
   <div class="spacer"></div>
 
-  <a class="search" th:href="@{/search}">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-      <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-    <span>티커 또는 종목명 검색</span>
-  </a>
 
   <p class="market-badge"><span class="dot"></span>정규장 <span class="num sub">마감 3:24</span></p>
 
@@ -74,7 +67,7 @@
     </div>
   </div>
 
-  <button class="icon-btn" type="button" aria-label="설정" onclick="location.href='/settings'">
+  <button class="icon-btn" type="button" aria-label="설정" data-go="/settings">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/>
       <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.53 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.53a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.47 9c.24.6.81 1 1.46 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"
@@ -110,31 +103,32 @@
     <!-- PriceHeader — 상단에서도 손익을 주가/환율로 분해한다 (화면설계서 SR-005) -->
     <section class="card card-pad price-header">
       <div class="sym-row">
-        <span class="tk">AAPL</span>
-        <span class="nm">Apple Inc.</span>
-        <span class="badge badge-line">NASDAQ</span>
+        <span class="tk" id="sym-ticker">—</span>
+        <span class="nm" id="sym-name">—</span>
+        <span class="badge badge-line" id="sym-exchange">—</span>
         <span class="spacer"></span>
-        <button class="btn btn-sm" type="button">관심 등록</button>
+        <button class="btn btn-sm" type="button" id="sym-star" aria-pressed="false">관심 등록</button>
         <a class="btn btn-sm btn-primary" th:href="@{/record-new}">매매 기록 추가</a>
       </div>
 
-      <p class="price-row"><b class="px">$196.40</b><span class="krw">276,540원</span></p>
+      <p class="price-row"><b class="px" id="sym-price">—</b><span class="krw" id="sym-krw">—</span></p>
 
       <p class="meta-row">
-        <span class="ch rise">+2.41 (+1.24%)</span>
-        <span class="tag"><i class="dot"></i>IEX 기준 · 실시간</span>
+        <span class="ch" id="sym-change">—</span>
+        <span class="basis sub" id="sym-basis"></span>
+        <span class="tag" id="sym-feed"><i class="dot"></i>종가 기준</span>
         <span class="spacer"></span>
-        <time class="asof">08-05 23:41 KST</time>
+        <time class="asof" id="sym-asof">—</time>
       </p>
 
       <div class="hold-strip">
         <div class="info">
           <span class="k">내 보유</span>
-          <span class="v">12주 · 평단 $178.20 · 평균매수환율 1,382.5</span>
+          <span class="v">—</span>
         </div>
         <div class="pnl">
-          <b class="num rise">+208,500원</b>
-          <span class="split"><span class="rise">주가 +306,900</span><span class="fall">환율 −98,400</span></span>
+          <b class="num">—</b>
+          <span class="split sub">매매를 기록하면 표시됩니다</span>
         </div>
       </div>
     </section>
@@ -154,62 +148,62 @@
     <div class="stack-v">
       <div class="card card-pad">
         <div class="row-between" style="margin-bottom:14px">
-          <h2 style="margin:0;font-size:var(--fs-section)">일봉 차트</h2>
+          <h2 style="margin:0;font-size:var(--fs-section)">차트 <span class="sub num" id="chart-label">—</span></h2>
           <span class="spacer" style="flex:1"></span>
-          <div class="pills" data-toggle-group>
+          <div class="pills" id="chart-type" data-toggle-group>
+            <button type="button" data-value="LINE" aria-pressed="true">선</button>
+            <button type="button" data-value="CANDLE" aria-pressed="false">캔들</button>
+          </div>
+          <div class="pills" id="chart-range" data-toggle-group>
+            <button type="button" data-value="LIVE" aria-pressed="true">실시간</button>
             <button type="button" data-value="1D" aria-pressed="false">1일</button>
             <button type="button" data-value="1W" aria-pressed="false">1주</button>
-            <button type="button" data-value="1M" aria-pressed="false">1개월</button>
-            <button type="button" data-value="3M" aria-pressed="true">3개월</button>
+            <button type="button" data-value="3M" aria-pressed="false">3달</button>
             <button type="button" data-value="1Y" aria-pressed="false">1년</button>
+            <button type="button" data-value="5Y" aria-pressed="false">5년</button>
             <button type="button" data-value="ALL" aria-pressed="false">전체</button>
           </div>
         </div>
 
         <div class="chart-box" style="padding:0">
-          <svg viewBox="0 0 1012 300" width="100%" height="300" preserveAspectRatio="none" role="img" aria-label="AAPL 3개월 일봉">
+          <svg id="candle-chart" viewBox="0 0 1012 300" width="100%" height="300" preserveAspectRatio="none" role="img" aria-label="일봉 차트">
             <g stroke="var(--line)" stroke-width="1">
               <line x1="0" y1="60"  x2="1012" y2="60"/>
               <line x1="0" y1="120" x2="1012" y2="120"/>
               <line x1="0" y1="180" x2="1012" y2="180"/>
               <line x1="0" y1="240" x2="1012" y2="240"/>
             </g>
-            <path d="M0 232 L84 224 L168 238 L252 206 L336 214 L420 178 L504 190 L588 152
-                     L672 164 L756 128 L840 140 L924 96 L1012 84"
-                  fill="none" stroke="var(--rise)" stroke-width="2.4"
-                  stroke-linejoin="round" stroke-linecap="round"/>
-            <path d="M0 232 L84 224 L168 238 L252 206 L336 214 L420 178 L504 190 L588 152
-                     L672 164 L756 128 L840 140 L924 96 L1012 84 L1012 300 L0 300 Z"
-                  fill="var(--rise)" opacity=".08"/>
-            <!-- 내 매수 시점 마커 -->
-            <polygon points="252,200 258,212 246,212" fill="var(--record)"/>
-            <polygon points="756,122 762,134 750,134" fill="var(--record)"/>
+            <g id="candle-body"></g>
           </svg>
+
+          <!-- 마지막 값 표시. SVG 안에 글자를 넣으면 preserveAspectRatio="none" 때문에
+               가로로 늘어난다. 그래서 HTML 로 얹고 위치만 백분율로 맞춘다 -->
+          <span class="chart-last" id="chart-last" hidden></span>
+          <span class="chart-last-line" id="chart-last-line" hidden></span>
         </div>
 
-        <p class="axis-dates"><span>05-08</span><span>05-29</span><span>06-19</span><span>07-10</span><span>07-31</span></p>
-        <p class="chart-legend"><span class="marker"></span>내 매매 기록 시점 · 클릭하면 당시 판단 메모를 봅니다</p>
-        <p class="note">일봉은 SIP 정산 데이터(15분 지연 이상)를 사용합니다. 손익 계산 기준가와 동일합니다.</p>
+        <p class="axis-dates" id="axis-dates"></p>
+        <p class="note" id="chart-note">—</p>
+        <p class="note">스크롤로 확대·축소 · 끌어서 이동 · 두 번 누르면 전체</p>
       </div>
 
       <div class="grid-2">
         <div class="card card-pad">
           <h2 style="margin:0 0 12px;font-size:var(--fs-section)">내 보유 현황</h2>
           <div class="kv">
-            <div><span class="k">보유 수량</span><span class="v">12주</span></div>
-            <div><span class="k">평균 단가</span><span class="v">$178.20</span></div>
-            <div><span class="k">평균 매수 환율</span><span class="v">1,382.50</span></div>
-            <div><span class="k">평가금액</span><span class="v">3,318,700원</span></div>
-            <div><span class="k">주가손익</span><span class="v rise">+306,900</span></div>
-            <div><span class="k">환차손익</span><span class="v fall">−98,400</span></div>
+            <div><span class="k">보유 수량</span><span class="v">—</span></div>
+            <div><span class="k">평균 단가</span><span class="v">—</span></div>
+            <div><span class="k">평균 매수 환율</span><span class="v">—</span></div>
+            <div><span class="k">평가금액</span><span class="v">—</span></div>
+            <div><span class="k">주가손익</span><span class="v">—</span></div>
+            <div><span class="k">환차손익</span><span class="v">—</span></div>
           </div>
           <a class="btn btn-block" th:href="@{/record-list}" style="margin-top:12px">매매 기록 보기</a>
         </div>
 
         <div class="card card-pad">
           <h2 style="margin:0 0 12px;font-size:var(--fs-section)">내 판단 기록</h2>
-          <p class="memo">서비스 매출 비중이 분기마다 올라가는 게 확인돼서 담았다. 목표가 $220. 하드웨어 사이클이 꺾여도 버틸 체력이 있다고 봄.</p>
-          <p class="note">2025-03-14 매수 시점 기록</p>
+          <p class="memo sub">매수 사유를 기록하면 여기에 표시됩니다.</p>
           <a class="btn btn-block btn-sm" th:href="@{/retrospect}" style="margin-top:10px">회고 작성</a>
         </div>
       </div>
@@ -220,16 +214,14 @@
   <section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
     <div class="stack-v">
       <div class="card card-pad">
-        <h2 class="form-sec">기업 개요</h2>
-        <p style="line-height:1.9;margin:0 0 18px">
-          스마트폰·PC·웨어러블 기기와 관련 소프트웨어·서비스를 설계하고 판매한다.
-          최근에는 서비스 부문(App Store, iCloud, 구독) 매출 비중이 꾸준히 확대되고 있다.
-        </p>
+        <h2 class="form-sec">기업 정보</h2>
         <div class="metrics">
-          <div><span class="k">설립</span><span class="v">1976년</span></div>
-          <div><span class="k">본사</span><span class="v">Cupertino, CA</span></div>
-          <div><span class="k">임직원</span><span class="v">약 164,000명</span></div>
-          <div><span class="k">CEO</span><span class="v">Tim Cook</span></div>
+          <div><span class="k">산업</span><span class="v" id="ci-industry">—</span></div>
+          <div><span class="k">상장일</span><span class="v" id="ci-ipo">—</span></div>
+          <div><span class="k">국가</span><span class="v" id="ci-country">—</span></div>
+          <div><span class="k">발행주식수</span><span class="v" id="ci-shares">—</span></div>
+          <div><span class="k">시가총액</span><span class="v" id="ci-cap">—</span></div>
+          <div><span class="k">홈페이지</span><span class="v" id="ci-web">—</span></div>
         </div>
         <p class="note" style="margin-top:14px">출처: Finnhub · 일 1회 갱신</p>
       </div>
@@ -318,43 +310,9 @@
   <!-- 뉴스 -->
   <section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
     <div class="card">
-      <h2 class="card-head">종목 뉴스 <span class="sub">최근 30일 · 24건</span></h2>
-      <ul class="news-list">
-        <li class="news-item">
-          <p class="meta"><span class="src">Reuters</span><time>2시간 전</time>
-            <span class="spacer"></span>
-            <a href="https://www.reuters.com" rel="noreferrer noopener" target="_blank">원문 보기</a></p>
-          <p class="ttl">Apple expands India manufacturing footprint</p>
-          <p class="sum">인도 내 아이폰 생산 비중을 2026년까지 25%로 확대할 계획이라고 밝혔다.</p>
-        </li>
-        <li class="news-item">
-          <p class="meta"><span class="src">Bloomberg</span><time>5시간 전</time>
-            <span class="spacer"></span>
-            <a href="https://www.reuters.com" rel="noreferrer noopener" target="_blank">원문 보기</a></p>
-          <p class="ttl">Services revenue hits record in latest quarter</p>
-          <p class="sum">서비스 부문 매출이 분기 기준 사상 최대를 기록했다.</p>
-        </li>
-        <li class="news-item">
-          <p class="meta"><span class="src">CNBC</span><time>어제</time>
-            <span class="spacer"></span>
-            <a href="https://www.reuters.com" rel="noreferrer noopener" target="_blank">원문 보기</a></p>
-          <p class="ttl">Analysts split on valuation after recent rally</p>
-          <p class="sum">최근 랠리 이후 밸류에이션을 두고 시각이 갈리고 있다.</p>
-        </li>
-        <li class="news-item">
-          <p class="meta"><span class="src">WSJ</span><time>2일 전</time>
-            <span class="spacer"></span>
-            <a href="https://www.reuters.com" rel="noreferrer noopener" target="_blank">원문 보기</a></p>
-          <p class="ttl">Supply chain diversification continues</p>
-          <p class="sum">공급망 다변화 기조가 이어지고 있다.</p>
-        </li>
-        <li class="news-item">
-          <p class="meta"><span class="src">Reuters</span><time>3일 전</time>
-            <span class="spacer"></span>
-            <a href="https://www.reuters.com" rel="noreferrer noopener" target="_blank">원문 보기</a></p>
-          <p class="ttl">Vision Pro production target revised</p>
-          <p class="sum">비전 프로 생산 목표가 조정됐다.</p>
-        </li>
+      <h2 class="card-head">종목 뉴스 <span class="sub" id="news-meta">—</span></h2>
+      <ul class="news-list" id="news-list">
+        <!-- 스크립트가 채운다 -->
       </ul>
       <p class="note" style="padding:12px 18px 16px">
         제목과 요약, 원문 링크만 제공합니다. 본문은 저작권상 저장하지 않습니다
@@ -457,27 +415,23 @@
       <section class="card card-pad">
         <h2 style="margin:0 0 12px;font-size:var(--fs-card)">시세 정보</h2>
         <ul class="kv-list">
-          <li><span class="k">시가</span><span class="v num">$194.80</span></li>
-          <li><span class="k">고가</span><span class="v num">$197.62</span></li>
-          <li><span class="k">저가</span><span class="v num">$193.95</span></li>
-          <li><span class="k">전일종가</span><span class="v num">$193.99</span></li>
-          <li><span class="k">거래량</span><span class="v num">48,213,900</span></li>
-        </ul>
-        <hr class="rule">
-        <ul class="kv-list">
-          <li><span class="k">52주 최고</span><span class="v num">$199.62</span></li>
-          <li><span class="k">52주 최저</span><span class="v num">$164.08</span></li>
+          <li><span class="k">시가</span><span class="v num" id="q-open">—</span></li>
+          <li><span class="k">당일 최고</span><span class="v num" id="q-high">—</span></li>
+          <li><span class="k">당일 최저</span><span class="v num" id="q-low">—</span></li>
+          <li><span class="k">전일종가</span><span class="v num" id="q-prev">—</span></li>
+          <li><span class="k">거래량</span><span class="v num" id="q-volume">—</span></li>
         </ul>
       </section>
 
       <section class="card card-pad">
         <h2 style="margin:0 0 12px;font-size:var(--fs-card)">투자 지표</h2>
         <ul class="kv-list">
-          <li><span class="k">시가총액</span><span class="v num">$3.01T</span></li>
-          <li><span class="k">PER</span><span class="v num">32.4</span></li>
-          <li><span class="k">PBR</span><span class="v num">46.8</span></li>
-          <li><span class="k">EPS</span><span class="v num">$6.06</span></li>
-          <li><span class="k">배당수익률</span><span class="v num">0.51%</span></li>
+          <li><span class="k">시가총액</span><span class="v num" id="m-cap">—</span></li>
+          <li><span class="k">PER</span><span class="v num" id="m-per">—</span></li>
+          <li><span class="k">PBR</span><span class="v num" id="m-pbr">—</span></li>
+          <li><span class="k">EPS</span><span class="v num" id="m-eps">—</span></li>
+          <li><span class="k">배당수익률</span><span class="v num" id="m-div">—</span></li>
+          <li><span class="k">산업</span><span class="v" id="m-industry">—</span></li>
         </ul>
         <p class="note" style="margin-top:10px">Finnhub · 일 1회 갱신</p>
       </section>
@@ -502,6 +456,858 @@
   </div>
 </div>
 
-<script th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 종목 상세 (PRICE-02·04) · 일봉 차트 (PRICE-05) · 관심종목 토글 (WATCH-01)
+   티커는 주소의 ?symbol= 에서 읽는다. 없으면 AAPL 을 보여준다. */
+(function () {
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "AAPL").toUpperCase();
+  var chart = document.getElementById("candle-body");
+  var star = document.getElementById("sym-star");
+  var watchId = null;
+
+  function $(id) { return document.getElementById(id); }
+  function text(id, value) { var el = $(id); if (el) el.textContent = value; }
+
+  /* 값이 없으면 — 로 둔다. 0 으로 쓰면 "0달러"와 구분되지 않는다 */
+  function money(v) {
+    return v == null ? "—" : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function krw(v) { return v == null ? "—" : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function count(v) { return v == null ? "—" : Number(v).toLocaleString("ko-KR"); }
+  function percent(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + Number(v).toFixed(2) + "%"; }
+
+  /* 응답 봉투를 벗겨 {성공 여부, 값} 으로 돌려준다.
+     값만 돌려주면 안 된다 — 담기·빼기는 성공해도 data 가 null 이라
+     값으로 성공을 판단하면 성공을 실패로 읽는다 */
+  async function call(url, options) {
+    var res = await fetch(url, options);
+    if (res.status === 401) { location.href = "/login"; return { ok: false, data: null }; }
+    var body = await res.json();
+    return { ok: body.success === true, data: body.data };
+  }
+
+  /* 상세를 받아 헤더와 사이드바를 채운다 */
+  /**
+   * 등락률을 세션 이름과 함께 보여준다.
+   *
+   * "정규장 +1.03%" 와 "시간외 +0.15%" 는 기준가가 다른 값이다.
+   * 이름 없이 숫자만 두면 두 값이 같은 것으로 읽힌다.
+   *
+   * 장이 닫혀 있으면 "정규장 마감" 으로 적어 지금 움직이는 값이 아님을 알린다.
+   */
+  function showChange(rate) {
+    var ch = $("sym-change");
+    if (!ch) return;
+    var name = session === "CLOSED" ? "정규장 마감" : sessionLabel;
+    ch.textContent = rate == null ? "—" : name + " " + percent(rate);
+    /* 국내 관례 — 상승 빨강, 하락 파랑 */
+    ch.className = "ch " + (rate == null ? "sub" : (rate >= 0 ? "rise" : "fall"));
+
+    /* 무엇에 견준 값인지 함께 적는다.
+       "정규장 +1.03%" 와 "시간외 +0.15%" 는 기준가가 다른 값이라,
+       이름만으로는 같은 잣대로 읽힐 수 있다 */
+    var basis = $("sym-basis");
+    if (basis) {
+      basis.textContent = (rate == null || basePrice == null) ? ""
+          : (session === "AFTER" ? "정규장 종가" : "전일 종가") + " " + money(basePrice) + " 대비";
+    }
+  }
+
+  async function loadDetail() {
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol));
+    var d = r.data;
+    if (!r.ok || !d) {
+      text("sym-ticker", symbol);
+      text("sym-name", "찾을 수 없는 종목입니다");
+      return;
+    }
+
+    document.title = "미장 — " + d.symbol;
+    text("sym-ticker", d.symbol);
+    /* 한글명이 있으면 앞에 세우고 영문명을 괄호로 덧붙인다.
+       티커만으로는 무슨 회사인지 모르는 사람이 많고, 영문명은 기록·검색의 근거라 지우지 않는다 */
+    text("sym-name", d.nameKo ? d.nameKo + " (" + d.name + ")" : d.name);
+    text("sym-exchange", d.exchange || "—");
+    text("sym-price", money(d.currentPrice));
+    text("sym-krw", krw(d.priceKrw));
+    text("sym-asof", d.asOf || "—");
+    text("q-prev", money(d.previousClose));
+    /* 기준가는 서버가 세션을 보고 정한다(2.15).
+       정규장이면 전일 종가, 시간외면 당일 정규장 종가다 */
+    session = d.session;
+    sessionLabel = d.sessionLabel;
+    basePrice = d.basePrice == null ? null : Number(d.basePrice);
+
+    /* 상장폐지·거래정지는 이유까지 보여준다. 배지만으로는 왜인지 알 수 없다 */
+    if (!d.active) {
+      text("sym-feed", d.inactiveReason || "거래할 수 없는 종목입니다");
+      $("sym-feed").classList.add("badge-err");
+    }
+
+    showChange(d.dayChangeRate);
+  }
+
+  /* ── 차트 ────────────────────────────────────────────────────────────
+     한 벌의 점으로 선과 캔들 둘 다 그린다. 기간이 바뀌면 다시 받고,
+     종류만 바뀌면 받아 둔 것을 다시 그린다. */
+  var SVG = "http://www.w3.org/2000/svg";
+  var W = 1012, H = 300, PAD = 20;      // 위아래 여백. 꼭짓점이 잘리지 않게 둔다
+  var range = "LIVE";
+  var chartType = "LINE";
+  var points = [];
+  var meta = null;
+
+  /* 보이는 구간. points 안의 인덱스다. 확대·축소·좌우 이동이 이 둘만 바꾼다 */
+  var i0 = 0, i1 = 0;
+  var MIN_POINTS = 10;              // 이보다 좁히면 봉 몇 개만 남아 형태를 알 수 없다
+
+  /** 지금 화면에 그릴 점들 */
+  function view() {
+    return points.slice(i0, i1 + 1);
+  }
+
+  /** 구간을 전체로 되돌린다. 기간을 새로 받을 때마다 부른다 */
+  function resetView() {
+    i0 = 0;
+    i1 = Math.max(0, points.length - 1);
+  }
+
+  function el(name, attrs) {
+    var node = document.createElementNS(SVG, name);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    return node;
+  }
+
+  function note(message) {
+    chart.replaceChildren();
+    var tag = $("chart-last"), lastLine = $("chart-last-line");
+    if (tag) tag.hidden = true;
+    if (lastLine) lastLine.hidden = true;
+    var t = el("text", { x: W / 2, y: H / 2, "text-anchor": "middle", fill: "var(--text-sub)" });
+    t.textContent = message;
+    chart.appendChild(t);
+    var axis = $("axis-dates");
+    if (axis) axis.replaceChildren();
+  }
+
+  /* 값의 위아래 폭을 구한다.
+     선은 종가만 보면 되지만 캔들은 꼬리까지 들어가야 해서 고가·저가를 본다 */
+  function bounds(vs) {
+    var hi = -Infinity, lo = Infinity;
+    vs.forEach(function (p) {
+      var top = chartType === "CANDLE" && p.high != null ? Number(p.high) : Number(p.close);
+      var bot = chartType === "CANDLE" && p.low != null ? Number(p.low) : Number(p.close);
+      if (top > hi) hi = top;
+      if (bot < lo) lo = bot;
+    });
+    /* 전 구간이 같은 값이면 0 으로 나누게 된다. 폭을 1 로 둬 가운데에 직선을 긋는다 */
+    return { hi: hi, lo: lo, span: (hi - lo) || 1 };
+  }
+
+  function drawLine(b, vs) {
+    var stepX = vs.length > 1 ? W / (vs.length - 1) : 0;
+    var coords = vs.map(function (p, i) {
+      return (i * stepX).toFixed(1) + "," +
+             ((H - PAD) - (Number(p.close) - b.lo) / b.span * (H - PAD * 2)).toFixed(1);
+    }).join(" ");
+    var up = Number(vs[vs.length - 1].close) >= Number(vs[0].close);
+    var stroke = up ? "var(--rise)" : "var(--fall)";
+
+    /* 면을 먼저, 선을 나중에. 순서가 바뀌면 면이 선을 덮는다 */
+    chart.appendChild(el("polygon", { points: coords + " " + W + "," + H + " 0," + H,
+                                      fill: stroke, opacity: ".08" }));
+    chart.appendChild(el("polyline", { points: coords, fill: "none", stroke: stroke,
+                                       "stroke-width": "2.4", "stroke-linejoin": "round" }));
+  }
+
+  /**
+   * 캔들.
+   *
+   * 봉마다 선과 사각형을 하나씩 만들면 800봉에 1,600개가 된다. 확대할 때마다 그것을
+   * 전부 지우고 다시 만들게 되어 스크롤이 끊긴다.
+   *
+   * 그래서 <b>네 개의 path 로 합친다</b> — 오르는 꼬리·오르는 몸통·내리는 꼬리·내리는 몸통.
+   * 몇 백 봉이든 요소는 네 개뿐이라 확대가 부드럽다.
+   */
+  function drawCandle(b, vs) {
+    var slot = W / vs.length;
+    /* 봉이 촘촘하면 몸통이 사라진다. 최소 1px 는 남긴다 */
+    var body = Math.max(1, slot * 0.62);
+    var y = function (v) { return (H - PAD) - (Number(v) - b.lo) / b.span * (H - PAD * 2); };
+
+    var d = { riseWick: "", riseBody: "", fallWick: "", fallBody: "" };
+
+    vs.forEach(function (p, i) {
+      if (p.open == null || p.close == null) return;
+      var x = i * slot + slot / 2;
+      var up = Number(p.close) >= Number(p.open);
+
+      /* 꼬리. 고가에서 저가까지 */
+      d[up ? "riseWick" : "fallWick"] +=
+        "M" + x.toFixed(1) + " " + y(p.high).toFixed(1) + "V" + y(p.low).toFixed(1);
+
+      /* 몸통. 시가와 종가 사이. 두 값이 같으면 높이가 0 이라 1px 로 둔다 */
+      var top = Math.min(y(p.open), y(p.close));
+      var height = Math.max(1, Math.abs(y(p.open) - y(p.close)));
+      var left = x - body / 2;
+      d[up ? "riseBody" : "fallBody"] +=
+        "M" + left.toFixed(1) + " " + top.toFixed(1) +
+        "h" + body.toFixed(1) + "v" + height.toFixed(1) + "h-" + body.toFixed(1) + "Z";
+    });
+
+    /* 국내 관례 — 오르면 빨강, 내리면 파랑 */
+    if (d.fallWick) chart.appendChild(el("path", { d: d.fallWick, stroke: "var(--fall)", "stroke-width": "1", fill: "none" }));
+    if (d.fallBody) chart.appendChild(el("path", { d: d.fallBody, fill: "var(--fall)" }));
+    if (d.riseWick) chart.appendChild(el("path", { d: d.riseWick, stroke: "var(--rise)", "stroke-width": "1", fill: "none" }));
+    if (d.riseBody) chart.appendChild(el("path", { d: d.riseBody, fill: "var(--rise)" }));
+  }
+
+  /* 가로축. 분봉이면 시각을, 일봉 이상이면 날짜를 쓴다 */
+  /**
+   * 가로축.
+   *
+   * 눈금은 늘 다섯 개지만 <b>보이는 구간에서 뽑는다.</b> 확대하면 같은 다섯 칸이
+   * 좁은 시간을 가리키게 되어 저절로 세분화된다 — 1분 단위까지 내려간다.
+   *
+   * 구간이 하루를 넘어가면 시각만으로는 어느 날인지 알 수 없어 날짜를 붙인다.
+   */
+  function drawAxis(vs) {
+    var axis = $("axis-dates");
+    if (!axis) return;
+    axis.replaceChildren();
+    if (vs.length === 0) return;
+
+    var first = vs[0].at, last = vs[vs.length - 1].at;
+    /* 분봉은 날짜가 넘어갈 때, 일봉 이상은 해가 바뀔 때만 앞자리를 붙인다.
+       늘 붙이면 좁은 축에 글자가 넘쳐 읽히지 않는다 */
+    var wide = (meta && meta.intraday)
+        ? first.slice(0, 10) !== last.slice(0, 10)
+        : first.slice(0, 4) !== last.slice(0, 4);
+
+    /* 눈금은 다섯 개다. 간격을 나눗셈으로 잡으면 여섯 개가 되는 경우가 생긴다 */
+    var TICKS = 5;
+    for (var k = 0; k < TICKS; k++) {
+      var i = vs.length === 1 ? 0 : Math.round(k * (vs.length - 1) / (TICKS - 1));
+      var at = vs[i].at;
+      var span = document.createElement("span");
+      if (meta && meta.intraday) {
+        var time = new Date(at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+        span.textContent = wide ? at.slice(5, 10) + " " + time : time;
+      } else {
+        span.textContent = wide ? at.slice(2, 10) : at.slice(5, 10);
+      }
+      axis.appendChild(span);
+      if (vs.length === 1) break;
+    }
+  }
+
+  /* 스크롤은 한 번 굴릴 때 이벤트를 여러 번 쏜다. 그때마다 그리면 같은 프레임에
+     같은 일을 반복하게 되어 끊긴다. 프레임당 한 번으로 묶는다 */
+  var pending = false;
+  function draw() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () { pending = false; paint(); });
+  }
+
+  /**
+   * 그래프 끝이 얼마인지 보여준다.
+   *
+   * 차트만 보면 "지금 얼마" 를 눈금에서 짐작해야 한다. 마지막 값을 그 높이에 직접 붙인다.
+   *
+   * SVG 안에 글자를 넣지 않는다. viewBox 가 preserveAspectRatio="none" 이라
+   * 화면 폭에 따라 가로로 늘어나 글자가 찌그러진다. HTML 로 얹고 위치만 백분율로 맞춘다 —
+   * 늘어나도 같은 지점을 가리킨다.
+   */
+  function drawLast(b, vs) {
+    var tag = $("chart-last");
+    var line = $("chart-last-line");
+    if (!tag || !line) return;
+
+    var last = vs[vs.length - 1];
+    if (!last || last.close == null) {
+      tag.hidden = true;
+      line.hidden = true;
+      return;
+    }
+
+    var value = Number(last.close);
+    var y = (H - PAD) - (value - b.lo) / b.span * (H - PAD * 2);
+    var topPercent = (y / H * 100).toFixed(2) + "%";
+
+    /* 구간 첫 값보다 올랐는지로 색을 정한다. 화면에 보이는 구간 기준이다 */
+    var up = Number(last.close) >= Number(vs[0].close);
+    var tone = up ? "rise" : "fall";
+
+    tag.textContent = money(value);
+    tag.className = "chart-last " + tone;
+    tag.style.top = topPercent;
+    tag.hidden = false;
+
+    line.className = "chart-last-line " + tone;
+    line.style.top = topPercent;
+    line.hidden = false;
+  }
+
+  function paint() {
+    if (!chart) return;
+    if (points.length === 0) { note("표시할 값이 없습니다"); return; }
+    var vs = view();
+    if (vs.length === 0) { note("표시할 값이 없습니다"); return; }
+    chart.replaceChildren();
+    var b = bounds(vs);
+    if (chartType === "CANDLE") drawCandle(b, vs); else drawLine(b, vs);
+    drawAxis(vs);
+    drawLast(b, vs);
+
+    /* 전체를 보고 있으면 개수만, 확대 중이면 몇 개 중 몇 개인지 알린다 */
+    var label = $("chart-label");
+    if (label) {
+      label.textContent = (vs.length === points.length)
+        ? points.length + "개"
+        : vs.length + " / " + points.length + "개";
+    }
+    /* 어디서 온 값인지 그대로 적는다. 구간마다 출처가 다르다 */
+    var n = $("chart-note");
+    if (n) {
+      var tf = meta ? meta.timeframe : "";
+      n.textContent =
+        meta && meta.intraday ? "분봉입니다. 프리마켓·애프터마켓을 포함하며 표시용입니다. 손익 계산에는 일봉 종가를 씁니다."
+        : tf === "1Day"       ? "일봉 종가 기준입니다. 손익 계산 기준가와 같습니다."
+        :                       "벤더가 집계한 " + (tf === "1Week" ? "주봉" : "월봉") + "입니다. 손익 계산에는 쓰지 않습니다.";
+    }
+  }
+
+  /**
+   * 사이드바의 시세 정보를 채운다.
+   *
+   * 고른 기간과 무관하게 <b>늘 당일 세션</b>을 보여준다. 5년 차트를 보고 있다고
+   * "오늘 시세" 자리에 5년 전 시가가 뜨면 안 된다.
+   *
+   * 그래서 차트와 별도로 1일치를 한 번 더 받는다. 서버가 캐시하고 있어 실제 호출은
+   * 대개 한 번뿐이다.
+   *
+   * 최고·최저는 프리마켓·애프터마켓을 포함한다 — 미국 장은 정규장 밖에도 거래된다(2.16).
+   */
+  async function fillQuoteBox() {
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/chart?range=1D");
+    if (!r.ok || !r.data || r.data.points.length === 0) return;
+    var day = r.data.points;
+
+    var high = -Infinity, low = Infinity, volume = 0;
+    day.forEach(function (p) {
+      if (p.high != null && Number(p.high) > high) high = Number(p.high);
+      if (p.low != null && Number(p.low) < low) low = Number(p.low);
+      volume += Number(p.volume || 0);
+    });
+
+    text("q-open", money(day[0].open));
+    text("q-high", money(high === -Infinity ? null : high));
+    text("q-low", money(low === Infinity ? null : low));
+    text("q-volume", count(volume));
+  }
+
+  /**
+   * 차트를 받아 그린다.
+   *
+   * keepView 를 주면 보고 있던 구간을 지킨다. 실시간 구간은 1분마다 다시 받는데,
+   * 그때마다 전체로 되돌리면 확대해서 들여다보던 화면이 손 안에서 튕겨 나간다.
+   *
+   * 구간은 인덱스가 아니라 시각으로 기억한다 — 새로 받은 목록은 길이가 달라
+   * 같은 인덱스가 다른 시각을 가리킨다.
+   */
+  async function loadChart(keepView) {
+    var keep = null;
+    if (keepView && points.length && !(i0 === 0 && i1 >= points.length - 1)) {
+      keep = { from: String(points[i0].at), to: String(points[i1].at) };
+    }
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/chart?range=" + range);
+    if (!r.ok || !r.data) { points = []; meta = null; note("차트를 불러오지 못했습니다"); return; }
+    meta = r.data;
+    points = r.data.points || [];
+    if (keep) restoreView(keep); else resetView();
+    draw();
+  }
+
+  /** 시각으로 기억해 둔 구간을 새 목록의 인덱스로 되돌린다 */
+  function restoreView(keep) {
+    resetView();
+    if (points.length === 0) return;
+    var a = indexAtTime(keep.from);
+    var b = indexAtTime(keep.to);
+    if (b > a) { i0 = a; i1 = b; }
+  }
+
+  /**
+   * 그 시각 이후 첫 점의 자리. 시각 문자열은 ISO 라 그대로 견주면 된다.
+   *
+   * 아래에 마우스 위치를 자리로 바꾸는 indexAt(event) 이 따로 있다. 같은 이름을 쓰면
+   * 나중 선언이 이겨서 이 함수가 통째로 사라진다 — 실제로 그렇게 죽어 있었다.
+   */
+  function indexAtTime(t) {
+    for (var i = 0; i < points.length; i++) {
+      if (String(points[i].at) >= t) return i;
+    }
+    return points.length - 1;
+  }
+
+  /* 담은 목록에서 이 종목을 찾아 별표 상태를 맞춘다 */
+  async function loadWatch() {
+    try {
+      var res = await fetch("/api/watchlists");
+      if (!res.ok) return;                      // 비로그인
+      var body = await res.json();
+      if (!body.success) return;
+      var hit = body.data.find(function (w) { return w.symbol === symbol; });
+      watchId = hit ? hit.id : null;
+      if (star) {
+        star.textContent = hit ? "관심 해제" : "관심 등록";
+        star.setAttribute("aria-pressed", String(!!hit));
+      }
+    } catch (e) { /* 버튼만 기본 상태로 남는다 */ }
+  }
+
+  if (star) {
+    star.addEventListener("click", async function () {
+      star.disabled = true;
+      if (watchId) {
+        /* 해제는 DELETE 다. 메서드를 안 주면 GET 이 나가고 아무 일도 일어나지 않는다 */
+        await call("/api/watchlists/items/" + watchId, { method: "DELETE" });
+      } else {
+        await call("/api/watchlists/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol: symbol })
+        });
+      }
+      await loadWatch();
+      star.disabled = false;
+    });
+  }
+
+  /* ── 확대·축소·이동 ──────────────────────────────────────────────────
+     스크롤로 구간을 좁히고 넓힌다. 끌면 좌우로 움직인다.
+     서버를 다시 부르지 않는다 — 이미 받아 둔 점 안에서 어디를 볼지만 바꾼다. */
+  var box = chart ? chart.ownerSVGElement : null;
+
+  /** 커서가 차트의 몇 번째 점 위에 있는지. 그 점을 붙잡고 확대한다 */
+  function indexAt(event) {
+    if (!box) return (i0 + i1) / 2;
+    var rect = box.getBoundingClientRect();
+    var ratio = rect.width ? (event.clientX - rect.left) / rect.width : 0.5;
+    ratio = Math.max(0, Math.min(1, ratio));
+    return i0 + ratio * (i1 - i0);
+  }
+
+  /**
+   * 구간을 배율만큼 조절한다.
+   *
+   * 커서 아래 점이 제자리에 남도록 양쪽을 다르게 줄인다. 가운데 기준으로 줄이면
+   * 보고 있던 자리가 손에서 빠져나간다.
+   */
+  function zoom(factor, anchor) {
+    var span = i1 - i0;
+    var next = Math.round(span * factor);
+    if (next < MIN_POINTS) next = MIN_POINTS;
+    if (next > points.length - 1) next = points.length - 1;
+    if (next === span) return;
+
+    var left = (anchor - i0) / (span || 1);
+    var start = Math.round(anchor - left * next);
+    var end = start + next;
+
+    if (start < 0) { start = 0; end = next; }
+    if (end > points.length - 1) { end = points.length - 1; start = end - next; }
+    i0 = Math.max(0, start);
+    i1 = Math.min(points.length - 1, end);
+    draw();
+  }
+
+  /** 구간 폭은 그대로 두고 좌우로 민다 */
+  function pan(steps) {
+    var span = i1 - i0;
+    var start = Math.max(0, Math.min(points.length - 1 - span, i0 + steps));
+    i0 = start;
+    i1 = start + span;
+    draw();
+  }
+
+  if (box) {
+    box.addEventListener("wheel", function (e) {
+      if (points.length < MIN_POINTS) return;
+      e.preventDefault();                       // 차트 위에서는 페이지가 스크롤되지 않는다
+      /* 위로 굴리면 확대(구간이 좁아진다), 아래로 굴리면 축소 */
+      zoom(e.deltaY < 0 ? 0.85 : 1.18, indexAt(e));
+    }, { passive: false });
+
+    /* 끌어서 이동. 왼쪽으로 끌면 뒤(더 최근)로 간다 */
+    var dragFrom = null;
+    box.addEventListener("pointerdown", function (e) {
+      dragFrom = { x: e.clientX, i0: i0 };
+      box.setPointerCapture(e.pointerId);
+      box.style.cursor = "grabbing";
+    });
+    box.addEventListener("pointermove", function (e) {
+      if (!dragFrom) return;
+      var rect = box.getBoundingClientRect();
+      var perPixel = (i1 - i0 + 1) / (rect.width || 1);
+      var moved = Math.round((dragFrom.x - e.clientX) * perPixel);
+      var span = i1 - i0;
+      var start = Math.max(0, Math.min(points.length - 1 - span, dragFrom.i0 + moved));
+      if (start !== i0) { i0 = start; i1 = start + span; draw(); }
+    });
+    var endDrag = function () { dragFrom = null; box.style.cursor = ""; };
+    box.addEventListener("pointerup", endDrag);
+    box.addEventListener("pointercancel", endDrag);
+
+    /* 두 번 누르면 전체로 되돌린다. 확대하다 길을 잃었을 때 나가는 문이다 */
+    box.addEventListener("dblclick", function () { resetView(); draw(); });
+
+    /* 키보드로도 되어야 한다. 마우스가 없으면 확대할 방법이 없어진다 */
+    box.setAttribute("tabindex", "0");
+    box.addEventListener("keydown", function (e) {
+      var span = i1 - i0;
+      if (e.key === "ArrowLeft") { pan(-Math.max(1, Math.round(span / 10))); e.preventDefault(); }
+      else if (e.key === "ArrowRight") { pan(Math.max(1, Math.round(span / 10))); e.preventDefault(); }
+      else if (e.key === "+" || e.key === "=") { zoom(0.8, (i0 + i1) / 2); e.preventDefault(); }
+      else if (e.key === "-") { zoom(1.25, (i0 + i1) / 2); e.preventDefault(); }
+      else if (e.key === "0") { resetView(); draw(); e.preventDefault(); }
+    });
+  }
+
+  /* 기간 버튼. 바뀌면 다시 받는다 */
+  var rangeGroup = document.getElementById("chart-range");
+  if (rangeGroup) {
+    rangeGroup.addEventListener("mj:change", function (e) { range = e.detail; loadChart(); });
+  }
+
+  /* 종류 버튼. 같은 점을 다시 그리기만 하면 되므로 서버를 부르지 않는다 */
+  var typeGroup = document.getElementById("chart-type");
+  if (typeGroup) {
+    typeGroup.addEventListener("mj:change", function (e) { chartType = e.detail; draw(); });
+  }
+
+  /**
+   * 투자 지표.
+   *
+   * 시세와 벤더가 다르다(Finnhub). 그래서 상세와 따로 부른다 —
+   * 지표가 막혀도 시세와 차트는 보여야 한다.
+   *
+   * ETF 는 PER·PBR 이 없고 무배당 종목은 배당수익률이 없다. 없는 값은 — 로 둔다.
+   */
+  async function loadMetrics() {
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/metrics");
+    if (!r.ok || !r.data) return;
+    var m = r.data;
+
+    /* 시가총액은 자릿수가 커서 그대로 쓰면 못 읽는다. 조·억 단위로 접는다 */
+    text("m-cap", m.marketCap == null ? "—" : compactUsd(Number(m.marketCap)));
+    text("m-per", m.per == null ? "—" : Number(m.per).toFixed(2));
+    text("m-pbr", m.pbr == null ? "—" : Number(m.pbr).toFixed(2));
+    text("m-eps", m.eps == null ? "—" : money(m.eps));
+    text("m-div", m.dividendYield == null ? "—" : Number(m.dividendYield).toFixed(2) + "%");
+    text("m-industry", m.industry || "—");
+    fillCompany(m);
+  }
+
+  /**
+   * $4.46T · $376.1B 처럼 접는다.
+   *
+   * 배열을 중첩해서 쓰지 않는다. Thymeleaf 는 대괄호 두 개를 자기 문법(인라인 출력)으로 읽어
+   * 템플릿 파싱 자체가 깨진다 — 자바스크립트로는 멀쩡한 코드인데 화면이 안 뜬다.
+   */
+  function compactUsd(v) {
+    var SCALE = { T: 1e12, B: 1e9, M: 1e6 };
+    var keys = ["T", "B", "M"];
+    for (var i = 0; i < keys.length; i++) {
+      var unit = SCALE[keys[i]];
+      if (v >= unit) return "$" + (v / unit).toFixed(2) + keys[i];
+    }
+    return money(v);
+  }
+
+  /**
+   * 발행주식수를 읽을 수 있는 단위로.
+   *
+   * 벤더는 백만 주 단위로 준다 — AAPL 이 14687.36 이면 146억 8736만 주다.
+   * 이걸 그대로 "만 주" 로 붙이면 100배가 어긋난다.
+   */
+  function shares(v) {
+    if (v == null) return "—";
+    var n = Number(v) * 1e6;
+    if (!isFinite(n) || n <= 0) return "—";
+    if (n >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, "") + "억 주";
+    if (n >= 1e4) return Math.round(n / 1e4).toLocaleString("ko-KR") + "만 주";
+    return Math.round(n).toLocaleString("ko-KR") + "주";
+  }
+
+  /**
+   * 기업 정보. 투자 지표와 같은 응답을 쓴다 — 둘 다 Finnhub 프로필에서 온다.
+   *
+   * 설립년도·본사·임직원·CEO 는 벤더가 주지 않아 화면에서 뺐다.
+   * 없는 값을 지어내느니 있는 값만 보여준다.
+   */
+  function fillCompany(m) {
+    text("ci-industry", m.industry || "—");
+    text("ci-ipo", m.ipoDate || "—");
+    text("ci-country", m.country || "—");
+    text("ci-shares", shares(m.sharesOutstanding));
+    text("ci-cap", m.marketCap == null ? "—" : compactUsd(Number(m.marketCap)));
+
+    var web = $("ci-web");
+    if (web) {
+      web.replaceChildren();
+      /* 벤더가 준 주소다. 뉴스 링크와 같은 이유로 스킴을 확인한다 */
+      var homepage = safeUrl(m.webUrl);
+      if (m.webUrl && homepage !== "#") {
+        var a = document.createElement("a");
+        a.href = homepage;
+        a.target = "_blank";
+        a.rel = "noreferrer noopener";
+        a.textContent = m.webUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+        web.appendChild(a);
+      } else {
+        web.textContent = "—";
+      }
+    }
+  }
+
+  /**
+   * 종목 뉴스.
+   *
+   * 본문은 담지 않는다. 제목·요약과 원문 링크만 보여주고 읽는 것은 원문에서 하게 한다.
+   *
+   * 제목과 요약은 벤더 문자열이라 textContent 로 넣는다. 그대로 HTML 에 붙이지 않는다.
+   */
+  async function loadNews() {
+    var box = $("news-list");
+    var meta = $("news-meta");
+    if (!box) return;
+
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/news");
+    var items = r.ok && r.data ? r.data : [];
+    box.replaceChildren();
+
+    if (meta) {
+      meta.textContent = items.length === 0 ? "—"
+          : "최근 30일 · " + items.length + "건"
+            + (items.length > NEWS_VISIBLE ? " · 스크롤" : "");
+    }
+    if (items.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "sub";
+      empty.style.padding = "22px";
+      empty.textContent = "관련 뉴스가 없습니다";
+      box.appendChild(empty);
+      return;
+    }
+
+    items.forEach(function (n) {
+      var li = document.createElement("li");
+      li.className = "news-item";
+
+      var metaLine = document.createElement("p");
+      metaLine.className = "meta";
+      var src = document.createElement("span");
+      src.className = "src";
+      src.textContent = n.source || "";
+      var when = document.createElement("time");
+      when.textContent = ago(n.publishedAt);
+      var spacer = document.createElement("span");
+      spacer.className = "spacer";
+      var link = document.createElement("a");
+      link.href = safeUrl(n.url);
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
+      link.textContent = "원문 보기";
+      metaLine.append(src, when, spacer, link);
+
+      var title = document.createElement("p");
+      title.className = "ttl";
+      title.textContent = n.headline;
+
+      li.append(metaLine, title);
+
+      if (n.summary) {
+        var sum = document.createElement("p");
+        sum.className = "sum";
+        sum.textContent = n.summary;
+        li.appendChild(sum);
+      }
+      box.appendChild(li);
+    });
+
+    fitNews(box, items.length);
+  }
+
+  /** 상세 화면에서 한 번에 펼치는 뉴스 건수. 나머지는 상자 안에서 굴려 본다 */
+  var NEWS_VISIBLE = 6;
+
+  /**
+   * 뉴스 상자의 높이를 여섯 건에 맞춘다.
+   *
+   * 항목마다 요약 길이가 달라 높이가 제각각이다. 그래서 고정 높이로는 여섯 건에 딱 맞지 않는다.
+   * <b>여섯째 항목이 시작하는 자리</b>를 재서 그만큼만 보이게 한다.
+   *
+   * 레이아웃을 잴 수 없는 환경에서는 재지 않고 넘어간다 — 그때는 CSS 의 기본 높이가 쓰인다.
+   */
+  function fitNews(box, count) {
+    box.classList.toggle("scrollable", count > NEWS_VISIBLE);
+    box.style.removeProperty("--news-max");
+    if (count <= NEWS_VISIBLE) return;
+
+    var kids = box.children;
+    if (kids.length <= NEWS_VISIBLE) return;
+    var height = kids[NEWS_VISIBLE].offsetTop - kids[0].offsetTop;
+    if (height > 0) {
+      box.style.setProperty("--news-max", height + "px");
+    }
+  }
+
+  /** "2시간 전" 처럼. 날짜만 보여주면 얼마나 지난 소식인지 감이 안 온다 */
+  /**
+   * 링크에 걸어도 되는 주소인지 본다.
+   *
+   * 벤더가 준 문자열을 href 에 그대로 넣으면 javascript: 로 시작하는 주소가 들어올 수 있다.
+   * 지금은 CSP 가 그것을 막아 주지만, 막아 주는 것이 CSP 하나뿐인 상태로 두지 않는다 —
+   * script-src 에 unsafe-inline 이 들어가는 순간 되살아난다.
+   *
+   * 웹소켓 프레임에서 "대문자 변환 하나에 기대지 않는다" 고 판단한 것과 같은 기준이다.
+   */
+  function safeUrl(url) {
+    if (!url) return "#";
+    try {
+      var u = new URL(url, location.origin);
+      return (u.protocol === "http:" || u.protocol === "https:") ? u.href : "#";
+    } catch (e) {
+      return "#";                      // 주소로 읽히지 않는 값
+    }
+  }
+
+  function ago(iso) {
+    var then = new Date(iso).getTime();
+    if (!then) return "";
+    var min = Math.max(0, Math.round((Date.now() - then) / 60000));
+    if (min < 60) return min + "분 전";
+    var hour = Math.round(min / 60);
+    if (hour < 24) return hour + "시간 전";
+    var day = Math.round(hour / 24);
+    return day < 7 ? day + "일 전" : new Date(iso).toLocaleDateString("ko-KR");
+  }
+
+  /* ── 실시간 ──────────────────────────────────────────────────────────
+     SSE 로 체결가를 받아 ① 헤더의 현재가와 ② 실시간 차트의 마지막 봉을 갱신한다.
+     웹소켓이 아니라 SSE 인 이유는 서버가 일방적으로 밀어 주기만 하면 되기 때문이다. */
+  var source = null;
+  var basePrice = null;      // 이 세션의 등락률 기준가. 서버가 세션을 보고 정해 준다
+  var session = null;        // PRE·REGULAR·AFTER·CLOSED
+  var sessionLabel = "";
+
+  function applyLive(quote) {
+    if (quote.symbol !== symbol) return;
+
+    var price = Number(quote.price);
+    text("sym-price", money(price));
+
+    /* 등락률은 서버가 체결마다 주지 않는다. 세션 기준가로 화면에서 구한다 */
+    if (basePrice) {
+      showChange((price - basePrice) / basePrice * 100);
+    }
+
+    var feed = $("sym-feed");
+    if (feed) {
+      /* 세 가지 상태를 구분한다. 지연값을 실시간인 척 보여 주면 지금 값으로 오해한다 */
+      feed.innerHTML = session === "CLOSED" ? '<i class="dot"></i>휴장'
+        : !quote.live ? '<i class="dot"></i>종가 기준'
+        : quote.delayed ? '<i class="dot"></i>SIP 15분 지연'
+        : '<i class="dot"></i>IEX 실시간';
+      feed.classList.toggle("stale", !quote.live || quote.delayed);
+    }
+
+    if (quote.live) appendLive(price, quote.at);
+  }
+
+  /**
+   * 실시간 차트에 체결을 얹는다.
+   *
+   * 같은 분이면 마지막 봉의 종가를 바꾸고 고가·저가를 늘린다.
+   * 분이 바뀌면 새 봉을 하나 붙인다. 분봉이 만들어지는 방식 그대로다.
+   */
+  function appendLive(price, at) {
+    if (range !== "LIVE" || points.length === 0) return;
+
+    var minute = String(at).slice(0, 16);              // "2026-08-13T13:31"
+    var last = points[points.length - 1];
+
+    /* 오른쪽 끝을 보고 있었는지 먼저 기억한다.
+       확대해서 과거를 들여다보는 중이라면 새 봉이 왔다고 화면을 끌고 가면 안 된다 */
+    var atEnd = i1 >= points.length - 1;
+    var whole = atEnd && i0 === 0;          // 전체를 보고 있었나
+
+    if (String(last.at).slice(0, 16) === minute) {
+      last.close = price;
+      if (price > Number(last.high)) last.high = price;
+      if (price < Number(last.low)) last.low = price;
+    } else {
+      points.push({ at: at, open: price, high: price, low: price, close: price, volume: 0 });
+      /* 하루치만 들고 있는다. 계속 쌓으면 화면이 점점 느려진다.
+         앞을 버리면 인덱스가 하나씩 당겨지므로 보이는 구간도 같이 당긴다 */
+      if (points.length > 1000) {
+        points.shift();
+        i0 = Math.max(0, i0 - 1);
+        i1 = Math.max(0, i1 - 1);
+      }
+      /* 전체를 보고 있었으면 새 봉까지 포함해 계속 전체를 보여준다.
+         확대한 채 오른쪽 끝에 있었다면 폭은 그대로 두고 창만 민다 */
+      if (whole) {
+        i0 = 0;
+        i1 = points.length - 1;
+      } else if (atEnd) {
+        var span = i1 - i0;
+        i1 = points.length - 1;
+        i0 = Math.max(0, i1 - span);
+      }
+    }
+    draw();
+  }
+
+  function openStream() {
+    /* 장이 닫혀 있으면 붙지 않는다. 값이 올 리도 없고, 와도 화면이 멈춰 있어야 한다 —
+       휴장일에 숫자가 조금씩 흔들리면 사용자는 "지금 거래되고 있다" 로 읽는다 */
+    if (session === "CLOSED") return;
+    /* 아주 오래된 브라우저에는 EventSource 가 없다. 그때는 실시간만 빠지고
+       종가 기준 화면은 그대로 돌아야 한다 */
+    if (typeof EventSource === "undefined") return;
+    if (source) source.close();
+    source = new EventSource("/api/market/stream?symbols=" + encodeURIComponent(symbol));
+    source.addEventListener("quote", function (e) { applyLive(JSON.parse(e.data)); });
+    /* 끊기면 브라우저가 알아서 다시 붙는다. 여기서 할 일이 없다 */
+  }
+
+  /* 다른 탭을 보고 있으면 끊는다. 동시 구독이 30종목뿐이라 자리를 비워 준다 */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (source) { source.close(); source = null; }
+    } else if (!source) {
+      openStream();
+    }
+  });
+
+  /* 실시간 구간의 앞부분은 15분 지연된 SIP 라 체결만으로는 채워지지 않는다.
+     주기적으로 다시 받아 그 구간을 메운다. 다른 기간은 값이 확정돼 있어 부르지 않는다 */
+  setInterval(function () {
+    if (range === "LIVE" && session !== "CLOSED" && !document.hidden) loadChart(true);
+  }, 60000);
+
+  loadDetail().then(function () { openStream(); });
+  fillQuoteBox();
+  loadMetrics();
+  loadNews();
+  loadChart();
+  loadWatch();
+})();
+</script>
 </body>
 </html>

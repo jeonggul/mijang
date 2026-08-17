@@ -138,3 +138,38 @@
     });
   });
 })();
+
+/* ── 인라인 핸들러 대체 ──────────────────────────────────────
+   CSP 를 켜면서 onclick="..." 같은 인라인 핸들러가 전부 죽었다.
+   nonce 는 <script> 에만 걸린다 — 인라인 이벤트 속성은 nonce 로 살릴 수 없고
+   'unsafe-inline' 을 넣어야 도는데, 그러면 CSP 를 켠 이유가 없어진다.
+
+   그래서 표시를 속성으로 옮기고 동작은 여기서 건다.
+     data-go="/경로"   눌렀을 때 그 주소로 간다 (button·form 둘 다)
+     data-back         이전 페이지로
+
+   위임으로 거는 이유는 로그아웃과 같다 — 헤더가 20개 템플릿에 복제돼 있다. */
+(function () {
+  document.addEventListener("click", function (e) {
+    var back = e.target.closest("[data-back]");
+    if (back) {
+      e.preventDefault();
+      history.back();
+      return;
+    }
+    var go = e.target.closest("[data-go]");
+    /* form 의 data-go 는 submit 에서 처리한다. 여기서 가로채면 입력 검증을 건너뛴다 */
+    if (go && go.tagName !== "FORM") {
+      e.preventDefault();
+      location.href = go.getAttribute("data-go");
+    }
+  });
+
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest("form[data-go], form[data-noop]");
+    if (!form) return;
+    e.preventDefault();                       // 서버가 아직 안 받는 폼이다
+    var to = form.getAttribute("data-go");
+    if (to) location.href = to;
+  });
+})();

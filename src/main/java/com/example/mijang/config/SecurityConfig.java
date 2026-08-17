@@ -68,6 +68,10 @@ public class SecurityConfig {
                 // POST /api/stocks/{symbol}/posts 가 이 아래에 있다.
                 .requestMatchers(HttpMethod.GET, "/api/stocks/**", "/api/calendar/**", "/api/fx/**")
                     .permitAll()
+                // 시세 조회와 실시간 스트림은 공개다. 종목 정보와 같은 성격이다.
+                // 다만 POST /api/market/subscriptions 는 열지 않는다 — 30종목뿐인
+                // 공유 구독 풀을 아무나 채워 버릴 수 있다.
+                .requestMatchers(HttpMethod.GET, "/api/market/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e

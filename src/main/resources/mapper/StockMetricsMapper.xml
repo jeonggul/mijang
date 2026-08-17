@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  StockMetricsMapper.xml — 투자 지표 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    조회 컬럼 순서가 StockMetricsResponse 의 선언 순서와 같아야 한다 —
+    이름이 아니라 자리로 매핑되므로 하나만 어긋나도 값이 뒤바뀐다.
+-->
+<mapper namespace="com.example.mijang.stock.mapper.StockMetricsMapper">
+
+    <select id="findBySymbol" parameterType="string"
+            resultType="com.example.mijang.stock.dto.StockMetricsResponse">
+        SELECT symbol, market_cap, per, pbr, eps, dividend_yield, beta,
+               week52_high, week52_low, industry, country, web_url, ipo_date, logo_url,
+               shares_outstanding, synced_at
+          FROM stock_metrics
+         WHERE symbol = #{symbol}
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO stock_metrics
+            (symbol, market_cap, per, pbr, eps, dividend_yield, beta,
+             week52_high, week52_low, industry, country, web_url, ipo_date, logo_url,
+             shares_outstanding, synced_at)
+        VALUES
+            (#{symbol}, #{marketCap}, #{per}, #{pbr}, #{eps}, #{dividendYield}, #{beta},
+             #{week52High}, #{week52Low}, #{industry}, #{country}, #{webUrl}, #{ipoDate}, #{logoUrl},
+             #{sharesOutstanding}, CURRENT_TIMESTAMP(3))
+        ON DUPLICATE KEY UPDATE
+            market_cap         = VALUES(market_cap),
+            per                = VALUES(per),
+            pbr                = VALUES(pbr),
+            eps                = VALUES(eps),
+            dividend_yield     = VALUES(dividend_yield),
+            beta               = VALUES(beta),
+            week52_high        = VALUES(week52_high),
+            week52_low         = VALUES(week52_low),
+            industry           = VALUES(industry),
+            country            = VALUES(country),
+            web_url            = VALUES(web_url),
+            ipo_date           = VALUES(ipo_date),
+            logo_url           = VALUES(logo_url),
+            shares_outstanding = VALUES(shares_outstanding),
+            synced_at          = CURRENT_TIMESTAMP(3)
+    </insert>
+
+    <!-- synced_at 을 찍는 시계와 신선도를 재는 기준이 같아야 한다 -->
+    <select id="now" resultType="java.time.LocalDateTime">
+        SELECT CURRENT_TIMESTAMP(3)
+    </select>
+
+    <select id="count" resultType="_int">
+        SELECT COUNT(*) FROM stock_metrics
+    </select>
+
+</mapper>
