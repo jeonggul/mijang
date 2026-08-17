@@ -25,13 +25,15 @@
 
   <div class="spacer"></div>
 
-  <a class="search" th:href="@{/search}">
+  <div class="search" role="combobox" aria-haspopup="listbox" aria-owns="hs-list">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
       <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>
-    <span>티커 또는 종목명 검색</span>
-  </a>
+    <input id="hs-input" type="search" autocomplete="off" placeholder="티커 또는 종목명 검색"
+           aria-label="종목 검색" aria-autocomplete="list" aria-controls="hs-list" aria-expanded="false">
+    <ul class="hs-list" id="hs-list" role="listbox" aria-label="검색 결과" hidden></ul>
+  </div>
 
   <p class="market-badge"><span class="dot"></span>정규장 <span class="num sub">마감 3:24</span></p>
 
@@ -74,7 +76,7 @@
     </div>
   </div>
 
-  <button class="icon-btn" type="button" aria-label="설정" onclick="location.href='/settings'">
+  <button class="icon-btn" type="button" aria-label="설정" data-go="/settings">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/>
       <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.53 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.53a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.47 9c.24.6.81 1 1.46 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"
@@ -107,86 +109,119 @@
   <div class="page-head">
     <div><h1>관심 종목</h1><p>등록한 종목은 실시간 구독 대상에 포함됩니다</p></div>
     <span class="grow"></span>
-    <button class="btn btn-sm" type="button" data-open="grp-modal">그룹 추가</button>
-  </div>
-
-  <div class="pills" data-toggle-group style="margin-bottom:14px">
-    <button type="button" data-value="ALL" aria-pressed="true">전체</button>
-    <button type="button" data-value="SEMI" aria-pressed="false">반도체</button>
-    <button type="button" data-value="DIV" aria-pressed="false">배당주</button>
-    <button type="button" data-value="BIG" aria-pressed="false">빅테크</button>
   </div>
 
   <section class="card">
-    <h2 class="card-head">관심 종목 <span class="sub num">4종목</span></h2>
+    <h2 class="card-head">관심 종목 <span class="sub num" id="watch-count">—</span></h2>
     <div class="table-wrap">
       <table class="tbl tbl-band">
         <thead>
           <tr>
-            <th scope="col"><span class="sr-only">순서</span></th>
             <th scope="col">티커</th><th class="txt" scope="col">종목명</th>
             <th class="r" scope="col">현재가</th><th class="r" scope="col">원화 환산</th>
             <th class="r" scope="col">등락률</th><th class="r" scope="col"><span class="sr-only">기록</span></th>
           </tr>
         </thead>
-        <tbody>
-              <tr>
-                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
-                <td><a th:href="@{/stock}">GOOGL</a></td>
-                <td class="txt">Alphabet Inc.</td>
-                <td class="r">$174.32</td><td class="r">245,530원</td>
-                <td class="r rise">+0.82%</td>
-                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
-              </tr>
-              <tr>
-                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
-                <td><a th:href="@{/stock}">AMD</a></td>
-                <td class="txt">Advanced Micro Devices</td>
-                <td class="r">$118.05</td><td class="r">166,260원</td>
-                <td class="r fall">−2.14%</td>
-                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
-              </tr>
-              <tr>
-                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
-                <td><a th:href="@{/stock}">COST</a></td>
-                <td class="txt">Costco Wholesale</td>
-                <td class="r">$892.10</td><td class="r">1,256,240원</td>
-                <td class="r rise">+0.34%</td>
-                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
-              </tr>
-              <tr>
-                <td class="drag"><span class="handle" aria-hidden="true">⠿</span></td>
-                <td><a th:href="@{/stock}">JEPI</a></td>
-                <td class="txt">JPMorgan Equity Premium</td>
-                <td class="r">$56.88</td><td class="r">80,110원</td>
-                <td class="r fall">−0.11%</td>
-                <td class="r"><a class="btn btn-sm" th:href="@{/record-new}">기록 추가</a></td>
-              </tr>
+        <tbody id="watch-rows">
+          <!-- 스크립트가 채운다 -->
         </tbody>
       </table>
     </div>
   </section>
 
-  <p class="note" style="margin-top:14px">좌측 손잡이를 끌어 순서를 바꿉니다 · 실시간 시세는 IEX 기준입니다</p>
+  <p class="note" style="margin-top:14px">시세는 마지막 일봉 종가입니다 · 실시간은 다음 단계에서 붙습니다</p>
 </div>
 
-<div class="overlay" id="grp-modal" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gm-t">
-    <h2 id="gm-t">관심 그룹 추가</h2>
-    <p>종목을 주제별로 나눠 관리할 수 있습니다.</p>
-    <div class="field">
-      <label for="gm-name">그룹 이름</label>
-      <input id="gm-name" type="text" placeholder="예: 반도체">
-      <p class="hint">반도체, 배당주 같은 이름을 붙여보세요 · 최대 10자</p>
-    </div>
-    <p class="note">그룹에 담긴 종목은 실시간 구독 대상에 포함됩니다.</p>
-    <div class="modal-actions">
-      <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-primary" type="button" data-close>만들기</button>
-    </div>
-  </div>
-</div>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/quotes.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 관심 종목 목록 (WATCH-02) · 해제 (WATCH-01)
+   목록에 시세가 함께 실려 온다. 종목마다 상세를 다시 부르지 않는다. */
+(function () {
+  var tbody = document.getElementById("watch-rows");
+  var countEl = document.getElementById("watch-count");
+  if (!tbody) return;
 
-<script th:src="@{/js/ui.js}"></script>
+  function money(v) {
+    return v == null ? "—" : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function percent(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + Number(v).toFixed(2) + "%"; }
+
+  /* 응답 봉투를 벗겨 {성공 여부, 값} 으로 돌려준다.
+     값만 돌려주면 안 된다 — 담기·빼기는 성공해도 data 가 null 이라
+     값으로 성공을 판단하면 성공을 실패로 읽는다 */
+  async function call(url, options) {
+    var res = await fetch(url, options);
+    if (res.status === 401) { location.href = "/login"; return { ok: false, data: null }; }
+    var body = await res.json();
+    return { ok: body.success === true, data: body.data };
+  }
+
+  function row(item) {
+    var tr = document.createElement("tr");
+    var cls = item.dayChangeRate == null ? "sub" : (item.dayChangeRate >= 0 ? "rise" : "fall");
+    /* 뼈대만 innerHTML 로 세운다. 티커는 벤더 문자열이라 종목명과 똑같이 조심한다 */
+    tr.innerHTML =
+      '<td><a></a></td>' +
+      '<td class="txt"></td>' +
+      /* data-quote 가 붙은 자리는 quotes.js 가 실시간으로 갈아 끼운다 */
+      '<td class="r num">' + money(item.currentPrice) + '</td>' +
+      /* 원화 환산은 fx 범위가 붙기 전까지 비운다(2.8) */
+      '<td class="r sub">—</td>' +
+      '<td class="r num ' + cls + '">' + percent(item.dayChangeRate) + '</td>' +
+      '<td class="r"><a class="btn btn-sm" href="/record-new">기록 추가</a> ' +
+        '<button class="btn btn-sm" type="button">해제</button></td>';
+
+    var link = tr.children[0].firstChild;
+    link.setAttribute("href", "/stock?symbol=" + encodeURIComponent(item.symbol));
+    link.textContent = item.symbol;
+    if (!item.active) {
+      var bad = document.createElement("span");
+      bad.className = "badge badge-err";
+      bad.textContent = "거래 불가";
+      tr.children[0].append(" ", bad);
+    }
+    tr.children[2].setAttribute("data-quote", item.symbol);
+    tr.children[5].querySelector("button").setAttribute("data-remove", item.id);
+
+    /* 종목명은 textContent 로 넣는다. 벤더 문자열이라 그대로 HTML 에 붙이지 않는다.
+       한글명이 있으면 그것을 쓴다 */
+    tr.children[1].textContent = item.nameKo || item.name;
+    return tr;
+  }
+
+  async function load() {
+    var r = await call("/api/watchlists");
+    if (!r.ok) return;
+    var data = r.data;
+    tbody.replaceChildren();
+    countEl.textContent = data.length + "종목";
+    if (data.length === 0) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td colspan="6" class="sub" style="padding:24px;text-align:center">' +
+                     '담은 종목이 없습니다. <a href="/search">종목 검색</a>에서 ☆ 를 눌러 추가하세요</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+    data.forEach(function (item) { tbody.appendChild(row(item)); });
+  }
+
+  /* 해제도 위임으로 건다. 목록이 다시 그려지므로 개별로 걸면 빠뜨린다 */
+  tbody.addEventListener("click", async function (e) {
+    var btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    btn.disabled = true;
+    if ((await call("/api/watchlists/items/" + btn.dataset.remove, { method: "DELETE" })).ok) {
+      load();
+    } else {
+      btn.disabled = false;
+    }
+  });
+
+  load();
+})();
+</script>
 </body>
 </html>

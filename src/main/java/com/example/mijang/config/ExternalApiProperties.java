@@ -15,7 +15,6 @@ public record ExternalApiProperties(
         Sec sec,
         Alpaca alpaca,
         Finnhub finnhub,
-        Koreaexim koreaexim,
         Bls bls,
         int connectTimeoutMs,
         int readTimeoutMs) {
@@ -67,14 +66,6 @@ public record ExternalApiProperties(
      * <p>키가 없다. iCalendar 파일 하나를 받아 파싱하는 구조라 인증 항목 자체가 없다.
      */
     public record Bls(String scheduleUrl, int cacheHours) {
-    }
-
-    /** 한국수출입은행 — 손익 계산 기준 환율. */
-    public record Koreaexim(String baseUrl, String apiKey) {
-
-        public boolean configured() {
-            return hasText(apiKey);
-        }
     }
 
     private static boolean hasText(String value) {

@@ -63,6 +63,6 @@
     </div>
   </article>
 </div>
-<script th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 </body>
 </html>

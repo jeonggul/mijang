@@ -69,8 +69,8 @@
     <p class="auth-note">본인 확인이나 인증서 절차가 없습니다. 미장은 증권사가 아닙니다.</p>
   </div>
 </div>
-<script th:src="@{/js/ui.js}"></script>
-<script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
 /* 회원가입 폼 검증.
 
    화면 검사는 사용자를 돕기 위한 것이고, 판정의 근거는 서버(SignupPolicy)다.

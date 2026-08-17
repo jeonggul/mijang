@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.stock.mapper.WatchlistMapper">
+
+    <select id="findDefaultGroupId" parameterType="long" resultType="java.lang.Long">
+        SELECT id
+          FROM watchlist_groups
+         WHERE user_id = #{userId}
+           AND is_default = 1
+         LIMIT 1
+    </select>
+
+    <insert id="insertDefaultGroup">
+        INSERT INTO watchlist_groups (user_id, name, is_default, sort_order)
+        VALUES (#{userId}, '관심 종목', 1, 0)
+    </insert>
+
+    <select id="findLastInsertedGroupId" resultType="java.lang.Long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+    <!-- 종가와 직전 종가를 상관 서브쿼리로 붙인다. 관심종목은 많아야 수십 건이라
+         이 방식으로 충분하고, 화면이 종목마다 상세를 다시 부르는 것보다 훨씬 낫다.
+         등락률은 직전 종가가 없거나 0 이면 NULL 이다 -->
+    <select id="findByUser" parameterType="long"
+            resultType="com.example.mijang.stock.dto.WatchlistItemResponse">
+        SELECT w.id,
+               w.symbol,
+               s.name,
+               s.name_ko   AS nameKo,
+               s.is_active AS active,
+               p.close     AS currentPrice,
+               CASE WHEN q.close IS NULL OR q.close = 0 THEN NULL
+                    ELSE ROUND((p.close - q.close) / q.close * 100, 2)
+               END         AS dayChangeRate,
+               p.trade_date AS asOf
+          FROM watchlists w
+          JOIN stocks s ON s.symbol = w.symbol
+          LEFT JOIN daily_prices p
+                 ON p.symbol = w.symbol
+                AND p.trade_date = (SELECT MAX(trade_date) FROM daily_prices
+                                     WHERE symbol = w.symbol)
+          LEFT JOIN daily_prices q
+                 ON q.symbol = w.symbol
+                AND q.trade_date = (SELECT MAX(trade_date) FROM daily_prices
+                                     WHERE symbol = w.symbol AND trade_date &lt; p.trade_date)
+         WHERE w.user_id = #{userId}
+         ORDER BY w.sort_order, w.id
+    </select>
+
+    <!-- 중복은 오류가 아니다. 별표를 두 번 눌렀을 뿐이다 -->
+    <insert id="insertItem">
+        INSERT IGNORE INTO watchlists (group_id, user_id, symbol, sort_order)
+        VALUES (#{groupId}, #{userId}, #{symbol}, 0)
+    </insert>
+
+    <!-- user_id 조건이 없으면 남의 것을 지울 수 있다 -->
+    <delete id="deleteItem">
+        DELETE FROM watchlists
+         WHERE id = #{id}
+           AND user_id = #{userId}
+    </delete>
+
+    <select id="existsByUserAndSymbol" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM watchlists
+                       WHERE user_id = #{userId} AND symbol = #{symbol})
+    </select>
+
+</mapper>
