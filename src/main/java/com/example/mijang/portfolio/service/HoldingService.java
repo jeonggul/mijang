@@ -1,25 +1,93 @@
+/*
+ * HoldingService — 보유 현황을 다시 계산하고 꺼내 주는 곳
+ *
+ * 이 파일이 하는 일
+ *   계산 자체는 HoldingCalculator 가 한다. 이 파일은 그 앞뒤를 맡는다 —
+ *   거래를 DB 에서 꺼내 계산기에 넣고, 나온 결과를 holdings 에 저장한다.
+ *   화면이 보유 목록을 물어보면 현재가·평가금액을 붙여 돌려준다.
+ */
 package com.example.mijang.portfolio.service;
 
+import com.example.mijang.fx.service.FxRateService;
+import com.example.mijang.common.exception.BusinessException;
+import com.example.mijang.common.exception.ErrorCode;
+import com.example.mijang.portfolio.domain.Holding;
+import com.example.mijang.portfolio.domain.Transaction;
 import com.example.mijang.portfolio.dto.HoldingResponse;
 import com.example.mijang.portfolio.mapper.HoldingMapper;
+import com.example.mijang.portfolio.mapper.TransactionMapper;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 보유 현황 조회·재계산. 개발명세서(API) PORT-001 — 평균단가는 이동평균, 평균매수환율은 금액가중평균.
+ * 보유 현황 재계산·조회. 개발명세서(API) ACCOUNT-04·05·07
+ *
+ * <p>계산 자체는 {@link HoldingCalculator} 가 한다. 이 클래스는 <b>DB 에서 읽어 계산기에 넣고
+ * 결과를 저장하는 일</b>만 한다.
  */
 @Service
 @RequiredArgsConstructor
 public class HoldingService {
 
+    private final TransactionMapper transactionMapper;
     private final HoldingMapper holdingMapper;
+    private final FxRateService fxRateService;
 
-    public List<HoldingResponse> findByUser(Long userId) {
-        throw new UnsupportedOperationException("TODO PORT-001: 보유 현황 + 현재가 조합");
+    /**
+     * 한 종목을 처음부터 다시 계산해 저장한다.
+     *
+     * <p>증분이 아니라 <b>전체 재생</b>이다(2.2). 과거 날짜를 나중에 넣거나 중간 기록을 지워도
+     * 항상 옳은 값이 나온다.
+     *
+     * @return 계산된 보유 현황. 매도 초과면 수량이 음수인 채로 돌아온다 —
+     *         거절 여부는 부르는 쪽이 판단한다(2.5)
+     */
+    @Transactional
+    public Holding recalculate(Long userId, Long portfolioId, String symbol) {
+        List<Transaction> transactions = transactionMapper.findForRecalc(userId, symbol);
+        Holding holding = HoldingCalculator.calculate(symbol, transactions);
+
+        /* 음수면 저장하지 않고 여기서 막는다. holdings 에 ck_holdings_quantity CHECK(>=0) 이
+           걸려 있어 그대로 넣으면 SQL 예외가 먼저 터지고, 화면에는 "서버 오류" 로 나간다 —
+           보유량을 넘겨 팔았다는 사실이 사용자에게 전달되지 않는다(2.5) */
+        if (holding.quantity().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException(ErrorCode.TX_QUANTITY_EXCEEDS_HOLDING, "quantity");
+        }
+        holdingMapper.upsert(userId, portfolioId, symbol,
+                holding.quantity(), holding.avgPrice(), holding.avgFxRate(),
+                holding.totalFee(), holding.realizedPnlKrw());
+        return holding;
     }
 
-    public void recalculate(Long userId, String symbol) {
-        throw new UnsupportedOperationException("TODO: 매매 기록 전체를 되짚어 평단·평균환율 재계산");
+    /**
+     * 보유 현황 목록. 평가금액은 오늘 환율로 환산한다.
+     *
+     * <p>환율이 없으면 원화 금액이 null 로 나온다. 오류로 막지 않는 이유 —
+     * 수량과 평단가는 환율과 무관하게 맞는 값이고, 그것만이라도 보여야 한다.
+     */
+    @Transactional(readOnly = true)
+    public List<HoldingResponse> findByUser(Long userId) {
+        return holdingMapper.findByUser(userId, todayRate());
+    }
+
+    /** 총 평가금액(원). {@code ACCOUNT-07}. 보유가 없으면 0. */
+    @Transactional(readOnly = true)
+    public BigDecimal totalMarketValueKrw(Long userId) {
+        BigDecimal sum = holdingMapper.sumMarketValueKrw(userId, todayRate());
+        return sum == null ? BigDecimal.ZERO : sum;
+    }
+
+    /**
+     * 평가에 쓸 오늘 환율.
+     *
+     * <p>주말이면 fx 범위가 직전 영업일 값으로 대체해 준다([[미장-fx-구현]] 2.1).
+     * 그마저 없으면 null 이고, 원화 금액은 계산되지 않는다.
+     */
+    private BigDecimal todayRate() {
+        return fxRateService.rateOf(LocalDate.now());
     }
 }

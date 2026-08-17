@@ -1,21 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- 개발명세서(MVC): "HoldingMapper XML id 일치" -->
+<!--
+  HoldingMapper.xml — 보유 현황 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    평가금액 합계는 보유·일봉·환율을 이어 붙여 DB 안에서 구한다.
+-->
 <mapper namespace="com.example.mijang.portfolio.mapper.HoldingMapper">
 
+    <!-- 마지막 일봉 종가를 붙인다. 실시간은 market 범위에서 이 자리를 대체한다.
+         환율이 없으면(fxRate=null) 원화 금액은 전부 NULL 이 된다 — 오류가 아니다 -->
     <select id="findByUser" resultType="com.example.mijang.portfolio.dto.HoldingResponse">
         SELECT h.symbol,
                s.name,
                h.quantity,
-               h.avg_price      AS avgPrice,
-               h.avg_fx_rate    AS avgFxRate,
-               NULL             AS currentPrice,
-               NULL             AS marketValueKrw
+               h.avg_price        AS avgPrice,
+               h.avg_fx_rate      AS avgFxRate,
+               h.total_fee        AS totalFee,
+               h.realized_pnl_krw AS realizedPnlKrw,
+               p.close            AS currentPrice,
+               ROUND(h.quantity * p.close * #{fxRate}, 2) AS marketValueKrw,
+               ROUND(h.quantity * (p.close * #{fxRate} - h.avg_price * h.avg_fx_rate), 2)
+                                  AS evalPnlKrw
           FROM holdings h
           JOIN stocks s ON s.symbol = h.symbol
+          LEFT JOIN daily_prices p
+                 ON p.symbol = h.symbol
+                AND p.trade_date = (SELECT MAX(trade_date) FROM daily_prices
+                                     WHERE symbol = h.symbol)
          WHERE h.user_id = #{userId}
+           AND h.quantity &gt; 0
          ORDER BY h.symbol
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO holdings
+            (user_id, portfolio_id, symbol, quantity, avg_price, avg_fx_rate,
+             total_fee, realized_pnl_krw, recalculated_at)
+        VALUES
+            (#{userId}, #{portfolioId}, #{symbol}, #{quantity}, #{avgPrice}, #{avgFxRate},
+             #{totalFee}, #{realizedPnlKrw}, CURRENT_TIMESTAMP(3))
+        ON DUPLICATE KEY UPDATE
+            quantity         = VALUES(quantity),
+            avg_price        = VALUES(avg_price),
+            avg_fx_rate      = VALUES(avg_fx_rate),
+            total_fee        = VALUES(total_fee),
+            realized_pnl_krw = VALUES(realized_pnl_krw),
+            recalculated_at  = CURRENT_TIMESTAMP(3)
+    </insert>
+
+    <select id="sumMarketValueKrw" resultType="java.math.BigDecimal">
+        SELECT ROUND(SUM(h.quantity * p.close * #{fxRate}), 2)
+          FROM holdings h
+          LEFT JOIN daily_prices p
+                 ON p.symbol = h.symbol
+                AND p.trade_date = (SELECT MAX(trade_date) FROM daily_prices
+                                     WHERE symbol = h.symbol)
+         WHERE h.user_id = #{userId}
+           AND h.quantity &gt; 0
     </select>
 
 </mapper>

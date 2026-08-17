@@ -1,13 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- 개발명세서(MVC): "TransactionMapper XML id 일치" -->
+<!--
+  TransactionMapper.xml — 매매 기록 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    삭제는 진짜로 지우지 않고 표시만 남긴다. 조회는 그 표시를 걸러서 본다.
+-->
 <mapper namespace="com.example.mijang.portfolio.mapper.TransactionMapper">
+
+    <!-- record 는 생성자로 매핑되고 MyBatis 가 이름이 아니라 순서로 맞춘다.
+         아래 컬럼 순서가 Transaction 선언 순서와 정확히 같아야 한다 -->
+    <sql id="cols">
+        id, user_id, portfolio_id, symbol, side, quantity, price, fx_rate, fee,
+        traded_at, trade_date, buy_reason, target_price, sentiment
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO transactions
+            (user_id, portfolio_id, symbol, side, quantity, price, fx_rate, fee,
+             traded_at, trade_date, buy_reason, target_price, sentiment)
+        VALUES
+            (#{userId}, #{portfolioId}, #{symbol}, #{side}, #{quantity}, #{price},
+             #{fxRate}, #{fee}, #{tradedAt}, #{tradeDate},
+             #{buyReason}, #{targetPrice}, #{sentiment})
+    </insert>
+
+    <select id="findLastInsertedId" resultType="java.lang.Long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+    <!-- 정렬이 계산 결과를 좌우한다(2.2).
+         같은 날 여러 건은 id 순으로 이어 붙여 입력 순서를 유지한다 -->
+    <select id="findForRecalc" resultType="com.example.mijang.portfolio.domain.Transaction">
+        SELECT <include refid="cols"/>
+          FROM transactions
+         WHERE user_id = #{userId}
+           AND symbol  = #{symbol}
+           AND deleted_at IS NULL
+         ORDER BY trade_date, id
+    </select>
+
+    <select id="findByUser" resultType="com.example.mijang.portfolio.dto.TransactionResponse">
+        SELECT t.id, t.symbol, s.name, t.side, t.quantity, t.price, t.fx_rate AS fxRate,
+               t.fee, t.traded_at AS tradedAt, t.trade_date AS tradeDate,
+               t.buy_reason AS buyReason, t.target_price AS targetPrice, t.sentiment
+          FROM transactions t
+          JOIN stocks s ON s.symbol = t.symbol
+         WHERE t.user_id = #{userId}
+           AND t.deleted_at IS NULL
+        <if test="symbol != null"> AND t.symbol = #{symbol} </if>
+         ORDER BY t.trade_date DESC, t.id DESC
+         LIMIT #{limit} OFFSET #{offset}
+    </select>
 
     <select id="countByUser" resultType="long">
         SELECT COUNT(*)
           FROM transactions
          WHERE user_id = #{userId}
+           AND deleted_at IS NULL
+        <if test="symbol != null"> AND symbol = #{symbol} </if>
+    </select>
+
+    <!-- user_id 조건이 없으면 남의 기록을 읽을 수 있다 -->
+    <select id="findById" resultType="com.example.mijang.portfolio.domain.Transaction">
+        SELECT <include refid="cols"/>
+          FROM transactions
+         WHERE id = #{id}
+           AND user_id = #{userId}
+           AND deleted_at IS NULL
+    </select>
+
+    <!-- 지우지 않는다(2.9). 이미 지운 것을 다시 눌러도 시각이 밀리지 않게 조건을 건다 -->
+    <update id="softDelete">
+        UPDATE transactions
+           SET deleted_at = CURRENT_TIMESTAMP(3)
+         WHERE id = #{id}
+           AND user_id = #{userId}
+           AND deleted_at IS NULL
+    </update>
+
+    <select id="findSymbolsByUser" resultType="string">
+        SELECT DISTINCT symbol
+          FROM transactions
+         WHERE user_id = #{userId}
+           AND deleted_at IS NULL
     </select>
 
 </mapper>
