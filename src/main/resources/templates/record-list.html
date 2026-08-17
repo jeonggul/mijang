@@ -115,20 +115,15 @@
       </svg>
     </button>
 
+    <!-- 주가손익·환차손익 분해는 PROFIT-03 이고 dashboard 범위다. 자리만 두고 비워 둔다 -->
     <ul class="stat-list">
-      <li><span class="k">종목 수</span><span class="v num">5</span></li>
-      <li><span class="k">주가손익</span><span class="v num rise">+822,400</span></li>
-      <li><span class="k">환차손익</span><span class="v num fall">−318,900</span></li>
+      <li><span class="k">종목 수</span><span class="v num" id="rl-count">—</span></li>
+      <li><span class="k">주가손익</span><span class="v num">—</span></li>
+      <li><span class="k">환차손익</span><span class="v num">—</span></li>
     </ul>
 
     <p class="nav-label">보유 종목</p>
-    <ul class="holdings-nav">
-      <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="pc rise">+6.7%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="pc rise">+17.4%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="pc rise">+2.1%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="pc fall">−11.3%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="pc fall">−0.8%</span></a></li>
-    </ul>
+    <ul class="holdings-nav" id="rl-nav"><!-- 스크립트가 채운다 --></ul>
 
     <a class="btn-record" th:href="@{/record-new}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -147,103 +142,30 @@
     </div>
 
     <div class="row-between" style="margin-bottom:14px">
-      <div class="pills" data-toggle-group>
+      <!-- data-side-filter · data-period 는 스크립트가 두 그룹을 구분하는 표식이다 -->
+      <div class="pills" data-toggle-group data-side-filter>
         <button type="button" data-value="ALL" aria-pressed="true">전체</button>
         <button type="button" data-value="BUY" aria-pressed="false">매수</button>
         <button type="button" data-value="SELL" aria-pressed="false">매도</button>
       </div>
+      <span class="sub num" id="tx-count" style="margin-left:12px">—</span>
       <span class="spacer" style="flex:1"></span>
-      <div class="pills" data-toggle-group>
-        <button type="button" data-value="2025" aria-pressed="true">2025년</button>
-        <button type="button" data-value="ALL" aria-pressed="false">전체 기간</button>
+      <!-- 연도는 스크립트가 올해로 채운다. 화면에 연도를 박아 두면 해가 바뀔 때 조용히 틀려진다.
+           기본값은 "전체 기간" 이다 — 기본이 연도 필터면 지난해 기록이 사라진 것처럼 보인다 -->
+      <div class="pills" data-toggle-group data-period>
+        <button type="button" data-value="YEAR" aria-pressed="false" id="tx-year">올해</button>
+        <button type="button" data-value="ALL" aria-pressed="true">전체 기간</button>
       </div>
     </div>
 
-      <article class="record-card">
-        <header>
-          <span class="badge badge-rise">매수</span>
-          <b class="tk">NVDA</b><span class="nm">NVIDIA Corp.</span>
-          <time class="date">2025-07-22</time>
-          <span class="spacer"></span>
-          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
-        </header>
-        <dl class="figures">
-          <div><dt>수량</dt><dd class="num">3.0주</dd></div>
-          <div><dt>단가</dt><dd class="num">$121.40</dd></div>
-          <div><dt>적용 환율</dt><dd class="num">1,391.20원</dd></div>
-          <div><dt>수수료</dt><dd class="num">$0.18</dd></div>
-          <div><dt>원화 환산</dt><dd class="num">506,660원</dd></div>
-        </dl>
-        <p class="memo"><span class="k">사유</span><span class="body">데이터센터 수요가 이어지는 구간이라 판단</span><span class="badge badge-line">목표 $165.00</span><span class="badge">확신</span></p>
-      </article>
-      <article class="record-card">
-        <header>
-          <span class="badge badge-fall">매도</span>
-          <b class="tk">TSLA</b><span class="nm">Tesla Inc.</span>
-          <time class="date">2025-06-30</time>
-          <span class="spacer"></span>
-          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
-        </header>
-        <dl class="figures">
-          <div><dt>수량</dt><dd class="num">2.0주</dd></div>
-          <div><dt>단가</dt><dd class="num">$248.30</dd></div>
-          <div><dt>적용 환율</dt><dd class="num">1,376.40원</dd></div>
-          <div><dt>수수료</dt><dd class="num">$0.25</dd></div>
-          <div><dt>원화 환산</dt><dd class="num">683,671원</dd></div>
-        </dl>
-        <p class="memo"><span class="k">사유</span><span class="body">비중이 과해져 일부만 줄임</span><span class="badge">중립</span></p>
-      </article>
-      <article class="record-card">
-        <header>
-          <span class="badge badge-rise">매수</span>
-          <b class="tk">MSFT</b><span class="nm">Microsoft Corp.</span>
-          <time class="date">2025-05-19</time>
-          <span class="spacer"></span>
-          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
-        </header>
-        <dl class="figures">
-          <div><dt>수량</dt><dd class="num">2.0주</dd></div>
-          <div><dt>단가</dt><dd class="num">$398.10</dd></div>
-          <div><dt>적용 환율</dt><dd class="num">1,368.80원</dd></div>
-          <div><dt>수수료</dt><dd class="num">$0.40</dd></div>
-          <div><dt>원화 환산</dt><dd class="num">1,089,882원</dd></div>
-        </dl>
-        <p class="memo"><span class="k">사유</span><span class="body">클라우드 성장률이 다시 올라온 것을 확인</span><span class="badge badge-line">목표 $470.00</span><span class="badge">확신</span></p>
-      </article>
-      <article class="record-card">
-        <header>
-          <span class="badge badge-rise">매수</span>
-          <b class="tk">SCHD</b><span class="nm">Schwab US Dividend</span>
-          <time class="date">2025-04-02</time>
-          <span class="spacer"></span>
-          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
-        </header>
-        <dl class="figures">
-          <div><dt>수량</dt><dd class="num">22.0주</dd></div>
-          <div><dt>단가</dt><dd class="num">$79.40</dd></div>
-          <div><dt>적용 환율</dt><dd class="num">1,402.50원</dd></div>
-          <div><dt>수수료</dt><dd class="num">$0.44</dd></div>
-          <div><dt>원화 환산</dt><dd class="num">2,450,047원</dd></div>
-        </dl>
-        <p class="memo"><span class="k">사유</span><span class="body">배당 적립 목적. 환율이 높아 분할 매수</span><span class="badge">불안</span></p>
-      </article>
-      <article class="record-card">
-        <header>
-          <span class="badge badge-rise">매수</span>
-          <b class="tk">AAPL</b><span class="nm">Apple Inc.</span>
-          <time class="date">2025-03-14</time>
-          <span class="spacer"></span>
-          <a class="btn btn-sm" th:href="@{/retrospect}">회고 보기</a>
-        </header>
-        <dl class="figures">
-          <div><dt>수량</dt><dd class="num">12.0주</dd></div>
-          <div><dt>단가</dt><dd class="num">$178.20</dd></div>
-          <div><dt>적용 환율</dt><dd class="num">1,382.50원</dd></div>
-          <div><dt>수수료</dt><dd class="num">$0.71</dd></div>
-          <div><dt>원화 환산</dt><dd class="num">2,955,100원</dd></div>
-        </dl>
-        <p class="memo"><span class="k">사유</span><span class="body">실적 호조가 이어지고 서비스 매출 비중이 커지는 중</span><span class="badge badge-line">목표 $218.00</span><span class="badge">확신</span></p>
-      </article>
+      <div id="tx-cards"><!-- 스크립트가 채운다 --></div>
+
+      <nav class="pager" id="tx-pager" style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:16px" hidden>
+        <button class="btn btn-sm" type="button" id="tx-prev">이전</button>
+        <span class="sub num" id="tx-page">1 / 1</span>
+        <button class="btn btn-sm" type="button" id="tx-next">다음</button>
+      </nav>
+
 
     <p class="note" style="text-align:center;margin-top:16px">
       기록을 수정하거나 삭제하면 보유 현황과 과거 스냅샷이 다시 계산됩니다
@@ -252,5 +174,265 @@
 </div>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 매매 기록 목록 (ACCOUNT-06) · 삭제 (2.9)
+   프로토타입이 표가 아니라 카드라 카드로 그린다. 판단 메모가 한 줄로 들어가야 해서
+   표보다 카드가 맞다 — 이 서비스의 차별점이 그 메모다.
+
+   페이징은 서버가 하고, 매수/매도·기간 필터는 받아 온 한 페이지 안에서 거른다.
+   그래서 필터를 켜면 "표시 M건 / 전체 N건" 으로 무엇을 세고 있는지 밝힌다. */
+(function () {
+  var box = document.getElementById("tx-cards");
+  if (!box) return;
+
+  var SIZE = 20;
+  var page = 0;
+  var totalPages = 1;
+  var totalElements = 0;
+  var side = "ALL";
+  var period = "ALL";
+  var year = new Date().getFullYear();
+
+  var yearBtn = document.getElementById("tx-year");
+  if (yearBtn) yearBtn.textContent = year + "년";
+
+  function money(v, digits) {
+    return v == null ? "—" : Number(v).toLocaleString("ko-KR",
+      { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+
+  /* 원화 환산 — 서버는 체결 금액을 따로 주지 않는다. 수량·단가·환율이 다 있으므로 여기서 곱한다.
+     수수료는 뺀 체결 금액 기준이다(Transaction.amountUsd 와 같은 정의). 수수료는 옆 칸에 따로 있다 */
+  function amountKrw(tx) {
+    if (tx.quantity == null || tx.price == null || tx.fxRate == null) return null;
+    return Number(tx.quantity) * Number(tx.price) * Number(tx.fxRate);
+  }
+
+  var SENTIMENT = { CONFIDENT: "확신", NEUTRAL: "중립", ANXIOUS: "불안", FOMO: "조급" };
+
+  function card(tx) {
+    var buy = tx.side === "BUY";
+    var art = document.createElement("article");
+    art.className = "record-card";
+    art.dataset.side = tx.side;
+    art.dataset.year = (tx.tradeDate || "").slice(0, 4);
+
+    /* 뼈대만 세우고 값은 textContent 로 넣는다. 종목명·사유는 사용자와 벤더가 준 글자다 */
+    art.innerHTML =
+      '<header>' +
+        '<span class="badge"></span>' +
+        '<b class="tk"></b><span class="nm"></span>' +
+        '<time class="date"></time>' +
+        '<span class="spacer"></span>' +
+        '<button class="btn btn-sm" type="button">삭제</button>' +
+      '</header>' +
+      '<dl class="figures">' +
+        '<div><dt>수량</dt><dd class="num"></dd></div>' +
+        '<div><dt>단가</dt><dd class="num"></dd></div>' +
+        '<div><dt>적용 환율</dt><dd class="num"></dd></div>' +
+        '<div><dt>수수료</dt><dd class="num"></dd></div>' +
+        '<div><dt>원화 환산</dt><dd class="num"></dd></div>' +
+      '</dl>';
+
+    var badge = art.querySelector(".badge");
+    badge.className = "badge " + (buy ? "badge-rise" : "badge-fall");
+    badge.textContent = buy ? "매수" : "매도";
+    art.querySelector(".tk").textContent = tx.symbol;
+    art.querySelector(".nm").textContent = tx.name || "";
+    var t = art.querySelector("time");
+    t.dateTime = tx.tradeDate;
+    t.textContent = tx.tradeDate;
+    art.querySelector("button").dataset.txId = tx.id;
+
+    var dd = art.querySelectorAll("dd");
+    dd[0].textContent = money(tx.quantity, 1) + "주";
+    dd[1].textContent = "$" + money(tx.price, 2);
+    dd[2].textContent = money(tx.fxRate, 2) + "원";
+    dd[3].textContent = "$" + money(tx.fee, 2);
+    var krw = amountKrw(tx);
+    dd[4].textContent = krw == null ? "—" : money(krw, 0) + "원";
+
+    /* 판단 메모는 있을 때만 붙인다. 없는 자리를 빈 칸으로 남기면 지저분하다 */
+    if (tx.buyReason || tx.targetPrice != null || tx.sentiment) {
+      var memo = document.createElement("p");
+      memo.className = "memo";
+      var k = document.createElement("span");
+      k.className = "why";
+      k.textContent = tx.buyReason || "";
+      memo.appendChild(k);
+      if (tx.targetPrice != null) {
+        var tg = document.createElement("span");
+        tg.className = "badge badge-line";
+        tg.textContent = "목표 $" + money(tx.targetPrice, 2);
+        memo.appendChild(tg);
+      }
+      if (tx.sentiment) {
+        var st = document.createElement("span");
+        st.className = "badge";
+        st.textContent = SENTIMENT[tx.sentiment] || tx.sentiment;
+        memo.appendChild(st);
+      }
+      art.appendChild(memo);
+    }
+    return art;
+  }
+
+  function empty(message) {
+    var p = document.createElement("p");
+    p.className = "note";
+    p.style.padding = "24px";
+    p.style.textAlign = "center";
+    p.textContent = message;
+    return p;
+  }
+
+  /* 필터는 이 페이지 안에서만 건다. 서버 요청은 그대로다 */
+  function applyFilter() {
+    var shown = 0;
+    Array.prototype.forEach.call(box.children, function (el) {
+      if (!el.classList || !el.classList.contains("record-card")) return;
+      var okSide = side === "ALL" || el.dataset.side === side;
+      var okYear = period === "ALL" || el.dataset.year === String(year);
+      el.hidden = !(okSide && okYear);
+      if (!el.hidden) shown++;
+    });
+
+    var count = document.getElementById("tx-count");
+    if (count) {
+      var filtering = side !== "ALL" || period !== "ALL";
+      count.textContent = filtering
+        ? "표시 " + shown + "건 / 전체 " + totalElements + "건"
+        : totalElements + "건";
+    }
+    return shown;
+  }
+
+  function renderPager() {
+    var pager = document.getElementById("tx-pager");
+    if (!pager) return;
+    pager.hidden = totalPages <= 1;
+    document.getElementById("tx-page").textContent = (page + 1) + " / " + totalPages;
+    document.getElementById("tx-prev").disabled = page === 0;
+    document.getElementById("tx-next").disabled = page >= totalPages - 1;
+  }
+
+  async function load() {
+    var res = await fetch("/api/transactions?page=" + page + "&size=" + SIZE);
+    if (res.status === 401) { location.href = "/login"; return; }
+    var out = await res.json();
+    box.replaceChildren();
+
+    if (!out.success) {
+      box.appendChild(empty("불러오지 못했습니다"));
+      totalElements = 0; totalPages = 1;
+      renderPager();
+      applyFilter();
+      return;
+    }
+
+    var data = out.data || {};
+    var rows = data.content || [];
+    totalElements = data.totalElements == null ? rows.length : data.totalElements;
+    totalPages = Math.max(1, data.totalPages == null
+      ? Math.ceil(totalElements / SIZE) : data.totalPages);
+
+    if (rows.length === 0) {
+      box.appendChild(empty("아직 기록이 없습니다. 첫 매매를 남겨보세요."));
+      renderPager();
+      applyFilter();
+      return;
+    }
+
+    rows.forEach(function (tx) { box.appendChild(card(tx)); });
+    renderPager();
+    if (applyFilter() === 0) {
+      box.appendChild(empty("이 조건에 맞는 기록이 이 페이지에 없습니다."));
+    }
+  }
+
+  /* 지운 뒤 보유 현황이 다시 계산된다(2.2). 목록만 새로 그리면 된다.
+     그 페이지의 마지막 한 건을 지웠으면 빈 페이지가 남으므로 한 장 앞으로 물러난다 */
+  box.addEventListener("click", async function (e) {
+    var btn = e.target.closest("[data-tx-id]");
+    if (!btn) return;
+    if (!confirm("이 기록을 지울까요? 보유 현황이 다시 계산됩니다.")) return;
+    var res = await fetch("/api/transactions/" + btn.dataset.txId, { method: "DELETE" });
+    if (res.status === 401) { location.href = "/login"; return; }
+    if (page > 0 && box.querySelectorAll(".record-card").length === 1) page--;
+    load();
+  });
+
+  var prev = document.getElementById("tx-prev");
+  if (prev) prev.addEventListener("click", function () {
+    if (page > 0) { page--; load(); }
+  });
+  var next = document.getElementById("tx-next");
+  if (next) next.addEventListener("click", function () {
+    if (page < totalPages - 1) { page++; load(); }
+  });
+
+  var sideGroup = document.querySelector("[data-side-filter]");
+  if (sideGroup) sideGroup.addEventListener("mj:change", function (e) {
+    side = e.detail;
+    redrawFilter();
+  });
+  var periodGroup = document.querySelector("[data-period]");
+  if (periodGroup) periodGroup.addEventListener("mj:change", function (e) {
+    period = e.detail === "YEAR" ? "YEAR" : "ALL";
+    redrawFilter();
+  });
+
+  /* 필터를 다시 걸 때 "조건에 맞는 기록 없음" 안내가 쌓이지 않게 먼저 걷어낸다 */
+  function redrawFilter() {
+    Array.prototype.slice.call(box.querySelectorAll(".note")).forEach(function (n) {
+      n.remove();
+    });
+    if (box.querySelectorAll(".record-card").length === 0) return;
+    if (applyFilter() === 0) {
+      box.appendChild(empty("이 조건에 맞는 기록이 이 페이지에 없습니다."));
+    }
+  }
+
+  load();
+})();
+
+/* 사이드바 보유 요약. 목록 화면에서도 지금 무엇을 들고 있는지 보이는 편이 낫다 */
+(function () {
+  var nav = document.getElementById("rl-nav");
+  if (!nav) return;
+
+  (async function () {
+    var res = await fetch("/api/portfolio/holdings");
+    if (!res.ok) return;
+    var out = await res.json();
+    if (!out.success) return;
+
+    var held = (out.data || []).filter(function (h) { return Number(h.quantity) > 0; });
+    var count = document.getElementById("rl-count");
+    if (count) count.textContent = String(held.length);
+
+    nav.replaceChildren();
+    held.forEach(function (h) {
+      var cost = (h.avgPrice == null || h.avgFxRate == null) ? null
+        : Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+      var r = (h.evalPnlKrw == null || !cost) ? null : (Number(h.evalPnlKrw) / cost) * 100;
+
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+      var tk = document.createElement("span");
+      tk.className = "tk";
+      tk.textContent = h.symbol;
+      var pc = document.createElement("span");
+      pc.className = "pc" + (r == null ? "" : (r >= 0 ? " rise" : " fall"));
+      pc.textContent = r == null ? "—" : (r >= 0 ? "+" : "−") + Math.abs(r).toFixed(1) + "%";
+      a.appendChild(tk); a.appendChild(pc);
+      li.appendChild(a);
+      nav.appendChild(li);
+    });
+  })();
+})();
+</script>
+
 </body>
 </html>

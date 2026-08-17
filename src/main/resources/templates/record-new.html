@@ -113,26 +113,28 @@
           <p>증권사에서 체결된 내역을 직접 입력합니다. 미장은 주문을 대신하지 않습니다.</p></div>
       </div>
 
-      <form data-go="/record-list">
+      <form id="record-form">
 
         <section class="card card-pad" style="margin-bottom:14px">
           <h2 class="form-sec">거래 정보</h2>
           <div class="field-row">
             <div class="field" style="flex:1.9">
               <label for="sym">종목</label>
-              <button class="sym-picker" type="button" data-open="pick-modal">
-                <span class="tk">AAPL</span><span class="nm">Apple Inc.</span>
+              <button class="sym-picker" type="button" data-open="pick-modal" id="sym-btn" data-symbol="">
+                <span class="tk" id="sym-tk">종목 선택</span><span class="nm" id="sym-nm"></span>
                 <span class="spacer"></span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
                   <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
               </button>
-              <p class="hint">NASDAQ · 보유 중 12주</p>
+              <p class="hint" id="sym-hint">기록할 종목을 먼저 고릅니다</p>
             </div>
             <div class="field">
               <label>매매 구분</label>
-              <div class="pills" data-toggle-group>
+              <!-- data-side 는 폼이 값을 읽어가는 표식이다. ui.js 가 aria-pressed 를 뒤집고,
+                   제출할 때 이 그룹 안에서 눌린 버튼의 data-value 를 side 로 보낸다 -->
+              <div class="pills" data-toggle-group data-side>
                 <button type="button" data-value="BUY" aria-pressed="true">매수</button>
                 <button type="button" data-value="SELL" aria-pressed="false">매도</button>
               </div>
@@ -140,7 +142,7 @@
             </div>
             <div class="field">
               <label for="dt">체결일</label>
-              <input id="dt" type="date" value="2025-03-14">
+              <input id="dt" type="date">
               <p class="hint">미국 현지 거래일 기준</p>
             </div>
           </div>
@@ -151,21 +153,21 @@
           <div class="field-row">
             <div class="field">
               <label for="qty">수량</label>
-              <input id="qty" type="number" value="4.5" step="0.000001">
+              <input id="qty" type="number" step="0.000001" placeholder="0">
               <p class="hint">소수점 매수 가능</p>
             </div>
             <div class="field">
               <label for="prc">체결 단가 (USD)</label>
-              <input id="prc" type="number" value="178.20" step="0.0001">
+              <input id="prc" type="number" step="0.0001" placeholder="0">
             </div>
             <div class="field">
               <label for="fx">적용 환율</label>
-              <input id="fx" type="number" value="1382.50" step="0.0001">
+              <input id="fx" type="number" step="0.0001" placeholder="비우면 그날 환율">
               <p class="hint accent">체결일 기준 자동 입력 · 수정 가능</p>
             </div>
             <div class="field">
               <label for="fee">수수료 (USD)</label>
-              <input id="fee" type="number" value="0.71" step="0.0001">
+              <input id="fee" type="number" step="0.0001" placeholder="0">
             </div>
           </div>
         </section>
@@ -178,18 +180,20 @@
 
           <div class="field" style="margin-bottom:14px">
             <label for="why">매수 사유</label>
-            <textarea id="why" rows="4">실적 호조가 이어지고 서비스 매출 비중이 커지는 중. 인도 생산 확대로 공급망 리스크도 줄어든다고 판단했다. 환율이 1,400원대라 부담은 있지만 분할로 접근한다.</textarea>
+            <textarea id="why" rows="4" maxlength="2000"
+                      placeholder="왜 샀는지 남겨두면 나중에 되돌아볼 수 있습니다"></textarea>
             <p class="hint">비워두면 저장은 되지만 회고에 사용할 수 없습니다</p>
           </div>
 
           <div class="field-row">
             <div class="field">
               <label for="tgt">목표가 (USD)</label>
-              <input id="tgt" type="number" value="218.00" step="0.0001">
+              <input id="tgt" type="number" step="0.0001" placeholder="0">
             </div>
             <div class="field" style="flex:2.3">
               <label>당시 심리</label>
-              <div class="pills" data-toggle-group>
+              <!-- data-sentiment 도 같은 표식이다. 이게 없으면 심리가 서버에 전달되지 않는다 -->
+              <div class="pills" data-toggle-group data-sentiment>
                 <button type="button" data-value="CONFIDENT" aria-pressed="true">확신</button>
                 <button type="button" data-value="NEUTRAL" aria-pressed="false">관망</button>
                 <button type="button" data-value="ANXIOUS" aria-pressed="false">불안</button>
@@ -202,7 +206,8 @@
 
         <div class="modal-actions" style="margin:0">
           <a class="btn" th:href="@{/record-list}">취소</a>
-          <button class="btn btn-primary" type="button" data-open="recalc-modal">기록 저장</button>
+          <button class="btn btn-primary" type="submit" id="save-btn">기록 저장</button>
+          <p class="form-error" id="form-error" role="alert" hidden></p>
         </div>
       </form>
     </div>
@@ -210,23 +215,25 @@
     <!-- 저장 전에 무엇이 어떻게 바뀌는지 먼저 보여준다 -->
     <aside class="stack-v">
       <section class="card card-pad">
-        <h2 class="form-sec">저장 시 반영 결과 <span class="spacer"></span>
-          <span class="badge badge-line">미리보기</span></h2>
+        <h2 class="form-sec">현재 보유 현황 <span class="spacer"></span>
+          <span class="badge badge-line">저장 전</span></h2>
 
-        <p class="prev-group">AAPL 보유 현황</p>
+        <p class="prev-group" id="prev-symbol">종목을 고르면 표시됩니다</p>
         <ul class="prev-list">
-          <li><span class="k">보유 수량</span><span class="v num">12주 → <b>16.5주</b></span></li>
-          <li><span class="k">평균단가</span><span class="v num">$178.20 → <b>$183.16</b></span></li>
-          <li><span class="k">평균매수환율</span><span class="v num">1,382.5 → <b>1,389.2</b></span></li>
+          <li><span class="k">보유 수량</span><span class="v num" id="prev-qty">—</span></li>
+          <li><span class="k">평균단가</span><span class="v num" id="prev-avg">—</span></li>
+          <li><span class="k">평균매수환율</span><span class="v num" id="prev-fx">—</span></li>
         </ul>
 
         <hr class="rule">
 
         <p class="prev-group">포트폴리오 전체</p>
         <ul class="prev-list">
-          <li><span class="k">총 평가금액</span><span class="v num">12,847,300 → <b>14,092,000원</b></span></li>
+          <li><span class="k">총 평가금액</span><span class="v num" id="prev-total">—</span></li>
         </ul>
-        <p class="prev-delta"><span class="k">이번 기록으로</span><b class="num rise">+1,244,700원</b></p>
+        <!-- 저장 후 값은 서버가 전체 재계산해서 준다(2.2). 화면에서 미리 계산하면
+             평단가 계산이 서버와 화면 두 곳에 생긴다 — 2.10 이 막으려던 바로 그 상황이다 -->
+        <p class="note">저장하면 서버가 전체 기록을 다시 훑어 재계산합니다.</p>
       </section>
 
       <p class="info">미장은 주문을 실행하지 않습니다. 증권사에서 이미 체결된 내역을 기록하는 화면입니다.</p>
@@ -239,42 +246,19 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pm-t">
     <h2 id="pm-t">종목 선택</h2>
     <p>매매 기록을 남길 종목을 찾습니다.</p>
-    <div class="field"><input type="search" value="app" aria-label="티커 또는 종목명"></div>
-    <ul class="list pick-list">
-      <li><button type="button"><span class="tk">AAPL</span><span class="nm">Apple Inc.</span>
-        <span class="meta">NASDAQ</span><span class="badge badge-line">보유 12주</span></button></li>
-      <li><button type="button"><span class="tk">APP</span><span class="nm">AppLovin Corp.</span>
-        <span class="meta">NASDAQ</span></button></li>
-      <li><button type="button"><span class="tk">APH</span><span class="nm">Amphenol Corp.</span>
-        <span class="meta">NYSE</span></button></li>
-      <li><button type="button"><span class="tk">APO</span><span class="nm">Apollo Global Mgmt</span>
-        <span class="meta">NYSE</span></button></li>
-    </ul>
+    <div class="field">
+      <input id="pick-q" type="search" autocomplete="off" placeholder="티커 또는 종목명"
+             aria-label="티커 또는 종목명" aria-controls="pick-list">
+    </div>
+    <ul class="list pick-list" id="pick-list"><!-- 스크립트가 채운다 --></ul>
     <p class="note">비활성 종목(상장폐지·티커 변경)은 신규 매수 기록에 사용할 수 없습니다.</p>
     <div class="modal-actions">
-      <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-primary" type="button" data-close>선택</button>
+      <button class="btn" type="button" data-close>닫기</button>
     </div>
   </div>
 </div>
 
 <!-- SR-006-3 재계산 안내 -->
-<div class="overlay" id="recalc-modal" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rm-t">
-    <h2 id="rm-t">과거 기록이 추가됩니다</h2>
-    <p>2025-03-14 거래를 입력하셨습니다. 그 날짜 이후의 손익이 다시 계산됩니다.</p>
-    <ul class="kv">
-      <li><span class="k">재계산 대상 기간</span><span class="v num">2025-03-14 ~ 오늘</span></li>
-      <li><span class="k">다시 만드는 스냅샷</span><span class="v num">178일</span></li>
-      <li><span class="k">예상 소요</span><span class="v num">약 20초</span></li>
-    </ul>
-    <p class="note">백그라운드에서 처리되며 완료되면 알림을 보냅니다. 그동안 다른 화면을 이용하셔도 됩니다.</p>
-    <div class="modal-actions">
-      <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-primary" type="button" data-go="/record-list">저장하고 재계산</button>
-    </div>
-  </div>
-</div>
 
 <!-- SR-006-2 기록 삭제 확인 -->
 <div class="overlay" id="del-modal" hidden>
@@ -296,5 +280,229 @@
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 거래 등록 (ACCOUNT-01~03) */
+(function () {
+  var form = document.getElementById("record-form");
+  if (!form) return;
+  var err = document.getElementById("form-error");
+  var save = document.getElementById("save-btn");
+
+  /* 오늘 날짜를 기본값으로 넣는다. 대부분의 기록은 당일 것이다 */
+  var dt = document.getElementById("dt");
+  if (dt) dt.value = new Date().toISOString().slice(0, 10);
+
+  /* 토글 버튼의 현재 값. aria-pressed 가 곧 상태다 */
+  function pressed(sel, fallback) {
+    var on = document.querySelector(sel + ' [aria-pressed="true"]');
+    return on ? on.dataset.value : fallback;
+  }
+
+  /* 빈 칸은 보내지 않는다. 서버가 @Positive 로 막으므로 0 이나 "" 를 보내면 거절당한다 */
+  function num(id) {
+    var el = document.getElementById(id);
+    if (!el) return null;
+    var v = el.value.trim();
+    return v === "" ? null : v;
+  }
+
+  function show(message) {
+    err.textContent = message;
+    err.hidden = false;
+    save.disabled = false;
+  }
+
+  /* 종목 선택 모달이 고른 티커를 버튼에 담아 둔다. 폼은 그 값만 읽는다 */
+  document.addEventListener("mj:symbol-pick", function (e) {
+    var btn = document.getElementById("sym-btn");
+    btn.dataset.symbol = e.detail.symbol;
+    /* textContent 로 통째로 갈아치우면 안에 있는 돋보기 아이콘까지 지워진다.
+       티커·종목명 칸만 각각 채운다 */
+    document.getElementById("sym-tk").textContent = e.detail.symbol;
+    document.getElementById("sym-nm").textContent = e.detail.name || "";
+  });
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    err.hidden = true;
+    save.disabled = true;
+
+    var symbol = document.getElementById("sym-btn").dataset.symbol;
+    if (!symbol) { show("종목을 선택해주세요"); return; }
+
+    /* 서버는 LocalDateTime 을 받는다. 날짜만 고르므로 장 마감 시각을 붙인다 */
+    var body = {
+      symbol: symbol,
+      side: pressed("[data-side]", "BUY"),
+      quantity: num("qty"),
+      price: num("prc"),
+      fxRate: num("fx"),
+      fee: num("fee"),
+      tradedAt: document.getElementById("dt").value + "T16:00:00",
+      buyReason: document.getElementById("why").value.trim() || null,
+      targetPrice: num("tgt"),
+      sentiment: pressed("[data-sentiment]", null)
+    };
+
+    var res = await fetch("/api/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 401) { location.href = "/login"; return; }
+    var out = await res.json();
+    /* 보유보다 많이 팔면 서버가 422 로 막는다(2.5). 그 문구를 그대로 보여준다 */
+    if (!out.success) { show(out.error ? out.error.message : "저장하지 못했습니다"); return; }
+    location.href = "/record-list";
+  });
+})();
+
+/* 종목 선택 모달 (SR-006-4)
+   프로토타입은 고정된 네 줄이었고 mj:symbol-pick 을 아무도 쏘지 않았다.
+   그래서 폼이 티커를 영원히 못 받아 저장 자체가 되지 않았다. 실제 검색에 연결한다. */
+(function () {
+  var modal = document.getElementById("pick-modal");
+  var input = document.getElementById("pick-q");
+  var list = document.getElementById("pick-list");
+  if (!modal || !input || !list) return;
+
+  var timer = null;
+
+  function message(text) {
+    list.replaceChildren();
+    var li = document.createElement("li");
+    li.className = "note";
+    li.style.padding = "14px";
+    li.textContent = text;
+    list.appendChild(li);
+  }
+
+  function draw(items) {
+    if (items.length === 0) { message("결과가 없습니다."); return; }
+    list.replaceChildren();
+    items.forEach(function (s) {
+      var li = document.createElement("li");
+      var btn = document.createElement("button");
+      btn.type = "button";
+
+      var tk = document.createElement("span");
+      tk.className = "tk";
+      tk.textContent = s.symbol;
+      var nm = document.createElement("span");
+      nm.className = "nm";
+      nm.textContent = s.nameKo || s.name || "";
+      var meta = document.createElement("span");
+      meta.className = "meta";
+      meta.textContent = s.exchange || "";
+      btn.appendChild(tk); btn.appendChild(nm); btn.appendChild(meta);
+
+      /* 상장폐지·거래불가 종목은 새 기록에 쓸 수 없다(2.6). 서버도 422 로 막지만
+         고를 수 있게 두면 다 적고 나서야 거절당한다 */
+      if (s.active === false) {
+        btn.disabled = true;
+        var bad = document.createElement("span");
+        bad.className = "badge badge-line";
+        bad.textContent = "거래불가";
+        btn.appendChild(bad);
+      } else {
+        btn.dataset.symbol = s.symbol;
+        btn.dataset.name = s.nameKo || s.name || "";
+      }
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+
+  async function search() {
+    var q = input.value.trim();
+    if (!q) { list.replaceChildren(); return; }
+    try {
+      var res = await fetch("/api/stocks/search?q=" + encodeURIComponent(q));
+      if (res.status === 401) { location.href = "/login"; return; }
+      var body = await res.json();
+      if (!body.success) { message("검색하지 못했습니다."); return; }
+      draw((body.data || []).slice(0, 20));
+    } catch (e) {
+      message("검색하지 못했습니다.");
+    }
+  }
+
+  /* 디바운스. 글자마다 보내면 타자 속도만큼 요청이 나간다 */
+  input.addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(search, 200);
+  });
+
+  list.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-symbol]");
+    if (!btn) return;
+    document.dispatchEvent(new CustomEvent("mj:symbol-pick", {
+      detail: { symbol: btn.dataset.symbol, name: btn.dataset.name },
+    }));
+    modal.hidden = true;
+  });
+
+  /* 열릴 때 바로 칠 수 있게 커서를 넣어 준다 */
+  document.addEventListener("click", function (e) {
+    if (e.target.closest('[data-open="pick-modal"]')) setTimeout(function () { input.focus(); }, 0);
+  });
+})();
+
+/* 고른 종목의 현재 보유 현황 · 총 평가금액
+   저장 후 값은 서버가 전체 재계산해서 준다(2.2). 화면에서 미리 계산하지 않는다 —
+   평단가 계산이 서버와 화면 두 곳에 생기면 2.10 이 막으려던 상황이 그대로 벌어진다. */
+(function () {
+  var holdings = null;
+
+  function num(v, digits, suffix) {
+    return v == null ? "—" : Number(v).toLocaleString("ko-KR",
+      { minimumFractionDigits: digits, maximumFractionDigits: digits }) + (suffix || "");
+  }
+  function text(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (res.status === 401) { location.href = "/login"; return undefined; }
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  function fill(symbol, name) {
+    var h = (holdings || []).filter(function (x) { return x.symbol === symbol; })[0];
+
+    text("prev-symbol", symbol ? symbol + " 보유 현황" : "종목을 고르면 표시됩니다");
+    if (!h) {
+      text("prev-qty", symbol ? "0주" : "—");
+      text("prev-avg", "—");
+      text("prev-fx", "—");
+      text("sym-hint", symbol ? "아직 보유하지 않은 종목입니다" : "기록할 종목을 먼저 고릅니다");
+      return;
+    }
+    text("prev-qty", num(h.quantity, 0, "주"));
+    text("prev-avg", h.avgPrice == null ? "—" : "$" + num(h.avgPrice, 2));
+    text("prev-fx", num(h.avgFxRate, 1));
+    text("sym-hint", "보유 중 " + num(h.quantity, 0, "주"));
+  }
+
+  document.addEventListener("mj:symbol-pick", function (e) {
+    fill(e.detail.symbol, e.detail.name);
+  });
+
+  (async function load() {
+    var list = await api("/api/portfolio/holdings");
+    if (list === undefined) return;
+    holdings = list || [];
+
+    var total = await api("/api/portfolio/total");
+    if (total === undefined) return;
+    text("prev-total", total == null ? "—"
+      : Math.round(Number(total)).toLocaleString("ko-KR") + "원");
+  })();
+})();
+</script>
+
 </body>
 </html>
