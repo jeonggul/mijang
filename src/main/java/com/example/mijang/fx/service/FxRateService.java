@@ -23,6 +23,7 @@ import com.example.mijang.fx.mapper.FxQuoteMapper;
 import com.example.mijang.fx.mapper.FxRateMapper;
 import java.time.Duration;
 import java.time.Instant;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,23 @@ public class FxRateService {
     private final FxRateMapper rateMapper;
     private final FxQuoteMapper quoteMapper;
     private final FxProperties props;
+
+    /**
+     * 그날 환율을 숫자 하나로. 다른 범위가 계산에 쓴다.
+     *
+     * <p>{@code portfolio} 가 매매 기록을 저장할 때 사용자가 환율을 안 적으면 이 값으로
+     * 채우고, 보유 평가액을 원화로 환산할 때도 쓴다([[미장-portfolio-구현]] 2.7).
+     *
+     * <p>{@link #findByDate} 와 같은 값을 보되 <b>포장을 벗겨 준다.</b> 부르는 쪽은 대체
+     * 여부나 기준일이 아니라 곱할 숫자 하나만 필요하다.
+     *
+     * @return 없으면 <b>null</b>. 부르는 쪽이 "환율 없이는 저장하지 않는다" 를 판단한다 —
+     *         0 을 돌려주면 그 기록만 손익에서 조용히 빠진다
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal rateOf(LocalDate date) {
+        return findByDate(date).map(FxRateResponse::rate).orElse(null);
+    }
 
     /**
      * 지금 환율. 원화 환산 표시가 쓴다.
