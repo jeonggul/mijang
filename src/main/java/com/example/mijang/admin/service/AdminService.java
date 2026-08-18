@@ -36,7 +36,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private static final String ACTION_STOCK_TOGGLE = "STOCK_TOGGLE";
+    /* admin_logs.action 은 ENUM 이다. 목록에 없는 값을 넣으면 MySQL 이 잘라내며 거절하고,
+       그 실패는 2.3 에 따라 삼켜져 로그가 조용히 사라진다. 스키마에 있는 값만 쓴다 */
+    private static final String ACTION_STOCK_DEACTIVATE = "STOCK_DEACTIVATE";
+    private static final String ACTION_STOCK_RESTORE = "STOCK_RESTORE";
     private static final String ACTION_BATCH_RUN = "BATCH_RUN";
     private static final String TARGET_STOCK = "STOCK";
     private static final String TARGET_BATCH = "BATCH";
@@ -102,7 +105,8 @@ public class AdminService {
         stockMapper.setActive(key, active, active ? null : reason);
 
         // 원본이 사라져도 무슨 종목이었는지 남도록 이름을 함께 적는다(2.2)
-        writeLog(adminId, ACTION_STOCK_TOGGLE, TARGET_STOCK, key, stock.name(),
+        writeLog(adminId, active ? ACTION_STOCK_RESTORE : ACTION_STOCK_DEACTIVATE,
+                TARGET_STOCK, key, stock.name(),
                 (active ? "활성화" : "비활성화") + (reason == null ? "" : " — " + reason));
     }
 

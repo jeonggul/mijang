@@ -416,6 +416,11 @@ table.holdings .stack { display: grid; gap: 3px; }
 .badge-err { background: color-mix(in srgb, var(--valid-err) 14%, transparent); color: var(--valid-err); }
 
 /* ── 안내 박스 ─────────────────────────────────────────────── */
+/* hidden 속성은 UA 기본값이 display:none 일 뿐이라, display 를 지정한 규칙이나
+   인라인 스타일이 있으면 그쪽이 이겨 요소가 그대로 보인다. .info(flex) · 인라인
+   style="display:flex" 를 쓴 페이저에서 실제로 그랬다. 한 줄로 못 박는다. */
+[hidden] { display: none !important; }
+
 .info {
   display: flex; gap: 9px; padding: 13px 14px;
   background: var(--surface-soft); border: 1px solid var(--line);

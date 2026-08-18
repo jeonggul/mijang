@@ -60,7 +60,9 @@
             <tbody id="ad-batches"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
-      <p class="info info-warn" style="margin:12px 18px 16px">뉴스 수집은 Finnhub 분당 60회 한도에 걸렸습니다. 재시도 주기를 조정하세요.</p>
+      <!-- 실패한 배치가 있을 때만, 그 배치가 남긴 메시지를 띄운다.
+           문구를 박아 두면 아무 일 없을 때도 장애가 난 것처럼 보인다 -->
+      <p class="info info-warn" id="ad-warn" style="margin:12px 18px 16px" hidden></p>
     </section>
 
     <section class="card">
@@ -118,7 +120,7 @@
             <tbody id="ad-batch-rows"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
-      <p class="info info-warn" style="margin:12px 18px 16px">뉴스 수집이 Finnhub 분당 60회 한도에 걸렸습니다. 재시도 주기를 조정하세요.</p>
+      <p class="info info-warn" id="ad-warn2" style="margin:12px 18px 16px" hidden></p>
     </section>
   </section>
   <section role="tabpanel" id="a-users" aria-labelledby="m-users" hidden>
@@ -487,10 +489,32 @@
       });
     });
 
+    /* 실패한 배치가 있으면 그 배치가 남긴 메시지를 그대로 띄운다.
+       문구를 마크업에 박아 두면 아무 일 없을 때도 장애가 난 것처럼 보인다 */
+    var failed = (list || []).filter(function (b) { return b.status === "FAILED"; });
+    ["ad-warn", "ad-warn2"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.hidden = failed.length === 0;
+      if (failed.length) {
+        el.textContent = failed.map(function (b) {
+          return b.jobName + " — " + (b.message || "실패");
+        }).join(" · ");
+      }
+    });
+
     var cards = document.getElementById("ad-batch-cards");
     if (!cards) return;
     cards.replaceChildren();
-    (list || []).forEach(function (b) {
+    if (!list || list.length === 0) {
+      /* 표에만 안내가 뜨고 카드 자리가 통째로 비면 화면이 깨진 것처럼 보인다 */
+      var none = document.createElement("p");
+      none.className = "note";
+      none.textContent = "감싼 배치가 아직 한 번도 돌지 않았습니다";
+      cards.appendChild(none);
+      return;
+    }
+    list.forEach(function (b) {
       var card = document.createElement("div");
       card.className = "card card-pad batch-card";
       var ttl = document.createElement("p");
@@ -542,14 +566,22 @@
 
     var full = document.getElementById("ad-stocks");
     if (full) { full.replaceChildren(); list.forEach(function (s) { stockRow(full, s, true); }); }
-    var dash = document.getElementById("ad-dash-stocks");
-    if (dash) { dash.replaceChildren(); list.slice(0, 5).forEach(function (s) { stockRow(dash, s, false); }); }
 
     var total = await api("/api/admin/stocks/count?" + query());
-    if (typeof total === "number") {
-      put("ad-stock-count", n(total) + "건");
-      put("ad-dash-stock-count", n(total) + "건");
-    }
+    if (typeof total === "number") put("ad-stock-count", n(total) + "건");
+  }
+
+  /* 운영 현황의 미리보기는 종목 탭의 검색어와 무관해야 한다. 같은 조회를 나눠 쓰면
+     종목 탭에서 검색한 순간 대시보드가 그 결과로 바뀐다 */
+  async function loadDashStocks() {
+    var dash = document.getElementById("ad-dash-stocks");
+    if (!dash) return;
+    var list = await api("/api/admin/stocks?limit=5");
+    if (!list || list.forbidden || list.error) return;
+    dash.replaceChildren();
+    list.forEach(function (s) { stockRow(dash, s, false); });
+    var total = await api("/api/admin/stocks/count");
+    if (typeof total === "number") put("ad-dash-stock-count", n(total) + "건");
   }
 
   /* 요약 스트립의 활성·비활성은 필터와 무관한 전체 값이라 따로 센다 */
@@ -599,7 +631,7 @@
       sync.disabled = false;
       sync.textContent = label;
       if (typeof out === "number") { alert(out.toLocaleString("ko-KR") + "건을 동기화했습니다"); }
-      loadStocks(); loadStockSummary(); loadLogs(); loadBatches();
+      loadStocks(); loadDashStocks(); loadStockSummary(); loadLogs(); loadBatches();
     });
   }
 
@@ -617,7 +649,7 @@
         body: JSON.stringify({ symbol: btn.dataset.symbol, active: toActive, reason: reason }),
       });
       if (out && out.error) { alert(out.error.message); return; }
-      loadStocks(); loadStockSummary(); loadLogs();
+      loadStocks(); loadDashStocks(); loadStockSummary(); loadLogs();
     });
   }
 
@@ -638,6 +670,7 @@
 
   loadBatches();
   loadStocks();
+  loadDashStocks();
   loadStockSummary();
   loadLogs();
 })();
