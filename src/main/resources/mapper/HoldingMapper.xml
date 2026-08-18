@@ -6,7 +6,7 @@
 
   이 파일이 하는 일
     위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
-    평가금액 합계는 보유·일봉·환율을 이어 붙여 DB 안에서 구한다.
+    손익용 조회는 보유·종목·일봉 세 표를 이어 붙여 계산에 필요한 값을 한 번에 낸다.
 -->
 <mapper namespace="com.example.mijang.portfolio.mapper.HoldingMapper">
 
@@ -60,6 +60,25 @@
                                      WHERE symbol = h.symbol)
          WHERE h.user_id = #{userId}
            AND h.quantity &gt; 0
+    </select>
+
+    <!-- 현재가가 없는 종목도 돌려준다. 거르는 것은 계산기 몫이다(2.5).
+         symbol 을 주면 그 종목만 — 종목 상세의 분해가 같은 문장을 쓴다(2.4) -->
+    <select id="findForPnl" resultType="com.example.mijang.portfolio.dto.SymbolPnl">
+        SELECT h.symbol,
+               h.quantity,
+               h.avg_price   AS avgPrice,
+               h.avg_fx_rate AS avgFxRate,
+               p.close       AS currentPrice
+          FROM holdings h
+          LEFT JOIN daily_prices p
+                 ON p.symbol = h.symbol
+                AND p.trade_date = (SELECT MAX(trade_date) FROM daily_prices
+                                     WHERE symbol = h.symbol)
+         WHERE h.user_id = #{userId}
+           AND h.quantity &gt; 0
+        <if test="symbol != null"> AND h.symbol = #{symbol} </if>
+         ORDER BY h.symbol
     </select>
 
 </mapper>

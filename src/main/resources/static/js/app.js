@@ -1,56 +1,187 @@
 /* ==========================================================================
-   미장 — SR-003 대시보드 프로토타입
-   API 명세서의 응답 형태를 그대로 흉내 낸 데이터로 화면을 그린다.
+   미장 — SR-003 대시보드
+   목 데이터를 걷어내고 실제 API 를 부른다. 그리는 코드는 그대로다.
    ========================================================================== */
 
-/** GET /api/profit/breakdown 응답 형태 */
-const breakdown = {
-  asOf: "2025-08-05",
-  totalValue: { krw: 12847300, usd: 9120.44 },
-  pricePnl: { krw: 822400 },
-  fxPnl: { krw: -318900 },
-  totalPnl: { krw: 503500, returnRate: 0.0408 },
-  appliedFxRate: 1408.40,
-  fxSubstituted: false,
-};
+/** 화면이 쓰는 값. 응답이 오기 전까지는 비어 있다. */
+let breakdown = null;
+let holdings = [];
+let watchlist = [];
 
-/** GET /api/holdings 응답 형태 */
-const holdings = [
-  { symbol: "AAPL", name: "Apple Inc.",          quantity: 12,  avgPrice: 178.20, currentPrice: 196.40, marketValueKrw: 3318700, pricePnlKrw:  306900, fxPnlKrw: -98400, returnRate:  0.067 , dayChangeRate: 0.0124 },
-  { symbol: "NVDA", name: "NVIDIA Corp.",        quantity:  8,  avgPrice: 102.40, currentPrice: 138.90, marketValueKrw: 2965300, pricePnlKrw:  512800, fxPnlKrw: -73200, returnRate:  0.174 , dayChangeRate: 0.0210 },
-  { symbol: "MSFT", name: "Microsoft Corp.",     quantity:  6,  avgPrice: 398.10, currentPrice: 412.60, marketValueKrw: 3486900, pricePnlKrw:  122400, fxPnlKrw: -51600, returnRate:  0.021 , dayChangeRate: 0.0042 },
-  { symbol: "TSLA", name: "Tesla Inc.",          quantity:  9,  avgPrice: 248.30, currentPrice: 221.70, marketValueKrw: 1595800, pricePnlKrw: -141400, fxPnlKrw: -62100, returnRate: -0.113 , dayChangeRate: -0.0185 },
-  { symbol: "SCHD", name: "Schwab US Dividend",  quantity: 22,  avgPrice:  79.40, currentPrice:  80.10, marketValueKrw: 1480600, pricePnlKrw:   21700, fxPnlKrw: -33600, returnRate: -0.008 , dayChangeRate: 0.0015 },
-];
+/**
+ * 응답 봉투를 벗긴다.
+ * 401 이면 로그인으로 보낸다 — 대시보드는 로그인 전용 화면이다.
+ */
+async function api(url) {
+  const res = await fetch(url);
+  if (res.status === 401) { location.href = "/login"; return null; }
+  const body = await res.json();
+  return body.success ? body.data : null;
+}
 
-const watchlist = [
-  { symbol: "GOOGL", price: 174.32, changeRate:  0.0082 },
-  { symbol: "AMD",   price: 118.05, changeRate: -0.0214 },
-  { symbol: "COST",  price: 892.10, changeRate:  0.0034 },
-  { symbol: "JEPI",  price:  56.88, changeRate: -0.0011 },
-];
+/**
+ * 손익 응답을 화면이 기대하는 모양으로 바꾼다.
+ *
+ * 렌더 함수를 고치지 않으려고 여기서 맞춘다(5.7.2).
+ * 환율을 못 구하면 서버가 data 를 null 로 주므로 그때는 null 을 그대로 넘긴다.
+ */
+function toBreakdown(pnl) {
+  if (!pnl) return null;
+  return {
+    asOf: pnl.asOf,
+    totalValue: { krw: Number(pnl.totalValueKrw), usd: Number(pnl.totalValueUsd) },
+    pricePnl: { krw: Number(pnl.pricePnlKrw) },
+    fxPnl: { krw: Number(pnl.fxPnlKrw) },
+    totalPnl: { krw: Number(pnl.totalPnlKrw), returnRate: Number(pnl.returnRate) },
+    appliedFxRate: Number(pnl.appliedFxRate),
+    fxSubstituted: pnl.fxSubstituted,
+    state: pnl.state,
+    skippedSymbols: pnl.skippedSymbols,
+  };
+}
+
+/**
+ * 보유 목록을 화면 모양으로 바꾼다.
+ *
+ * 종목별 주가·환율 분해는 이 응답에 없다. 전체 분해만 있으면 대시보드가 성립하고,
+ * 종목별까지 담으려면 종목 수만큼 계산이 늘어난다. 없는 값은 null 로 두고
+ * 화면이 — 로 그린다. 0 으로 채우면 계산된 값처럼 읽힌다.
+ */
+function toHolding(h) {
+  return {
+    symbol: h.symbol,
+    name: h.name,
+    quantity: Number(h.quantity),
+    avgPrice: Number(h.avgPrice),
+    currentPrice: h.currentPrice == null ? null : Number(h.currentPrice),
+    marketValueKrw: h.marketValueKrw == null ? null : Number(h.marketValueKrw),
+    evalPnlKrw: h.evalPnlKrw == null ? null : Number(h.evalPnlKrw),
+    avgFxRate: h.avgFxRate == null ? null : Number(h.avgFxRate),
+    pricePnlKrw: null,
+    fxPnlKrw: null,
+    /* 수익률은 받은 값으로 구할 수 있다 — 평가손익 ÷ 매입원가(2.8).
+       주가·환율 분해와 달리 서버가 따로 주지 않아도 되는 표시용 파생값이다 */
+    returnRate: returnRateOf(h),
+    dayChangeRate: null,
+  };
+}
+
+/** 평가손익 ÷ 매입원가. 원가를 못 구하면 null 이다 — 0 으로 나누지 않는다(2.8) */
+function returnRateOf(h) {
+  if (h.evalPnlKrw == null || h.avgPrice == null || h.avgFxRate == null) return null;
+  const cost = Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+  return cost === 0 ? null : Number(h.evalPnlKrw) / cost;
+}
+
+/**
+ * 화면에 필요한 것을 한 번에 받아 그린다.
+ *
+ * 세 요청을 나란히 보낸다. 순서대로 기다리면 가장 느린 것의 합이 되고,
+ * 서로 필요로 하지 않으므로 기다릴 이유가 없다.
+ */
+async function loadDashboard() {
+  const [pnl, hold, watch] = await Promise.all([
+    api("/api/portfolio/pnl"),
+    api("/api/portfolio/holdings"),
+    api("/api/watchlists"),
+  ]);
+
+  breakdown = toBreakdown(pnl);
+  holdings = (hold || []).filter(h => Number(h.quantity) > 0).map(toHolding);
+  watchlist = (watch || []).map(w => ({
+    symbol: w.symbol,
+    price: w.currentPrice == null ? null : Number(w.currentPrice),
+    /* 화면은 비율(0.0082)을 받아 퍼센트로 만든다. API 는 퍼센트(0.82)를 준다 */
+    changeRate: w.dayChangeRate == null ? null : Number(w.dayChangeRate) / 100,
+  }));
+
+  /* 환율을 못 구하면 손익이 성립하지 않는다(2.6). 안내만 띄우고 나머지는 그린다 */
+  renderBreakdown();
+  renderHoldings();
+  renderWatchlist();
+  setupCurrency();
+  renderFxCard();
+  noteSkipped();
+}
+
+/**
+ * 계산에서 빠진 종목을 밝힌다(2.5).
+ *
+ * 조용히 빼면 사용자는 합계가 왜 작은지 알 수 없다. 일봉이 아직 없는 종목이라
+ * 시간이 지나면 저절로 들어온다는 것까지 말해 준다.
+ */
+/**
+ * 환율 카드. <b>손익 계산에 실제로 쓴 값</b>을 보여준다.
+ *
+ * 다른 값을 띄우면 같은 화면의 환차손익과 어긋나 보인다. 주말·휴일이라 직전 영업일
+ * 값으로 대체됐으면 그 사실도 밝힌다 — 오늘 값인 줄 알면 안 된다.
+ */
+function renderFxCard() {
+  const rate = document.getElementById("fx-rate");
+  const asOf = document.getElementById("fx-asof");
+  const note = document.getElementById("fx-note");
+  if (!rate) return;
+  if (!breakdown) { rate.textContent = DASH; asOf.textContent = DASH; return; }
+
+  rate.textContent = breakdown.appliedFxRate.toLocaleString("ko-KR",
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  asOf.textContent = breakdown.asOf;
+  note.textContent = breakdown.fxSubstituted ? "직전 영업일 값" : "";
+}
+
+function noteSkipped() {
+  const note = document.getElementById("cur-note");
+  if (!note || !breakdown || !breakdown.skippedSymbols) return;
+  note.textContent =
+    `시세를 아직 못 구한 ${breakdown.skippedSymbols}종목은 손익 계산에서 빠져 있습니다`;
+}
+
+loadDashboard();
+
 
 /* ── 포맷 ─────────────────────────────────────────────────────
    원화는 `원` 접미. `₩` 접두는 쓰지 않는다. */
-const krw  = n => Math.round(n).toLocaleString("ko-KR") + "원";
-const usd  = n => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const pct  = (r, d = 1) => (r >= 0 ? "+" : "−") + (Math.abs(r) * 100).toFixed(d) + "%";
+/* 값이 없으면 — 로 그린다. 0 으로 두면 "계산해 봤더니 0" 으로 읽히고,
+   그대로 toLocaleString 을 부르면 null 에서 터진다 */
+const DASH = "—";
+const krw  = n => n == null ? DASH : Math.round(n).toLocaleString("ko-KR") + "원";
+const usd  = n => n == null ? DASH : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct  = (r, d = 1) => r == null ? DASH : (r >= 0 ? "+" : "−") + (Math.abs(r) * 100).toFixed(d) + "%";
 const pct2 = r => pct(r, 2);
 /** 부호를 항상 붙인다. 색만으로 손익을 구분하지 않는다. */
-const sKrw = n => (n >= 0 ? "+" : "−") + Math.abs(Math.round(n)).toLocaleString("ko-KR");
-const dir  = n => (n >= 0 ? "rise" : "fall");
+const sKrw = n => n == null ? DASH : (n >= 0 ? "+" : "−") + Math.abs(Math.round(n)).toLocaleString("ko-KR");
+/** 값이 없으면 손익 색을 붙이지 않는다. 없는 값에 빨강·파랑이 붙으면 방향이 있는 것처럼 보인다 */
+const dir  = n => n == null ? "" : (n >= 0 ? "rise" : "fall");
 
 /* ── 손익 요인 분해 ────────────────────────────────────────── */
 function renderBreakdown() {
+  const chip = document.getElementById("state-chip");
+
+  /* 환율을 못 구하면 손익 자체가 성립하지 않는다(2.6). 숫자를 0 으로 채우는 대신
+     자리를 비우고 왜 비었는지 알린다 */
+  if (!breakdown) {
+    ["total-krw", "total-usd", "total-pnl"].forEach(id => {
+      document.getElementById(id).textContent = DASH;
+    });
+    ["factor-price", "factor-fx"].forEach(id => {
+      const f = document.getElementById(id);
+      f.querySelector(".v").textContent = DASH;
+      f.querySelector(".v").className = "v";
+      f.querySelector(".bar").style.width = "0%";
+    });
+    chip.hidden = false;
+    chip.textContent = "환율 없음";
+    return;
+  }
+
   const { pricePnl, fxPnl, totalPnl, totalValue } = breakdown;
 
   document.getElementById("total-krw").textContent = krw(totalValue.krw);
   document.getElementById("total-usd").textContent = usd(totalValue.usd);
 
-  // 상쇄 = 두 요인의 부호가 다름. 이 서비스가 존재하는 이유다.
-  const offset = Math.sign(pricePnl.krw) !== Math.sign(fxPnl.krw)
-              && pricePnl.krw !== 0 && fxPnl.krw !== 0;
-  document.getElementById("state-chip").hidden = !offset;
+  /* 상쇄 여부는 서버가 정한다(2.3). 화면이 부호를 다시 비교하면 기준이 갈린다 */
+  chip.textContent = "상쇄";
+  chip.hidden = breakdown.state !== "OFFSET";
 
   // 두 요인 중 큰 쪽을 100%로 잡고 상대 길이를 계산
   const max = Math.max(Math.abs(pricePnl.krw), Math.abs(fxPnl.krw)) || 1;
@@ -76,14 +207,17 @@ function renderBreakdown() {
 
 /* ── 사이드바 · 표 ─────────────────────────────────────────── */
 function renderHoldings() {
-  const priceSum = holdings.reduce((s, h) => s + h.pricePnlKrw, 0);
-  const fxSum    = holdings.reduce((s, h) => s + h.fxPnlKrw, 0);
+  /* 사이드바의 주가·환차손익은 전 종목 합계다. 보유 목록을 더해서 만들지 않는다 —
+     종목별 분해는 이 응답에 없어서 더하면 전부 0 이 된다. 그 합계는 손익 분해가
+     이미 갖고 있다(2.4 — 종목별로 계산해서 합친 값이 곧 전체다) */
+  const priceSum = breakdown ? breakdown.pricePnl.krw : null;
+  const fxSum    = breakdown ? breakdown.fxPnl.krw : null;
 
   document.getElementById("stat-count").textContent = holdings.length;
   const sp = document.getElementById("stat-price");
-  sp.textContent = sKrw(priceSum); sp.className = "v " + dir(priceSum);
+  sp.textContent = sKrw(priceSum); sp.className = ("v " + dir(priceSum)).trim();
   const sf = document.getElementById("stat-fx");
-  sf.textContent = sKrw(fxSum); sf.className = "v " + dir(fxSum);
+  sf.textContent = sKrw(fxSum); sf.className = ("v " + dir(fxSum)).trim();
 
   document.getElementById("holdings-nav").innerHTML = holdings.map(h => `
     <li><button type="button">
@@ -94,7 +228,7 @@ function renderHoldings() {
   document.getElementById("holdings-body").innerHTML = holdings.map(h => `
     <tr>
       <td><div class="stack"><span>${h.symbol}</span><span class="name">${h.name}</span></div></td>
-      <td><div class="stack"><span>${h.quantity.toFixed(1)}</span><span class="name">${usd(h.avgPrice)}</span></div></td>
+      <td><div class="stack"><span>${h.quantity.toLocaleString("ko-KR", { maximumFractionDigits: 6 })}</span><span class="name">${usd(h.avgPrice)}</span></div></td>
       <td><div class="stack"><span>${usd(h.currentPrice)}</span>
           <span class="name ${dir(h.dayChangeRate)}">${pct2(h.dayChangeRate)}</span></div></td>
       <td><div class="stack"><span>${krw(h.marketValueKrw)}</span>
@@ -107,6 +241,7 @@ function renderHoldings() {
 }
 
 function renderWatchlist() {
+  document.getElementById("watch-count").textContent = watchlist.length;
   document.getElementById("watchlist").innerHTML = watchlist.map(w => `
     <li>
       <span class="tk">${w.symbol}</span>
@@ -118,6 +253,7 @@ function renderWatchlist() {
 /* ── 통화 전환 ────────────────────────────────────────────────
    원화·달러는 표시 기준일 뿐 계산 기준이 아니다. */
 function setupCurrency() {
+  if (!breakdown) return;      // 환율을 못 구하면 바꿔 보여 줄 값이 없다
   const rate = breakdown.appliedFxRate;
   document.querySelectorAll("[data-currency] button").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -138,7 +274,5 @@ function setupCurrency() {
   });
 }
 
-renderBreakdown();
-renderHoldings();
-renderWatchlist();
-setupCurrency();
+/* 즉시 호출하지 않는다. 응답이 오기 전에 그리면 breakdown 이 null 이라 터진다 —
+   그리는 순서는 loadDashboard 가 쥔다 */
