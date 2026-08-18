@@ -200,13 +200,15 @@
   <!-- ── 우측 패널 ─────────────────────────────────────────── -->
   <aside class="panel">
     <section class="card">
-      <h2 class="card-head">원달러 환율 <span class="sub">오늘 11:02</span></h2>
-      <p class="fx-row"><b>1,408.40</b><span class="num rise">+3.20</span></p>
-      <p class="note">한국수출입은행 · 영업일 1회 갱신</p>
+      <!-- 손익 계산에 실제로 쓴 환율을 그대로 보여준다. 여기에 다른 값이 떠 있으면
+           같은 화면의 환차손익과 어긋나 보인다 -->
+      <h2 class="card-head">원달러 환율 <span class="sub" id="fx-asof">—</span></h2>
+      <p class="fx-row"><b id="fx-rate">—</b><span class="num sub" id="fx-note"></span></p>
+      <p class="note">Open Exchange Rates · 1시간 주기 갱신</p>
     </section>
 
     <section class="card">
-      <h2 class="card-head">관심 종목 <span class="sub num">4</span></h2>
+      <h2 class="card-head">관심 종목 <span class="sub num" id="watch-count">—</span></h2>
       <ul class="watch" id="watchlist"></ul>
       <span class="tag">IEX 기준 · 실시간</span>
     </section>
