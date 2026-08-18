@@ -1,6 +1,7 @@
 package com.example.mijang.stock.batch;
 
 import com.example.mijang.stock.service.StockSyncService;
+import com.example.mijang.admin.service.BatchLogWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,10 +21,11 @@ import org.springframework.stereotype.Component;
 public class StockMasterSyncScheduler {
 
     private final StockSyncService stockSyncService;
+    private final BatchLogWriter batchLogWriter;
 
     /** 평일만 돈다. 주말에는 상장 변동이 없다. */
     @Scheduled(cron = "0 0 21 * * MON-FRI", zone = "Asia/Seoul")
     public void run() {
-        stockSyncService.syncAll();
+        batchLogWriter.run("종목 마스터 동기화", stockSyncService::syncAll);
     }
 }

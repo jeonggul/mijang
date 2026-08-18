@@ -44,10 +44,12 @@
     <div class="page-head"><div><h1>운영 현황</h1><p>ROLE_ADMIN 전용 화면입니다</p></div></div>
 
     <div class="summary-strip">
-      <div><span class="k">가입 사용자</span><b class="num">1,284</b><span class="s">어제 +32</span></div>
-      <div><span class="k">활성 종목</span><b class="num">9,847</b><span class="s">비활성 213</span></div>
-      <div><span class="k">미처리 신고</span><b class="num">3</b><span class="s">확인 필요</span></div>
-      <div><span class="k">오늘 매매 기록</span><b class="num">417건</b><span class="s">&nbsp;</span></div>
+      <!-- 사용자·신고·매매 집계는 해당 범위(ADMIN-03~05)가 선행이라 아직 셀 수 없다.
+           0 으로 두면 "아무도 없다" 로 읽히므로 — 로 비운다 -->
+      <div><span class="k">가입 사용자</span><b class="num">—</b><span class="s">ADMIN-03 대기</span></div>
+      <div><span class="k">활성 종목</span><b class="num" id="ad-active">—</b><span class="s" id="ad-inactive">&nbsp;</span></div>
+      <div><span class="k">미처리 신고</span><b class="num">—</b><span class="s">ADMIN-05 대기</span></div>
+      <div><span class="k">오늘 매매 기록</span><b class="num">—</b><span class="s">&nbsp;</span></div>
     </div>
 
     <section class="card" style="margin-bottom:14px">
@@ -55,29 +57,18 @@
         <div class="table-wrap">
           <table class="tbl tbl-band">
             <thead><tr><th class="" scope="col">배치</th><th class="r" scope="col">최근 실행</th><th class="r" scope="col">소요</th><th class="r" scope="col">처리 건수</th><th class="r" scope="col">상태</th></tr></thead>
-            <tbody>
-              <tr><td class="txt">종목 마스터 동기화</td><td class="r">22:10 KST</td><td class="r">4.2초</td><td class="r">9,847건</td><td class="r"><span class="badge badge-ok">정상</span></td></tr>
-              <tr><td class="txt">환율 수집</td><td class="r">11:03 KST</td><td class="r">0.6초</td><td class="r">1건</td><td class="r"><span class="badge badge-ok">정상</span></td></tr>
-              <tr><td class="txt">일봉 수집</td><td class="r">06:12 KST</td><td class="r">38.4초</td><td class="r">1,206건</td><td class="r"><span class="badge badge-ok">정상</span></td></tr>
-              <tr><td class="txt">일별 자산 스냅샷</td><td class="r">06:15 KST</td><td class="r">2.1초</td><td class="r">1,284건</td><td class="r"><span class="badge badge-ok">정상</span></td></tr>
-              <tr><td class="txt">뉴스 수집</td><td class="r">23:40 KST</td><td class="r">—</td><td class="r">0건</td><td class="r"><span class="badge badge-err">한도 초과</span></td></tr>
-            </tbody>
+            <tbody id="ad-batches"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
       <p class="info info-warn" style="margin:12px 18px 16px">뉴스 수집은 Finnhub 분당 60회 한도에 걸렸습니다. 재시도 주기를 조정하세요.</p>
     </section>
 
     <section class="card">
-      <h2 class="card-head">종목 마스터 <span class="sub num">9,847건</span></h2>
+      <h2 class="card-head">종목 마스터 <span class="sub num" id="ad-dash-stock-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
             <thead><tr><th class="" scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="" scope="col">거래소</th><th class="" scope="col">섹터</th><th class="r" scope="col">상태</th></tr></thead>
-            <tbody>
-              <tr><td class="">AAPL</td><td class="txt">Apple Inc.</td><td class="">NASDAQ</td><td class="">Technology</td><td class="r"><span class="badge badge-ok">활성</span></td></tr>
-              <tr><td class="">NVDA</td><td class="txt">NVIDIA Corp.</td><td class="">NASDAQ</td><td class="">Technology</td><td class="r"><span class="badge badge-ok">활성</span></td></tr>
-              <tr><td class="">FISV</td><td class="txt">Fiserv Inc.</td><td class="">NASDAQ</td><td class="">Financials</td><td class="r"><span class="badge badge-warn">비활성 · 티커 변경</span></td></tr>
-              <tr><td class="">SCHD</td><td class="txt">Schwab US Dividend</td><td class="">NYSE</td><td class="">ETF</td><td class="r"><span class="badge badge-ok">활성</span></td></tr>
-            </tbody>
+            <tbody id="ad-dash-stocks"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
       <p class="note" style="padding:12px 18px 16px">상장폐지·티커 변경 종목은 삭제하지 않고 비활성화합니다. 과거 매매 기록이 참조하기 때문입니다.</p>
@@ -93,28 +84,22 @@
           <label for="ms-q" class="sr-only">티커 또는 종목명</label>
           <input id="ms-q" type="search" placeholder="티커 또는 종목명">
         </div>
-        <div class="pills" data-toggle-group>
-          <button type="button" aria-pressed="true">전체</button>
-          <button type="button" aria-pressed="false">활성</button>
-          <button type="button" aria-pressed="false">비활성</button>
-          <button type="button" aria-pressed="false">ETF</button>
+        <div class="pills" data-toggle-group data-stock-filter>
+          <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+          <button type="button" data-value="ACTIVE" aria-pressed="false">활성</button>
+          <button type="button" data-value="INACTIVE" aria-pressed="false">비활성</button>
+          <button type="button" data-value="ETF" aria-pressed="false">ETF</button>
         </div>
-        <button class="btn btn-sm btn-primary" type="button">지금 동기화</button>
+        <button class="btn btn-sm btn-primary" type="button" id="ad-sync">지금 동기화</button>
       </div>
     </div>
 
     <section class="card">
-      <h2 class="card-head">종목 목록 <span class="sub num">9,847건 · 활성 9,634 · 비활성 213</span></h2>
+      <h2 class="card-head">종목 목록 <span class="sub num" id="ad-stock-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
             <thead><tr><th class="" scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="" scope="col">거래소</th><th class="" scope="col">섹터</th><th class="r" scope="col">최근 동기화</th><th class="" scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
-            <tbody>
-              <tr><td class="">AAPL</td><td class="txt">Apple Inc.</td><td class="">NASDAQ</td><td class="">Technology</td><td class="r">21:00</td><td class="txt"><span class="badge badge-ok">활성</span></td><td class="r"><button class="btn btn-sm" type="button">수정</button></td></tr>
-              <tr><td class="">NVDA</td><td class="txt">NVIDIA Corp.</td><td class="">NASDAQ</td><td class="">Technology</td><td class="r">21:00</td><td class="txt"><span class="badge badge-ok">활성</span></td><td class="r"><button class="btn btn-sm" type="button">수정</button></td></tr>
-              <tr><td class="">SCHD</td><td class="txt">Schwab US Dividend</td><td class="">NYSE</td><td class="">ETF</td><td class="r">21:00</td><td class="txt"><span class="badge badge-ok">활성</span></td><td class="r"><button class="btn btn-sm" type="button">수정</button></td></tr>
-              <tr><td class="">FISV</td><td class="txt">Fiserv Inc.</td><td class="">NASDAQ</td><td class="">Financials</td><td class="r">07-30</td><td class="txt"><span class="badge badge-warn">비활성 · 티커 변경</span></td><td class="r"><button class="btn btn-sm" type="button">복원</button></td></tr>
-              <tr><td class="">TWTR</td><td class="txt">Twitter Inc.</td><td class="">NYSE</td><td class="">Technology</td><td class="r">—</td><td class="txt"><span class="badge badge-warn">비활성 · 상장폐지</span></td><td class="r"><button class="btn btn-sm" type="button">복원</button></td></tr>
-            </tbody>
+            <tbody id="ad-stocks"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
       <p class="note" style="padding:12px 18px 16px">비활성 종목은 검색에서 제외되지만 과거 매매 기록에서는 계속 조회됩니다</p>
@@ -123,29 +108,14 @@
   <section role="tabpanel" id="a-sync" aria-labelledby="m-sync" hidden>
     <div class="page-head"><div><h1>배치 상태</h1><p>휴장일에는 시세 배치가 자동으로 건너뜁니다</p></div></div>
 
-    <div class="grid-3" style="margin-bottom:14px">
-      <div class="card card-pad batch-card"><p class="ttl">종목 마스터 동기화 <span class="badge badge-ok">정상</span></p>
-        <p class="note">최근 21:00 KST</p><button class="btn btn-sm btn-block" type="button">수동 실행</button></div>
-      <div class="card card-pad batch-card"><p class="ttl">환율 수집 <span class="badge badge-ok">정상</span></p>
-        <p class="note">최근 11:03 KST</p><button class="btn btn-sm btn-block" type="button">수동 실행</button></div>
-      <div class="card card-pad batch-card"><p class="ttl">일봉 수집 <span class="badge badge-ok">정상</span></p>
-        <p class="note">최근 06:12 KST</p><button class="btn btn-sm btn-block" type="button">수동 실행</button></div>
-      <div class="card card-pad batch-card"><p class="ttl">뉴스 수집 <span class="badge badge-err">한도 초과</span></p>
-        <p class="note">최근 23:40 KST</p><button class="btn btn-sm btn-block" type="button">수동 실행</button></div>
-    </div>
+    <div class="grid-3" style="margin-bottom:14px" id="ad-batch-cards"><!-- 스크립트가 채운다 --></div>
 
     <section class="card">
-      <h2 class="card-head">실행 이력 <span class="sub">최근 20건</span></h2>
+      <h2 class="card-head">실행 이력 <span class="sub">잡별 최근 1건</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
             <thead><tr><th class="" scope="col">배치</th><th class="" scope="col">실행 시각</th><th class="r" scope="col">소요</th><th class="r" scope="col">처리</th><th class="" scope="col">상태</th><th class="txt" scope="col">메시지</th></tr></thead>
-            <tbody>
-              <tr><td class="">BUILD_SNAPSHOT</td><td class="">08-06 06:15</td><td class="r">2.1초</td><td class="r">1,284</td><td class=""><span class="badge badge-ok">SUCCESS</span></td><td class="txt">—</td></tr>
-              <tr><td class="">COLLECT_BARS</td><td class="">08-06 06:12</td><td class="r">38.4초</td><td class="r">1,206</td><td class=""><span class="badge badge-ok">SUCCESS</span></td><td class="txt">—</td></tr>
-              <tr><td class="">COLLECT_NEWS</td><td class="">08-05 23:40</td><td class="r">—</td><td class="r">0</td><td class=""><span class="badge badge-err">FAILED</span></td><td class="txt">429 한도 초과</td></tr>
-              <tr><td class="">COLLECT_FX</td><td class="">08-05 11:03</td><td class="r">0.6초</td><td class="r">1</td><td class=""><span class="badge badge-ok">SUCCESS</span></td><td class="txt">—</td></tr>
-              <tr><td class="">BUILD_SNAPSHOT</td><td class="">08-03 06:15</td><td class="r">—</td><td class="r">0</td><td class=""><span class="badge">SKIPPED</span></td><td class="txt">휴장일</td></tr>
-            </tbody>
+            <tbody id="ad-batch-rows"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
       <p class="info info-warn" style="margin:12px 18px 16px">뉴스 수집이 Finnhub 분당 60회 한도에 걸렸습니다. 재시도 주기를 조정하세요.</p>
@@ -318,20 +288,11 @@
     </div>
 
     <section class="card">
-      <h2 class="card-head">작업 이력 <span class="sub num">최근 30일 · 412건</span></h2>
+      <h2 class="card-head">작업 이력 <span class="sub num" id="ad-log-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
             <thead><tr><th class="" scope="col">시각</th><th class="" scope="col">관리자</th><th class="" scope="col">작업</th><th class="txt" scope="col">대상</th><th class="" scope="col">결과</th><th class="r" scope="col">IP</th></tr></thead>
-            <tbody>
-              <tr><td class="">08-06 09:14</td><td class="txt">정하</td><td class="txt">게시글 숨김</td><td class="txt">단타 리딩방 들어오세요 수익 보장</td><td class="txt"><span class="badge badge-ok">성공</span></td><td class="r">211.36.***.14</td></tr>
-              <tr><td class="">08-06 09:12</td><td class="txt">정하</td><td class="txt">신고 처리</td><td class="txt">신고 #1842 · 스팸</td><td class="txt"><span class="badge badge-ok">성공</span></td><td class="r">211.36.***.14</td></tr>
-              <tr><td class="">08-05 22:41</td><td class="txt">정하</td><td class="txt">배치 수동 실행</td><td class="txt">COLLECT_NEWS</td><td class="txt"><span class="badge badge-err">실패</span></td><td class="r">211.36.***.14</td></tr>
-              <tr><td class="">08-05 18:30</td><td class="txt">정하</td><td class="txt">사용자 정지</td><td class="txt">박도윤 (doyun@example.com)</td><td class="txt"><span class="badge badge-ok">성공</span></td><td class="r">211.36.***.14</td></tr>
-              <tr><td class="">08-05 14:02</td><td class="txt">정하</td><td class="txt">종목 비활성화</td><td class="txt">FISV · 티커 변경</td><td class="txt"><span class="badge badge-ok">성공</span></td><td class="r">211.36.***.14</td></tr>
-              <tr><td class="">08-03 10:15</td><td class="txt">정하</td><td class="txt">공지 등록</td><td class="txt">환율 수집 지연 안내 (8/3~8/4)</td><td class="txt"><span class="badge badge-ok">성공</span></td><td class="r">211.36.***.14</td></tr>
-              <tr><td class="">08-01 21:03</td><td class="txt">정하</td><td class="txt">종목 마스터 동기화</td><td class="txt">9,847건 갱신</td><td class="txt"><span class="badge badge-ok">성공</span></td><td class="r">211.36.***.14</td></tr>
-              <tr><td class="">07-28 16:47</td><td class="txt">정하</td><td class="txt">댓글 숨김</td><td class="txt">이런 것도 모르면서 투자하시나요</td><td class="txt"><span class="badge badge-ok">성공</span></td><td class="r">211.36.***.14</td></tr>
-            </tbody>
+            <tbody id="ad-logs"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
       <p class="note" style="padding:12px 18px 16px">조회는 기록되지 않습니다. 데이터를 바꾸는 작업만 남깁니다. 로그는 수정·삭제할 수 없습니다.</p>
@@ -451,5 +412,235 @@
 </div>
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 관리자 화면 (ADMIN-01 · ADMIN-02 · ADMIN-07)
+   접근 통제는 SecurityConfig 가 /api/admin/** 를 ADMIN 에만 열어 막는다(2.1).
+   화면이 탭을 숨기는 것은 편의일 뿐 방어가 아니다. */
+(function () {
+  var box = document.getElementById("ad-batches");
+  if (!box) return;
+
+  var DASH = "—";
+  /* 휴장일에 안 돈 것과 실패해서 못 돈 것은 다르다(2.4). SKIPPED 를 따로 보여준다 */
+  var STATUS = { SUCCESS: "정상", FAILED: "실패", SKIPPED: "건너뜀", RUNNING: "실행 중" };
+  var BADGE = { SUCCESS: "badge-ok", FAILED: "badge-err", SKIPPED: "", RUNNING: "badge-warn" };
+
+  function api(url, opts) {
+    return fetch(url, opts).then(function (res) {
+      if (res.status === 401) { location.href = "/login"; return null; }
+      if (res.status === 403) { return { forbidden: true }; }
+      return res.json().then(function (b) { return b.success ? b.data : { error: b.error }; });
+    });
+  }
+  function put(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function n(v) { return v == null ? DASH : Number(v).toLocaleString("ko-KR"); }
+
+  /* 초 단위로 보여준다. 밀리초는 배치 규모에서 의미가 없다 */
+  function dur(ms) { return ms == null ? DASH : (ms / 1000).toFixed(1) + "초"; }
+  function when(iso) {
+    if (!iso) return DASH;
+    return iso.slice(5, 10).replace("-", "-") + " " + iso.slice(11, 16);
+  }
+  function badge(status) {
+    var b = document.createElement("span");
+    b.className = "badge " + (BADGE[status] || "");
+    b.textContent = STATUS[status] || status;
+    return b;
+  }
+  function cells(tr, values) {
+    values.forEach(function (v) {
+      var td = tr.insertCell();
+      if (v && v.nodeType) { td.appendChild(v); } else { td.textContent = v; }
+    });
+  }
+
+  /* ── 배치 상태 (ADMIN-02) ─────────────────────────────────── */
+  function drawBatches(list) {
+    /* 대괄호가 둘 잇달아 붙는 표기를 쓰지 않는다 — Thymeleaf 가 인라인 표현식 여는 기호로
+       읽어 템플릿 파싱이 통째로 깨진다(report 5.8 과 같은 함정) */
+    var targets = ["ad-batches", "ad-batch-rows"];
+    var spans = { "ad-batches": 5, "ad-batch-rows": 6 };
+    targets.forEach(function (id) {
+      var body = document.getElementById(id);
+      if (!body) return;
+      body.replaceChildren();
+      if (!list || list.length === 0) {
+        var tr = body.insertRow();
+        var td = tr.insertCell();
+        td.colSpan = spans[id]; td.className = "sub";
+        td.style.padding = "24px"; td.style.textAlign = "center";
+        td.textContent = "아직 실행 기록이 없습니다";
+        return;
+      }
+      list.forEach(function (b) {
+        var tr = body.insertRow();
+        if (id === "ad-batches") {
+          cells(tr, [b.jobName, when(b.startedAt), dur(b.durationMs),
+                     n(b.processedCount) + "건", badge(b.status)]);
+        } else {
+          cells(tr, [b.jobName, when(b.startedAt), dur(b.durationMs),
+                     n(b.processedCount), badge(b.status), b.message || DASH]);
+        }
+      });
+    });
+
+    var cards = document.getElementById("ad-batch-cards");
+    if (!cards) return;
+    cards.replaceChildren();
+    (list || []).forEach(function (b) {
+      var card = document.createElement("div");
+      card.className = "card card-pad batch-card";
+      var ttl = document.createElement("p");
+      ttl.className = "ttl";
+      ttl.textContent = b.jobName + " ";
+      ttl.appendChild(badge(b.status));
+      var note = document.createElement("p");
+      note.className = "note";
+      note.textContent = "최근 " + when(b.startedAt);
+      card.appendChild(ttl); card.appendChild(note);
+      cards.appendChild(card);
+    });
+  }
+
+  /* ── 종목 마스터 (ADMIN-01) ───────────────────────────────── */
+  var filter = "ALL";
+
+  function query() {
+    var q = document.getElementById("ms-q");
+    var params = "limit=100";
+    if (filter === "ACTIVE" || filter === "INACTIVE") params += "&status=" + filter;
+    if (filter === "ETF") params += "&assetClass=ETF";
+    if (q && q.value.trim()) params += "&q=" + encodeURIComponent(q.value.trim());
+    return params;
+  }
+
+  function stockRow(body, s, withAction) {
+    var tr = body.insertRow();
+    var state = document.createElement("span");
+    state.className = "badge " + (s.active ? "badge-ok" : "badge-warn");
+    state.textContent = s.active ? "활성" : "비활성";
+
+    var base = [s.symbol, s.nameKo || s.name, s.exchange || DASH, s.assetClass || DASH];
+    if (!withAction) { cells(tr, base.concat([state])); return; }
+
+    /* 지우지 않고 상태만 바꾼다(2.6). 과거 매매 기록이 이 종목을 참조한다 */
+    var btn = document.createElement("button");
+    btn.className = "btn btn-sm";
+    btn.type = "button";
+    btn.textContent = s.active ? "비활성화" : "복원";
+    btn.dataset.symbol = s.symbol;
+    btn.dataset.next = s.active ? "false" : "true";
+    cells(tr, base.concat([DASH, state, btn]));
+  }
+
+  async function loadStocks() {
+    var list = await api("/api/admin/stocks?" + query());
+    if (!list || list.forbidden || list.error) return;
+
+    var full = document.getElementById("ad-stocks");
+    if (full) { full.replaceChildren(); list.forEach(function (s) { stockRow(full, s, true); }); }
+    var dash = document.getElementById("ad-dash-stocks");
+    if (dash) { dash.replaceChildren(); list.slice(0, 5).forEach(function (s) { stockRow(dash, s, false); }); }
+
+    var total = await api("/api/admin/stocks/count?" + query());
+    if (typeof total === "number") {
+      put("ad-stock-count", n(total) + "건");
+      put("ad-dash-stock-count", n(total) + "건");
+    }
+  }
+
+  /* 요약 스트립의 활성·비활성은 필터와 무관한 전체 값이라 따로 센다 */
+  async function loadStockSummary() {
+    var active = await api("/api/admin/stocks/count?status=ACTIVE");
+    var inactive = await api("/api/admin/stocks/count?status=INACTIVE");
+    if (typeof active === "number") put("ad-active", n(active));
+    if (typeof inactive === "number") put("ad-inactive", "비활성 " + n(inactive));
+  }
+
+  /* ── 운영 로그 (ADMIN-07) ─────────────────────────────────── */
+  async function loadLogs() {
+    var list = await api("/api/admin/logs?limit=50");
+    var body = document.getElementById("ad-logs");
+    if (!body || !list || list.forbidden || list.error) return;
+    body.replaceChildren();
+    put("ad-log-count", "최근 " + list.length + "건");
+    if (list.length === 0) {
+      var tr = body.insertRow();
+      var td = tr.insertCell();
+      td.colSpan = 6; td.className = "sub";
+      td.style.padding = "24px"; td.style.textAlign = "center";
+      td.textContent = "아직 기록이 없습니다";
+      return;
+    }
+    list.forEach(function (g) {
+      var tr = body.insertRow();
+      var result = document.createElement("span");
+      result.className = "badge " + (g.result === "SUCCESS" ? "badge-ok" : "badge-err");
+      result.textContent = g.result === "SUCCESS" ? "성공" : "실패";
+      /* 원본이 사라져도 무슨 대상이었는지 남도록 label 을 함께 저장해 둔다(2.2) */
+      cells(tr, [when(g.createdAt), g.adminNickname || DASH, g.action,
+                 g.targetLabel || g.targetId || DASH, result, DASH]);
+    });
+  }
+
+  /* ── 동작 연결 ────────────────────────────────────────────── */
+  var sync = document.getElementById("ad-sync");
+  if (sync) {
+    sync.addEventListener("click", async function () {
+      /* 1만 건이라 수십 초가 걸린다. 비동기로 던지면 성공했는지 알 수 없어
+         동기로 돌리고 기다린다(2.5). 그동안 버튼을 잠근다 */
+      var label = sync.textContent;
+      sync.disabled = true;
+      sync.textContent = "동기화 중…";
+      var out = await api("/api/admin/stocks/sync", { method: "POST" });
+      sync.disabled = false;
+      sync.textContent = label;
+      if (typeof out === "number") { alert(out.toLocaleString("ko-KR") + "건을 동기화했습니다"); }
+      loadStocks(); loadStockSummary(); loadLogs(); loadBatches();
+    });
+  }
+
+  var stocksBody = document.getElementById("ad-stocks");
+  if (stocksBody) {
+    stocksBody.addEventListener("click", async function (e) {
+      var btn = e.target.closest("button[data-symbol]");
+      if (!btn) return;
+      var toActive = btn.dataset.next === "true";
+      var reason = toActive ? null : prompt("비활성 사유를 적어주세요 (예: 상장폐지)");
+      if (!toActive && !reason) return;
+      var out = await api("/api/admin/stocks/active", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbol: btn.dataset.symbol, active: toActive, reason: reason }),
+      });
+      if (out && out.error) { alert(out.error.message); return; }
+      loadStocks(); loadStockSummary(); loadLogs();
+    });
+  }
+
+  var q = document.getElementById("ms-q");
+  if (q) {
+    var timer = null;
+    q.addEventListener("input", function () {
+      clearTimeout(timer);
+      timer = setTimeout(loadStocks, 250);
+    });
+  }
+  var group = document.querySelector("[data-stock-filter]");
+  if (group) {
+    group.addEventListener("mj:change", function (e) { filter = e.detail; loadStocks(); });
+  }
+
+  async function loadBatches() { drawBatches(await api("/api/admin/batches")); }
+
+  loadBatches();
+  loadStocks();
+  loadStockSummary();
+  loadLogs();
+})();
+</script>
 </body>
 </html>
