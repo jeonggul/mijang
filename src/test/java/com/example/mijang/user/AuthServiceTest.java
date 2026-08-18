@@ -123,6 +123,15 @@ class AuthServiceTest {
         /** 저장돼 있다고 칠 사용자. 각 테스트가 직접 세팅한다. */
         User stored;
 
+        /* mypage 범위가 더한 것들. 인증 테스트가 부르지 않으므로 계약만 채운다 —
+           여기서 뭔가 돌려주면 인증이 프로필 경로에 기대게 되어 경계가 흐려진다 */
+        @Override public int countByNicknameExcluding(String nickname, Long excludeId) { return 0; }
+
+        @Override public int updateProfile(Long id, String nickname, String profileImageUrl,
+                                           String baseCurrency, String theme) { return 0; }
+
+        @Override public com.example.mijang.user.dto.UserResponse findProfile(Long id) { return null; }
+
         /** 저장된 사용자와 이메일이 같으면 1. */
         @Override public int countByEmail(String email) {
             return stored != null && stored.email().equals(email) ? 1 : 0;

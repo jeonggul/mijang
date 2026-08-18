@@ -107,15 +107,17 @@
 
 <div class="page-wide">
   <section class="card card-pad profile-head">
-    <span class="ava-lg" aria-hidden="true"></span>
+    <span class="ava-lg" aria-hidden="true"><img id="my-avatar" alt="" hidden></span>
     <div class="info">
-      <h1>정하</h1>
-      <p class="note">dlwjdgkw@gmail.com · 2025년 1월 가입</p>
+      <h1 id="my-nick">—</h1>
+      <p class="note"><span id="my-email">—</span> · <span id="my-joined">—</span> 가입</p>
       <ul class="stats">
-        <li><span class="k">매매 기록</span><span class="v num">38건</span></li>
-        <li><span class="k">보유 종목</span><span class="v num">5종목</span></li>
-        <li><span class="k">작성 글</span><span class="v num">12개</span></li>
-        <li><span class="k">기록한 판단</span><span class="v num">31개</span></li>
+        <li><span class="k">매매 기록</span><span class="v num" id="my-tx">—</span></li>
+        <li><span class="k">보유 종목</span><span class="v num" id="my-holding-count">—</span></li>
+        <!-- 작성 글·기록한 판단은 community 와 회고 범위가 선행이라 아직 셀 수 없다.
+             0 으로 두면 "글을 쓴 적이 없다" 로 읽히므로 — 로 비운다 -->
+        <li><span class="k">작성 글</span><span class="v num">—</span></li>
+        <li><span class="k">기준 통화</span><span class="v" id="my-currency">—</span></li>
       </ul>
     </div>
     <a class="btn btn-sm" th:href="@{/profile-edit}">프로필 수정</a>
@@ -123,29 +125,15 @@
 
   <div class="grid-2">
     <section class="card">
-      <h2 class="card-head">보유 요약 <span class="sub num">5종목</span></h2>
-      <ul class="watch" style="padding:0 18px 16px">
-        <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="px">3,318,700원</span><span class="pc rise">+6.7%</span></a></li>
-        <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="px">2,965,300원</span><span class="pc rise">+17.4%</span></a></li>
-        <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="px">3,486,900원</span><span class="pc rise">+2.1%</span></a></li>
-        <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="px">1,595,800원</span><span class="pc fall">−11.3%</span></a></li>
-        <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="px">1,480,600원</span><span class="pc fall">−0.8%</span></a></li>
-      </ul>
+      <h2 class="card-head">보유 요약 <span class="sub num" id="my-holding-label">—</span></h2>
+      <ul class="watch" style="padding:0 18px 16px" id="my-holdings"><!-- 스크립트가 채운다 --></ul>
     </section>
 
     <section class="card">
-      <h2 class="card-head">작성 글 <span class="sub num">12개</span></h2>
-      <ul class="list">
-        <li><a th:href="@{/community-post}">
-          <span class="nm">인도 생산 확대 뉴스 어떻게 보시나요</span>
-          <span class="meta">AAPL · 3시간 전</span></a></li>
-        <li><a th:href="@{/community-post}">
-          <span class="nm">$200 넘으면 일부 정리 예정</span>
-          <span class="meta">AAPL · 어제</span></a></li>
-        <li><a th:href="@{/community-post}">
-          <span class="nm">AI 수요 지속성에 대한 생각</span>
-          <span class="meta">NVDA · 1주 전</span></a></li>
-      </ul>
+      <h2 class="card-head">작성 글 <span class="sub num">—</span></h2>
+      <!-- MY-03 작성 글은 community 범위가 선행이다. 목록을 만들 수 없으므로
+           프로토타입 더미를 지우고 아직 없다는 것만 밝힌다 -->
+      <p class="note" style="padding:0 18px 18px">커뮤니티 기능이 붙으면 여기에 표시됩니다</p>
     </section>
   </div>
 
@@ -154,5 +142,86 @@
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 내 정보 (MY-01) · 보유 요약 (MY-02)
+   보유는 포트폴리오 화면과 같은 값이어야 한다(2.5). 별도 조회를 만들지 않고
+   서버가 HoldingService 를 그대로 불러 상위 몇 개만 잘라 준다. */
+(function () {
+  var DASH = "—";
+
+  function api(url) {
+    return fetch(url).then(function (res) {
+      if (res.status === 401) { location.href = "/login"; return null; }
+      return res.json().then(function (b) { return b.success ? b.data : null; });
+    });
+  }
+  function put(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function krw(v) { return v == null ? DASH : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function pct(v) {
+    if (v == null) return DASH;
+    return (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(1) + "%";
+  }
+
+  api("/api/users/me").then(function (me) {
+    if (!me) return;
+    put("my-nick", me.nickname);
+    put("my-email", me.email);
+    /* joinedAt 은 ISO 문자열이다. 날짜 부분만 쓴다 — 가입 시각까지는 필요 없다 */
+    put("my-joined", me.joinedAt ? me.joinedAt.slice(0, 10) : DASH);
+    put("my-currency", me.baseCurrency === "USD" ? "달러" : "원화");
+
+    /* 프로필 이미지가 없으면 마크업의 기본 아바타를 그대로 둔다 */
+    var img = document.getElementById("my-avatar");
+    if (img && me.profileImageUrl) { img.src = me.profileImageUrl; img.hidden = false; }
+  });
+
+  /* 매매 기록 건수는 목록 API 의 총건수를 쓴다. 한 건만 받아 와도 총계는 온다 */
+  api("/api/transactions?page=0&size=1").then(function (page) {
+    if (page) put("my-tx", (page.totalElements || 0) + "건");
+  });
+
+  api("/api/users/me/holdings").then(function (list) {
+    if (!list) return;
+    put("my-holding-count", list.length + "종목");
+    put("my-holding-label", list.length + "종목");
+
+    var box = document.getElementById("my-holdings");
+    if (!box) return;
+    box.replaceChildren();
+    if (list.length === 0) {
+      var p = document.createElement("li");
+      p.className = "note";
+      p.style.padding = "8px 0 12px";
+      p.textContent = "보유 종목이 없습니다";
+      box.appendChild(p);
+      return;
+    }
+    list.forEach(function (h) {
+      /* 수익률은 평가손익 ÷ 매입원가. 포트폴리오 화면과 같은 식이다 */
+      var cost = (h.avgPrice == null || h.avgFxRate == null) ? null
+        : Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+      var rate = (h.evalPnlKrw == null || !cost) ? null : Number(h.evalPnlKrw) / cost;
+
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+
+      var tk = document.createElement("span");
+      tk.className = "tk"; tk.textContent = h.symbol;
+      var px = document.createElement("span");
+      px.className = "px"; px.textContent = krw(h.marketValueKrw);
+      var pc = document.createElement("span");
+      pc.className = "pc" + (rate == null ? "" : (rate >= 0 ? " rise" : " fall"));
+      pc.textContent = pct(rate);
+
+      a.appendChild(tk); a.appendChild(px); a.appendChild(pc);
+      li.appendChild(a); box.appendChild(li);
+    });
+  });
+})();
+</script>
 </body>
 </html>
