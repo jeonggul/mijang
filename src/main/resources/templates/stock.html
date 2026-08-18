@@ -230,16 +230,10 @@
         <h2 class="card-head">재무제표 <span class="sub">SEC EDGAR · 연간</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
-            <thead><tr>
-              <th class="txt" scope="col">항목</th><th class="r" scope="col">2024</th>
-              <th class="r" scope="col">2023</th><th class="r" scope="col">2022</th>
+            <thead><tr id="fin-head">
+              <th class="txt" scope="col">항목</th>
             </tr></thead>
-            <tbody>
-              <tr><td class="txt">매출</td><td class="r">$391.0B</td><td class="r">$383.3B</td><td class="r">$394.3B</td></tr>
-              <tr><td class="txt">영업이익</td><td class="r">$123.2B</td><td class="r">$114.3B</td><td class="r">$119.4B</td></tr>
-              <tr><td class="txt">순이익</td><td class="r">$93.7B</td><td class="r">$97.0B</td><td class="r">$99.8B</td></tr>
-              <tr><td class="txt">영업이익률</td><td class="r">31.5%</td><td class="r">29.8%</td><td class="r">30.3%</td></tr>
-            </tbody>
+            <tbody id="fin-rows"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
         <p class="note" style="padding:12px 18px 16px">
@@ -255,18 +249,10 @@
       <h2 class="card-head">주요 재무 지표 <span class="sub">최근 4개 분기</span></h2>
       <div class="table-wrap">
         <table class="tbl">
-          <thead><tr>
+          <thead><tr id="q-head">
             <th class="txt" scope="col">항목</th>
-            <th class="r" scope="col">2025 Q2</th><th class="r" scope="col">2025 Q1</th>
-            <th class="r" scope="col">2024 Q4</th><th class="r" scope="col">2024 Q3</th>
           </tr></thead>
-          <tbody>
-            <tr><td class="txt">매출</td><td class="r">$94.0B</td><td class="r">$124.3B</td><td class="r">$94.9B</td><td class="r">$85.8B</td></tr>
-            <tr><td class="txt">영업이익</td><td class="r">$29.6B</td><td class="r">$42.8B</td><td class="r">$29.6B</td><td class="r">$25.4B</td></tr>
-            <tr><td class="txt">순이익</td><td class="r">$24.8B</td><td class="r">$36.3B</td><td class="r">$14.7B</td><td class="r">$21.4B</td></tr>
-            <tr><td class="txt">EPS</td><td class="r">$1.65</td><td class="r">$2.40</td><td class="r">$0.97</td><td class="r">$1.40</td></tr>
-            <tr><td class="txt">영업이익률</td><td class="r">31.5%</td><td class="r">34.4%</td><td class="r">31.2%</td><td class="r">29.6%</td></tr>
-          </tbody>
+          <tbody id="q-rows"><!-- 스크립트가 채운다 --></tbody>
         </table>
       </div>
       <p class="note" style="padding:12px 18px">SEC EDGAR XBRL 원문 기준. 회계 기준 차이로 벤더 집계와 다를 수 있습니다.</p>
@@ -1307,6 +1293,162 @@
   loadNews();
   loadChart();
   loadWatch();
+})();
+
+/* 재무제표 (SEC EDGAR)
+   기업 정보 옆에 붙어 있는데 값이 박혀 있었다. 회계연도는 종목마다 다르므로
+   머리글도 응답에서 만든다 — 2024·2023·2022 를 박아 두면 9월 결산 종목에서 틀린다. */
+(function () {
+  var head = document.getElementById("fin-head");
+  var rows = document.getElementById("fin-rows");
+  if (!head || !rows) return;
+
+  var symbol = new URLSearchParams(location.search).get("symbol");
+  if (!symbol) return;
+
+  /* 표에 올릴 항목. 순서가 곧 행 순서다 */
+  var METRICS = ["revenue", "operatingIncome", "netIncome", "eps"];
+  var LABEL = { revenue: "매출", operatingIncome: "영업이익", netIncome: "순이익", eps: "EPS" };
+
+  /* $391.0B 처럼 줄여 쓴다. 억 단위 숫자를 그대로 늘어놓으면 읽히지 않는다 */
+  function money(v) {
+    if (v == null) return "—";
+    var n = Number(v), sign = n < 0 ? "−" : "";
+    n = Math.abs(n);
+    if (n >= 1e9) return sign + "$" + (n / 1e9).toFixed(1) + "B";
+    if (n >= 1e6) return sign + "$" + (n / 1e6).toFixed(1) + "M";
+    return sign + "$" + n.toLocaleString("en-US");
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (!res.ok) return null;
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  /* EPS 는 주당 금액이라 B·M 로 줄이면 안 된다. $1.65 그대로 보여준다 */
+  function amount(key, v) {
+    if (v == null) return "—";
+    return key === "eps" ? "$" + Number(v).toFixed(2) : money(v);
+  }
+
+  function empty(message) {
+    rows.replaceChildren();
+    var tr = rows.insertRow();
+    var td = tr.insertCell();
+    td.colSpan = 4; td.className = "sub";
+    td.style.padding = "20px"; td.style.textAlign = "center";
+    td.textContent = message;
+  }
+
+  /* 분기 표(재무 탭). 기간 이름도 응답에서 만든다 — 회계 분기는 달력 분기와 다르다 */
+  function drawQuarterly(byMetric) {
+    var qhead = document.getElementById("q-head");
+    var qrows = document.getElementById("q-rows");
+    if (!qhead || !qrows) return;
+
+    /* 라벨은 기간이 끝난 달로 만든다. 응답의 fiscalYear·fiscalPeriod 는 분기 행에서
+       신뢰할 수 없다 — 실제로 서로 다른 기간이 둘 다 "2026 Q3" 로 온다 */
+    var periods = byMetric.revenue.slice(0, 4).map(function (f) {
+      return { key: f.end, label: f.end.slice(0, 7).replace("-", ".") };
+    });
+    qrows.replaceChildren();
+    if (periods.length === 0) {
+      var tr = qrows.insertRow();
+      var td = tr.insertCell();
+      td.colSpan = 5; td.className = "sub";
+      td.style.padding = "20px"; td.style.textAlign = "center";
+      td.textContent = "분기 재무 정보를 불러오지 못했습니다";
+      return;
+    }
+    while (qhead.cells.length > 1) { qhead.deleteCell(1); }
+    periods.forEach(function (p) {
+      var th = document.createElement("th");
+      th.className = "r"; th.scope = "col"; th.textContent = p.label;
+      qhead.appendChild(th);
+    });
+
+    function pick(key, end) {
+      return byMetric[key].filter(function (f) { return f.end === end; })[0];
+    }
+    METRICS.forEach(function (key) {
+      var tr = qrows.insertRow();
+      var name = tr.insertCell();
+      name.className = "txt"; name.textContent = LABEL[key];
+      periods.forEach(function (p) {
+        var td = tr.insertCell();
+        td.className = "r";
+        var f = pick(key, p.key);
+        td.textContent = amount(key, f ? f.value : null);
+      });
+    });
+    var tr2 = qrows.insertRow();
+    var n2 = tr2.insertCell();
+    n2.className = "txt"; n2.textContent = "영업이익률";
+    periods.forEach(function (p) {
+      var op = pick("operatingIncome", p.key), rev = pick("revenue", p.key);
+      var td = tr2.insertCell();
+      td.className = "r";
+      td.textContent = (op && rev && Number(rev.value))
+        ? (Number(op.value) / Number(rev.value) * 100).toFixed(1) + "%" : "—";
+    });
+  }
+
+  (async function () {
+    var byMetric = {}, quarterly = {};
+    for (var i = 0; i < METRICS.length; i++) {
+      var list = await api("/api/stocks/" + encodeURIComponent(symbol)
+        + "/financials?metric=" + METRICS[i] + "&limit=24") || [];
+      /* 연간 총계만 쓴다. quarterly 가 false 인 것에는 "3분기까지 누적" 같은 값도 섞여 있어
+         그것으로 거르면 같은 해가 여러 번, 그것도 반쪽 금액으로 나온다. FY 만 고른다 */
+      byMetric[METRICS[i]] = list.filter(function (f) { return f.fiscalPeriod === "FY"; });
+      /* 분기 표는 반대로 quarterly 인 것만 쓰고, 끝난 날 기준 최신순으로 본다 */
+      quarterly[METRICS[i]] = list.filter(function (f) { return f.quarterly; })
+        .sort(function (a, b) { return a.end < b.end ? 1 : -1; });
+    }
+    drawQuarterly(quarterly);
+
+    /* 회계연도는 응답이 알려 준다. 매출 기준으로 최근 세 해를 고른다 */
+    var years = byMetric.revenue.map(function (f) { return f.fiscalYear; })
+      .filter(function (y) { return y != null; });
+    years = Array.from(new Set(years)).sort(function (a, b) { return b - a; }).slice(0, 3);
+
+    if (years.length === 0) { empty("재무 정보를 불러오지 못했습니다"); return; }
+
+    while (head.cells.length > 1) { head.deleteCell(1); }
+    years.forEach(function (y) {
+      var th = document.createElement("th");
+      th.className = "r"; th.scope = "col"; th.textContent = y;
+      head.appendChild(th);
+    });
+
+    rows.replaceChildren();
+    METRICS.forEach(function (key) {
+      var tr = rows.insertRow();
+      var name = tr.insertCell();
+      name.className = "txt"; name.textContent = LABEL[key];
+      years.forEach(function (y) {
+        var fact = byMetric[key].filter(function (f) { return f.fiscalYear === y; })[0];
+        var td = tr.insertCell();
+        td.className = "r";
+        td.textContent = amount(key, fact ? fact.value : null);
+      });
+    });
+
+    /* 영업이익률은 응답에 없다. 두 값이 다 있는 해만 만든다 — 없는 해를 0%로 두면 거짓이다 */
+    var tr = rows.insertRow();
+    var name = tr.insertCell();
+    name.className = "txt"; name.textContent = "영업이익률";
+    years.forEach(function (y) {
+      var op = byMetric.operatingIncome.filter(function (f) { return f.fiscalYear === y; })[0];
+      var rev = byMetric.revenue.filter(function (f) { return f.fiscalYear === y; })[0];
+      var td = tr.insertCell();
+      td.className = "r";
+      td.textContent = (op && rev && Number(rev.value))
+        ? (Number(op.value) / Number(rev.value) * 100).toFixed(1) + "%" : "—";
+    });
+  })();
 })();
 </script>
 </body>
