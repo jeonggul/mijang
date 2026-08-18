@@ -59,4 +59,17 @@ public interface HoldingMapper {
      * @param symbol 주면 그 종목만. null 이면 전체 — 종목 상세가 같은 문장을 쓴다(2.4)
      */
     List<SymbolPnl> findForPnl(@Param("userId") Long userId, @Param("symbol") String symbol);
+
+    /**
+     * 손익 계산 입력값 — <b>그날 기준</b>.
+     *
+     * <p>{@link #findForPnl} 은 언제나 <b>최신</b> 종가를 붙인다. 오늘 스냅샷에는 그것이 맞지만,
+     * 놓친 날을 나중에 메울 때 그대로 쓰면 <b>과거 추이가 통째로 거짓이 된다</b>(report 2.4).
+     * 그래서 그 날짜 이하의 마지막 종가를 붙이는 경로를 따로 둔다.
+     *
+     * @param asOf 이 날짜까지의 마지막 종가를 쓴다
+     */
+    List<SymbolPnl> findForPnlAsOf(@Param("userId") Long userId,
+                                   @Param("symbol") String symbol,
+                                   @Param("asOf") java.time.LocalDate asOf);
 }
