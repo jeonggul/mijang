@@ -81,4 +81,26 @@
          ORDER BY h.symbol
     </select>
 
+    <!--
+      그날 기준 손익 입력값. 위 findForPnl 과 딱 한 줄 다르다 — 종가를 고를 때
+      "그 날짜 이하" 로 자른다. 놓친 날을 메울 때 오늘 종가를 쓰면 과거가 거짓이 된다(report 2.4).
+    -->
+    <select id="findForPnlAsOf" resultType="com.example.mijang.portfolio.dto.SymbolPnl">
+        SELECT h.symbol,
+               h.quantity,
+               h.avg_price   AS avgPrice,
+               h.avg_fx_rate AS avgFxRate,
+               p.close       AS currentPrice
+          FROM holdings h
+          LEFT JOIN daily_prices p
+                 ON p.symbol = h.symbol
+                AND p.trade_date = (SELECT MAX(trade_date) FROM daily_prices
+                                     WHERE symbol = h.symbol
+                                       AND trade_date &lt;= #{asOf})
+         WHERE h.user_id = #{userId}
+           AND h.quantity &gt; 0
+        <if test="symbol != null"> AND h.symbol = #{symbol} </if>
+         ORDER BY h.symbol
+    </select>
+
 </mapper>
