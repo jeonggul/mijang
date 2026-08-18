@@ -45,7 +45,10 @@
     <select id="findByUser" resultType="com.example.mijang.portfolio.dto.TransactionResponse">
         SELECT t.id, t.symbol, s.name, t.side, t.quantity, t.price, t.fx_rate AS fxRate,
                t.fee, t.traded_at AS tradedAt, t.trade_date AS tradeDate,
-               t.buy_reason AS buyReason, t.target_price AS targetPrice, t.sentiment
+               t.buy_reason AS buyReason, t.target_price AS targetPrice, t.sentiment,
+               <!-- 실현손익은 원장에 없다. 서비스가 계산해서 채운다(2.1) — 레코드는 자리 순서로
+                    매핑되므로 자리는 여기서 비워 둔 채 만들어 둬야 한다 -->
+               NULL AS realizedPnlKrw
           FROM transactions t
           JOIN stocks s ON s.symbol = t.symbol
          WHERE t.user_id = #{userId}
@@ -86,6 +89,7 @@
           FROM transactions
          WHERE user_id = #{userId}
            AND deleted_at IS NULL
+         ORDER BY symbol
     </select>
 
 </mapper>

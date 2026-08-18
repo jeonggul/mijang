@@ -1,6 +1,7 @@
 package com.example.mijang.portfolio;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.mijang.portfolio.domain.Holding;
 import com.example.mijang.portfolio.domain.Transaction;
@@ -36,6 +37,13 @@ class HoldingCalculatorTest {
         return new Transaction(null, 1L, 1L, "AAPL", side,
                 new BigDecimal(qty), new BigDecimal(price), new BigDecimal(fx), new BigDecimal(fee),
                 d.atStartOfDay(), d, null, null, null);
+    }
+
+    /** 건별 실현손익은 거래 id 로 돌아온다. 기본 헬퍼는 id 가 없으므로 붙여 준다. */
+    private static Transaction withId(long id, Transaction t) {
+        return new Transaction(id, t.userId(), t.portfolioId(), t.symbol(), t.side(),
+                t.quantity(), t.price(), t.fxRate(), t.fee(), t.tradedAt(), t.tradeDate(),
+                t.buyReason(), t.targetPrice(), t.sentiment());
     }
 
     @Nested
@@ -240,5 +248,97 @@ class HoldingCalculatorTest {
                 buy("10", "300", "1300", "0", 2)));
 
         assertThat(h.costUsd()).isEqualByComparingTo("5000");
+    }
+
+    @Nested
+    @DisplayName("매도 건별 실현손익 — 화면 SR-007")
+    class 건별실현손익 {
+
+        /* 매수 10@$100(환율 1300) → 매도 5@$150(1400) → 매수 5@$200(1500) → 매도 4@$250(1600)
+           두 번째 매도는 평단가가 150 으로 올라간 뒤라 첫 매도와 기준이 다르다.
+           이 "그 시점 평단가" 때문에 거래 한 줄만 보고는 실현손익을 구할 수 없다. */
+        @Test
+        @DisplayName("매도마다 그 시점 평단가로 따로 계산된다")
+        void 매도별로계산() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1L, buy("10", "100", "1300", "0", 1)),
+                    withId(2L, sell("5", "150", "1400", "0", 2)),
+                    withId(3L, buy("5", "200", "1500", "0", 3)),
+                    withId(4L, sell("4", "250", "1600", "0", 4))));
+
+            // 5 × (150×1400 − 100×1300) = 5 × 80,000
+            assertThat(c.realizedBySellId().get(2L)).isEqualByComparingTo("400000.00");
+            // 평단 150 · 평균환율 1433.3333 기준 — 4 × (250×1600 − 150×1433.3333)
+            assertThat(c.realizedBySellId().get(4L)).isEqualByComparingTo("740000.02");
+        }
+
+        @Test
+        @DisplayName("건별 합이 보유 현황의 실현손익과 같다")
+        void 합이일치한다() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1L, buy("10", "100", "1300", "0", 1)),
+                    withId(2L, sell("5", "150", "1400", "0", 2)),
+                    withId(3L, buy("5", "200", "1500", "0", 3)),
+                    withId(4L, sell("4", "250", "1600", "0", 4))));
+
+            BigDecimal sum = c.realizedBySellId().values().stream()
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            assertThat(sum).isEqualByComparingTo(c.holding().realizedPnlKrw());
+        }
+
+        @Test
+        @DisplayName("매수는 들어 있지 않다")
+        void 매수는제외() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1L, buy("10", "100", "1300", "0", 1)),
+                    withId(2L, sell("5", "150", "1400", "0", 2))));
+
+            assertThat(c.realizedBySellId()).containsOnlyKeys(2L);
+        }
+
+        @Test
+        @DisplayName("손실 매도는 음수로 담긴다")
+        void 손실도담긴다() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1L, buy("10", "200", "1300", "0", 1)),
+                    withId(2L, sell("10", "100", "1300", "0", 2))));
+
+            assertThat(c.realizedBySellId().get(2L)).isEqualByComparingTo("-1300000.00");
+        }
+
+        @Test
+        @DisplayName("수수료를 뺀 값이 담긴다")
+        void 수수료차감() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1L, buy("10", "100", "1300", "0", 1)),
+                    withId(2L, sell("5", "150", "1400", "5", 2))));
+
+            // 400,000 − 5×1400
+            assertThat(c.realizedBySellId().get(2L)).isEqualByComparingTo("393000.00");
+        }
+
+        /* 재계산 경로는 DB 에서 꺼낸 거래라 id 가 항상 있지만, 계산기는 id 없이도 부를 수 있어야
+           한다 — 기존 테스트가 전부 그렇게 부른다. id 가 없으면 건별 값만 비고 합계는 그대로다. */
+        @Test
+        @DisplayName("id 가 없으면 건별 값은 비고 합계는 그대로다")
+        void id없으면건별만비운다() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    buy("10", "100", "1300", "0", 1),
+                    sell("5", "150", "1400", "0", 2)));
+
+            assertThat(c.realizedBySellId()).isEmpty();
+            assertThat(c.holding().realizedPnlKrw()).isEqualByComparingTo("400000.00");
+        }
+
+        @Test
+        @DisplayName("돌려준 지도는 고칠 수 없다")
+        void 불변이다() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1L, buy("10", "100", "1300", "0", 1)),
+                    withId(2L, sell("5", "150", "1400", "0", 2))));
+
+            assertThatThrownBy(() -> c.realizedBySellId().put(9L, BigDecimal.ONE))
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
     }
 }
