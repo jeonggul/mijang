@@ -1,14 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- 개발명세서(MVC): "DailySnapshotMapper XML id 일치" -->
+<!--
+  DailySnapshotMapper.xml — 스냅샷 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    저장은 넣기 겸 갱신이다 — 배치가 두 번 돌아도 그날 값이 하나만 남는다.
+-->
 <mapper namespace="com.example.mijang.portfolio.mapper.DailySnapshotMapper">
 
-    <select id="countByRange" resultType="long">
-        SELECT COUNT(*)
+    <!-- record 는 순서로 매핑된다. SnapshotResponse 선언 순서와 같아야 한다 -->
+    <sql id="cols">
+        snapshot_date, market_value_krw, cost_basis_krw, price_pnl_krw, fx_pnl_krw,
+        total_pnl_krw, return_rate, applied_fx_rate, is_fx_substituted
+    </sql>
+
+    <!-- 같은 날을 다시 찍으면 갱신한다(2.5) -->
+    <insert id="upsert">
+        INSERT INTO daily_snapshots
+            (user_id, portfolio_id, snapshot_date, market_value_usd, market_value_krw,
+             cost_basis_krw, price_pnl_krw, fx_pnl_krw, total_pnl_krw,
+             return_rate, applied_fx_rate, is_fx_substituted)
+        VALUES
+            (#{userId}, #{portfolioId}, #{snapshotDate}, #{marketValueUsd}, #{marketValueKrw},
+             #{costBasisKrw}, #{pricePnlKrw}, #{fxPnlKrw}, #{totalPnlKrw},
+             #{returnRate}, #{appliedFxRate}, #{fxSubstituted})
+        ON DUPLICATE KEY UPDATE
+            market_value_usd  = VALUES(market_value_usd),
+            market_value_krw  = VALUES(market_value_krw),
+            cost_basis_krw    = VALUES(cost_basis_krw),
+            price_pnl_krw     = VALUES(price_pnl_krw),
+            fx_pnl_krw        = VALUES(fx_pnl_krw),
+            total_pnl_krw     = VALUES(total_pnl_krw),
+            return_rate       = VALUES(return_rate),
+            applied_fx_rate   = VALUES(applied_fx_rate),
+            is_fx_substituted = VALUES(is_fx_substituted)
+    </insert>
+
+    <select id="findByRange" resultType="com.example.mijang.portfolio.dto.SnapshotResponse">
+        SELECT <include refid="cols"/>
           FROM daily_snapshots
          WHERE user_id = #{userId}
-           AND base_date BETWEEN #{from} AND #{to}
+           AND snapshot_date BETWEEN #{from} AND #{to}
+         ORDER BY snapshot_date
+    </select>
+
+    <!-- 정확히 그 날짜가 없을 수 있다. 이후 첫 행을 집는다 -->
+    <select id="findFirstOnOrAfter" resultType="com.example.mijang.portfolio.dto.SnapshotResponse">
+        SELECT <include refid="cols"/>
+          FROM daily_snapshots
+         WHERE user_id = #{userId}
+           AND snapshot_date &gt;= #{from}
+         ORDER BY snapshot_date
+         LIMIT 1
+    </select>
+
+    <select id="findLastOnOrBefore" resultType="com.example.mijang.portfolio.dto.SnapshotResponse">
+        SELECT <include refid="cols"/>
+          FROM daily_snapshots
+         WHERE user_id = #{userId}
+           AND snapshot_date &lt;= #{to}
+         ORDER BY snapshot_date DESC
+         LIMIT 1
+    </select>
+
+    <!-- 보유가 있는 사용자만. 없으면 평가액 0 인 행이 쌓여 수익률이 깨진다(2.6) -->
+    <select id="findUserIdsWithHoldings" resultType="java.lang.Long">
+        SELECT DISTINCT user_id FROM holdings WHERE quantity &gt; 0
     </select>
 
 </mapper>
