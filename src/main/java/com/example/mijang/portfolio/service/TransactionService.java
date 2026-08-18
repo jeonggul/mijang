@@ -23,8 +23,12 @@ import com.example.mijang.stock.domain.Stock;
 import com.example.mijang.stock.mapper.StockMapper;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -118,11 +122,52 @@ public class TransactionService {
         holdingService.recalculate(userId, tx.portfolioId(), tx.symbol());
     }
 
-    /** 목록 조회. {@code symbol} 을 주면 그 종목만 본다. */
+    /**
+     * 목록 조회. {@code symbol} 을 주면 그 종목만 본다.
+     *
+     * <p><b>매도 행에는 실현손익을 채워 준다</b>(화면 SR-007). 그 값은 매도 시점의 평단가에
+     * 달려 있어 거래 한 줄만 보고는 구할 수 없고, 원장에 저장해 둘 수도 없다(2.1) —
+     * 과거 날짜를 나중에 끼워 넣으면 그 뒤 매도들의 실현손익이 전부 달라지기 때문이다.
+     *
+     * <p>그래서 이 페이지에 매도가 들어 있는 <b>종목만</b> 골라 다시 훑는다. 페이지 하나에
+     * 종목이 스무 개를 넘기 어렵고 한 종목의 기록은 많아야 수백 건이라 부담이 되지 않는다(2.2).
+     * 매도가 없는 페이지에서는 추가 조회가 한 번도 나가지 않는다.
+     */
     @Transactional(readOnly = true)
     public List<TransactionResponse> list(Long userId, String symbol, int page, int size) {
         String filter = (symbol == null || symbol.isBlank()) ? null : normalize(symbol);
-        return transactionMapper.findByUser(userId, filter, size, page * size);
+        List<TransactionResponse> rows = transactionMapper.findByUser(userId, filter, size, page * size);
+
+        Set<String> soldSymbols = rows.stream()
+                .filter(r -> "SELL".equals(r.side()))
+                .map(TransactionResponse::symbol)
+                .collect(Collectors.toSet());
+        if (soldSymbols.isEmpty()) {
+            return rows;
+        }
+
+        Map<Long, BigDecimal> realized = new HashMap<>();
+        for (String sold : soldSymbols) {
+            realized.putAll(HoldingCalculator
+                    .calculateAll(sold, transactionMapper.findForRecalc(userId, sold))
+                    .realizedBySellId());
+        }
+        return rows.stream()
+                .map(r -> "SELL".equals(r.side())
+                        ? r.withRealizedPnlKrw(realized.get(r.id()))
+                        : r)
+                .toList();
+    }
+
+    /**
+     * 이 사용자가 거래한 적 있는 종목 티커. 목록 화면의 종목 필터가 쓴다({@code ACCOUNT-06}).
+     *
+     * <p>보유 목록이 아니라 <b>거래한 적 있는</b> 목록이다. 전량 매도한 종목도 기록은 남아 있고,
+     * 그 기록을 찾으려면 필터에 그 종목이 떠야 한다.
+     */
+    @Transactional(readOnly = true)
+    public List<String> tradedSymbols(Long userId) {
+        return transactionMapper.findSymbolsByUser(userId);
     }
 
     /** 총 건수. 페이징에 쓴다. */

@@ -14,7 +14,10 @@ import com.example.mijang.portfolio.domain.Holding;
 import com.example.mijang.portfolio.domain.Transaction;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 보유 현황 계산. <b>DB 도 스프링도 모른다</b>(2.10).
@@ -39,6 +42,22 @@ public final class HoldingCalculator {
     }
 
     /**
+     * 한 종목을 훑은 결과 전부.
+     *
+     * <p>보유 현황과 <b>매도 건별 실현손익</b>을 함께 담는다. 목록 화면이 매도 한 줄마다
+     * "실현 +142,600원" 을 보여주려면 건별 값이 필요한데, 그 값은 <b>그 시점의 평단가</b>에
+     * 달려 있어 거래 하나만 떼어 보면 구할 수 없다.
+     *
+     * <p>원장(`transactions`)에 저장하지 않는 이유 — 파생값이기 때문이다(2.1). 과거 날짜를
+     * 나중에 끼워 넣으면 그 뒤 매도들의 실현손익이 전부 달라진다. 저장해 두면 그 순간 틀린 값이 된다.
+     *
+     * @param holding         보유 현황
+     * @param realizedBySellId 매도 기록 id → 그 매도가 확정한 손익(원). 매수는 들어 있지 않다
+     */
+    public record Calculation(Holding holding, Map<Long, BigDecimal> realizedBySellId) {
+    }
+
+    /**
      * 한 종목의 거래를 처음부터 훑어 보유 현황을 만든다.
      *
      * <p><b>거래일 순서대로 들어와야 한다.</b> 순서가 뒤바뀌면 평단가가 달라진다.
@@ -52,11 +71,22 @@ public final class HoldingCalculator {
      * @param transactions 거래일 오름차순으로 정렬된 해당 종목의 거래 전부
      */
     public static Holding calculate(String symbol, List<Transaction> transactions) {
+        return calculateAll(symbol, transactions).holding();
+    }
+
+    /**
+     * 보유 현황과 매도 건별 실현손익을 <b>한 번에</b> 구한다.
+     *
+     * <p>훑는 루프가 하나뿐인 것이 중요하다. 건별 실현손익을 따로 계산하는 루프를 하나 더 두면
+     * 합계와 건별 값이 어긋나는 날이 온다 — 같은 계산이 두 곳에 있으면 언젠가 갈라진다(2.10).
+     */
+    public static Calculation calculateAll(String symbol, List<Transaction> transactions) {
         BigDecimal quantity = BigDecimal.ZERO;
         BigDecimal avgPrice = BigDecimal.ZERO;
         BigDecimal avgFxRate = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
         BigDecimal realizedPnlKrw = BigDecimal.ZERO;
+        Map<Long, BigDecimal> realizedBySellId = new LinkedHashMap<>();
 
         for (Transaction tx : transactions) {
             totalFee = totalFee.add(tx.fee());
@@ -75,18 +105,23 @@ public final class HoldingCalculator {
                         .divide(newQuantity, PRICE_SCALE, RoundingMode.HALF_UP);
                 quantity = newQuantity;
             } else {
-                realizedPnlKrw = realizedPnlKrw.add(realized(tx, avgPrice, avgFxRate));
+                BigDecimal thisSell = realized(tx, avgPrice, avgFxRate);
+                realizedPnlKrw = realizedPnlKrw.add(thisSell);
+                if (tx.id() != null) {
+                    realizedBySellId.put(tx.id(), thisSell.setScale(KRW_SCALE, RoundingMode.HALF_UP));
+                }
                 // 매도는 평단가·평균환율을 바꾸지 않는다. 판 것은 남은 것의 원가와 무관하다(2.3)
                 quantity = quantity.subtract(tx.quantity());
             }
         }
 
-        return new Holding(symbol,
+        Holding holding = new Holding(symbol,
                 quantity.setScale(PRICE_SCALE, RoundingMode.HALF_UP),
                 avgPrice.setScale(PRICE_SCALE, RoundingMode.HALF_UP),
                 avgFxRate.setScale(FX_SCALE, RoundingMode.HALF_UP),
                 totalFee.setScale(4, RoundingMode.HALF_UP),
                 realizedPnlKrw.setScale(KRW_SCALE, RoundingMode.HALF_UP));
+        return new Calculation(holding, Collections.unmodifiableMap(realizedBySellId));
     }
 
     /**

@@ -148,6 +148,12 @@
         <button type="button" data-value="BUY" aria-pressed="false">매수</button>
         <button type="button" data-value="SELL" aria-pressed="false">매도</button>
       </div>
+      <!-- 종목 필터는 서버가 건다(?symbol=). 매수/매도·기간과 달리 티커는 개수가 정해져 있지 않아
+           pill 로 늘어놓을 수 없고, 페이지 밖의 기록까지 찾아야 해서 화면에서 거르면 안 된다 -->
+      <label class="sr-only" for="tx-symbol">종목</label>
+      <select id="tx-symbol" style="margin-left:12px">
+        <option value="">전체 종목</option>
+      </select>
       <span class="sub num" id="tx-count" style="margin-left:12px">—</span>
       <span class="spacer" style="flex:1"></span>
       <!-- 연도는 스크립트가 올해로 채운다. 화면에 연도를 박아 두면 해가 바뀔 때 조용히 틀려진다.
@@ -172,6 +178,27 @@
     </p>
   </main>
 </div>
+<!-- SR-006-2 기록 삭제 확인. 브라우저 confirm 은 무엇을 지우는지 못 보여준다 —
+     어느 기록인지와 판단 메모가 함께 사라진다는 사실을 짚어야 한다 -->
+<div class="overlay" id="del-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dm-t">
+    <h2 id="dm-t">이 기록을 삭제할까요?</h2>
+    <p id="dm-what">—</p>
+    <ul class="kv">
+      <li><span class="k">수량 · 단가</span><span class="v num" id="dm-qty">—</span></li>
+      <li><span class="k">적용 환율</span><span class="v num" id="dm-fx">—</span></li>
+    </ul>
+    <p class="prev-group" id="dm-memo-head" hidden>함께 삭제되는 판단 메모</p>
+    <p class="note" id="dm-memo" hidden></p>
+    <p class="note">삭제하면 보유 현황과 평균 단가가 다시 계산됩니다.</p>
+    <p class="form-error" id="dm-error" role="alert" hidden></p>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-danger" type="button" id="dm-confirm">삭제</button>
+    </div>
+  </div>
+</div>
+
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
 <script th:attr="nonce=${cspNonce}">
@@ -191,6 +218,8 @@
   var totalElements = 0;
   var side = "ALL";
   var period = "ALL";
+  var symbol = "";          /* 종목 필터. 서버가 건다 */
+  var loaded = {};          /* 이번 페이지의 기록. 삭제 확인 모달이 내용을 꺼내 쓴다 */
   var year = new Date().getFullYear();
 
   var yearBtn = document.getElementById("tx-year");
@@ -199,6 +228,13 @@
   function money(v, digits) {
     return v == null ? "—" : Number(v).toLocaleString("ko-KR",
       { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+
+  /* 수량은 자리수를 고정하지 않는다. 소수점 매수를 1자리로 반올림하면 0.526316주가
+     0.5주로 보여 거짓말이 된다. 정수 주는 "3주" 로, 소수는 있는 만큼 보여준다 */
+  function shares(v) {
+    return v == null ? "—" : Number(v).toLocaleString("ko-KR",
+      { minimumFractionDigits: 0, maximumFractionDigits: 6 });
   }
 
   /* 원화 환산 — 서버는 체결 금액을 따로 주지 않는다. 수량·단가·환율이 다 있으므로 여기서 곱한다.
@@ -237,6 +273,17 @@
     var badge = art.querySelector(".badge");
     badge.className = "badge " + (buy ? "badge-rise" : "badge-fall");
     badge.textContent = buy ? "매수" : "매도";
+
+    /* 매도는 실현손익을 함께 보여준다(SR-007). 서버가 그 시점 평단가로 계산해서 준다 —
+       거래 한 줄만 보고는 구할 수 없는 값이라 화면에서 만들지 않는다 */
+    if (!buy && tx.realizedPnlKrw != null) {
+      var r = Number(tx.realizedPnlKrw);
+      var rb = document.createElement("span");
+      rb.className = "badge " + (r >= 0 ? "badge-rise" : "badge-fall");
+      rb.textContent = "실현 " + (r >= 0 ? "+" : "−") +
+        Math.abs(Math.round(r)).toLocaleString("ko-KR") + "원";
+      badge.after(rb);
+    }
     art.querySelector(".tk").textContent = tx.symbol;
     art.querySelector(".nm").textContent = tx.name || "";
     var t = art.querySelector("time");
@@ -245,7 +292,7 @@
     art.querySelector("button").dataset.txId = tx.id;
 
     var dd = art.querySelectorAll("dd");
-    dd[0].textContent = money(tx.quantity, 1) + "주";
+    dd[0].textContent = shares(tx.quantity) + "주";
     dd[1].textContent = "$" + money(tx.price, 2);
     dd[2].textContent = money(tx.fxRate, 2) + "원";
     dd[3].textContent = "$" + money(tx.fee, 2);
@@ -299,6 +346,8 @@
 
     var count = document.getElementById("tx-count");
     if (count) {
+      /* 종목은 서버가 걸러 totalElements 에 이미 반영돼 있다. 화면에서 더 거르는
+         매수매도·기간일 때만 "표시 M / 전체 N" 으로 나눈다 */
       var filtering = side !== "ALL" || period !== "ALL";
       count.textContent = filtering
         ? "표시 " + shown + "건 / 전체 " + totalElements + "건"
@@ -317,10 +366,12 @@
   }
 
   async function load() {
-    var res = await fetch("/api/transactions?page=" + page + "&size=" + SIZE);
+    var res = await fetch("/api/transactions?page=" + page + "&size=" + SIZE +
+                          (symbol ? "&symbol=" + encodeURIComponent(symbol) : ""));
     if (res.status === 401) { location.href = "/login"; return; }
     var out = await res.json();
     box.replaceChildren();
+    loaded = {};
 
     if (!out.success) {
       box.appendChild(empty("불러오지 못했습니다"));
@@ -343,22 +394,76 @@
       return;
     }
 
-    rows.forEach(function (tx) { box.appendChild(card(tx)); });
+    loaded = {};
+    rows.forEach(function (tx) {
+      loaded[tx.id] = tx;
+      box.appendChild(card(tx));
+    });
     renderPager();
     if (applyFilter() === 0) {
       box.appendChild(empty("이 조건에 맞는 기록이 이 페이지에 없습니다."));
     }
   }
 
-  /* 지운 뒤 보유 현황이 다시 계산된다(2.2). 목록만 새로 그리면 된다.
-     그 페이지의 마지막 한 건을 지웠으면 빈 페이지가 남으므로 한 장 앞으로 물러난다 */
-  box.addEventListener("click", async function (e) {
+  /* 지운 뒤 보유 현황이 다시 계산된다(2.2). 목록만 새로 그리면 된다 */
+  /* SR-006-2 삭제 확인. 브라우저 confirm 은 무엇을 지우는지 못 보여준다 —
+     특히 판단 메모가 함께 사라진다는 사실이 전달되지 않는다 */
+  var modal = document.getElementById("del-modal");
+  var pending = null;
+
+  function askDelete(tx) {
+    pending = tx;
+    document.getElementById("dm-what").textContent =
+      tx.symbol + " " + (tx.side === "BUY" ? "매수" : "매도") + " · " + tx.tradeDate + " 기록입니다.";
+    document.getElementById("dm-qty").textContent =
+      shares(tx.quantity) + "주 · $" + money(tx.price, 2);
+    document.getElementById("dm-fx").textContent = money(tx.fxRate, 2) + "원";
+
+    var head = document.getElementById("dm-memo-head");
+    var memo = document.getElementById("dm-memo");
+    var hasMemo = !!(tx.buyReason || tx.targetPrice != null || tx.sentiment);
+    head.hidden = !hasMemo;
+    memo.hidden = !hasMemo;
+    if (hasMemo) {
+      memo.textContent = (tx.buyReason || "적어둔 사유 없음") +
+        " — 회고에서 더 이상 볼 수 없습니다.";
+    }
+    document.getElementById("dm-error").hidden = true;
+    document.getElementById("dm-confirm").disabled = false;
+    modal.hidden = false;
+  }
+
+  box.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-tx-id]");
     if (!btn) return;
-    if (!confirm("이 기록을 지울까요? 보유 현황이 다시 계산됩니다.")) return;
-    var res = await fetch("/api/transactions/" + btn.dataset.txId, { method: "DELETE" });
+    var tx = loaded[btn.dataset.txId];
+    if (tx) askDelete(tx);
+  });
+
+  document.getElementById("dm-confirm").addEventListener("click", async function () {
+    if (!pending) return;
+    var confirmBtn = document.getElementById("dm-confirm");
+    var error = document.getElementById("dm-error");
+    error.hidden = true;
+    confirmBtn.disabled = true;
+
+    var res = await fetch("/api/transactions/" + pending.id, { method: "DELETE" });
     if (res.status === 401) { location.href = "/login"; return; }
+
+    /* 서버가 거절할 수 있다. 그 매수를 지우면 뒤따르는 매도가 보유량을 넘기는 경우가 그렇다(2.5).
+       모달을 그냥 닫으면 아무 일도 없었던 것처럼 보이고, 사용자는 왜 안 지워졌는지 모른다 */
+    var out = await res.json();
+    if (!out.success) {
+      error.textContent = out.error ? out.error.message : "삭제하지 못했습니다";
+      error.hidden = false;
+      confirmBtn.disabled = false;
+      return;
+    }
+
+    modal.hidden = true;
+    /* 그 페이지의 마지막 한 건을 지웠으면 빈 페이지가 남으므로 한 장 앞으로 물러난다 */
     if (page > 0 && box.querySelectorAll(".record-card").length === 1) page--;
+    pending = null;
     load();
   });
 
@@ -370,6 +475,30 @@
   if (next) next.addEventListener("click", function () {
     if (page < totalPages - 1) { page++; load(); }
   });
+
+  /* 종목 목록은 거래한 적 있는 티커 전부다. 보유 목록으로 대신할 수 없다 —
+     전량 매도한 종목의 기록도 찾을 수 있어야 한다 */
+  var symbolSelect = document.getElementById("tx-symbol");
+  if (symbolSelect) {
+    symbolSelect.addEventListener("change", function () {
+      symbol = symbolSelect.value;
+      page = 0;                 // 종목을 바꾸면 건수가 달라진다. 첫 장부터 본다
+      load();
+    });
+
+    (async function () {
+      var res = await fetch("/api/transactions/symbols");
+      if (!res.ok) return;
+      var out = await res.json();
+      if (!out.success) return;
+      (out.data || []).forEach(function (sym) {
+        var opt = document.createElement("option");
+        opt.value = sym;
+        opt.textContent = sym;
+        symbolSelect.appendChild(opt);
+      });
+    })();
+  }
 
   var sideGroup = document.querySelector("[data-side-filter]");
   if (sideGroup) sideGroup.addEventListener("mj:change", function (e) {

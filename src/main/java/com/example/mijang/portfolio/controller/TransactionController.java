@@ -63,6 +63,17 @@ public class TransactionController {
         return ApiResponse.ok(PageResponse.of(items, page, size, total));
     }
 
+    /**
+     * 이 사용자가 거래한 적 있는 종목 티커. 목록 화면 종목 필터가 쓴다({@code ACCOUNT-06}).
+     *
+     * <p>보유 목록({@code /api/portfolio/holdings})으로 대신할 수 없다 — 그쪽은 수량이 남은
+     * 종목만 준다. 전량 매도한 종목의 기록도 찾을 수 있어야 한다.
+     */
+    @GetMapping("/symbols")
+    public ApiResponse<List<String>> symbols(@LoginUser SessionUser me) {
+        return ApiResponse.ok(transactionService.tradedSymbols(me.userId()));
+    }
+
     /** 삭제. 지우지 않고 표시만 한다(2.9). */
     @DeleteMapping("/{txId}")
     public ApiResponse<Void> delete(@LoginUser SessionUser me, @PathVariable Long txId) {

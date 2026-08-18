@@ -352,6 +352,30 @@ table.holdings .stack { display: grid; gap: 3px; }
 .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
 .field-row > .field { flex: 1 1 160px; }
 
+/* 한 줄에 입력칸을 여러 개 놓을 때 (SR-006 수량·가격)
+   .field-row 는 줄이 넘치면 남은 칸이 늘어나 폭이 제각각이 된다 — 4개가 3+1 로 갈리면
+   혼자 남은 칸이 한 줄을 다 차지한다. 그리고 라벨이 한 줄이냐 두 줄이냐, 힌트가 있냐 없냐에
+   따라 입력칸의 세로 위치까지 어긋난다. 칸 수를 격자로 고정하고, 라벨·입력·힌트를 같은 줄에 태운다. */
+.field-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 12px; }
+@media (max-width: 900px) { .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .field-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* subgrid 가 있으면 네 칸이 라벨·입력·힌트 세 줄을 공유한다. 라벨 줄 높이가 제각각이어도
+   입력칸은 반드시 같은 높이에서 시작한다. 없으면 폭만 고르고 세로는 예전대로다. */
+@supports (grid-template-rows: subgrid) {
+  .field-grid { grid-template-rows: auto auto auto; }
+  .field-grid > .field { grid-row: span 3; grid-template-rows: subgrid; }
+  .field-grid > .field > label,
+  .field-grid > .field > .field-head { align-self: end; }
+}
+
+/* 라벨과 단위 토글을 한 줄에 둔다. 토글을 라벨 아래 따로 두면 그 칸만 줄이 하나 더 생긴다. */
+.field-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.field-head > label { font-size: var(--fs-label); font-weight: 500; color: var(--text-sub); }
+.field-head > .spacer { flex: 1; }
+.pills-xs { gap: 1px; flex-wrap: nowrap; }
+.pills-xs button { padding: 3px 8px; font-size: var(--fs-badge); }
+
 .check { display: flex; align-items: flex-start; gap: 9px; font-size: var(--fs-label); }
 .check input { accent-color: var(--btn); width: 16px; height: 16px; margin: 1px 0 0; }
 

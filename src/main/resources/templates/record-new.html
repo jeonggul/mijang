@@ -150,24 +150,37 @@
 
         <section class="card card-pad" style="margin-bottom:14px">
           <h2 class="form-sec">수량 · 가격</h2>
-          <div class="field-row">
+          <!-- .field-grid 는 네 칸의 폭과 라벨·입력·힌트 줄을 맞춘다(.field-row 는 줄이 넘칠 때
+               남은 칸이 늘어나 폭이 어긋난다). 힌트가 없는 칸도 자리는 같이 차지한다 -->
+          <div class="field-grid">
             <div class="field">
-              <label for="qty">수량</label>
-              <input id="qty" type="number" step="0.000001" placeholder="0">
-              <p class="hint">소수점 매수 가능</p>
+              <!-- 단위 토글. 라벨과 같은 줄에 둔다 — 아래에 따로 두면 이 칸만 줄이 하나 더 생겨
+                   입력칸이 옆칸보다 내려앉는다 -->
+              <div class="field-head">
+                <label for="qty" id="qty-label">수량 (주)</label>
+                <span class="spacer"></span>
+                <div class="pills pills-xs" data-toggle-group data-qty-unit>
+                  <button type="button" data-value="SHARES" aria-pressed="true">수량</button>
+                  <button type="button" data-value="AMOUNT" aria-pressed="false">소수점</button>
+                </div>
+              </div>
+              <input id="qty" type="number" step="0.000001" placeholder="0" inputmode="decimal">
+              <p class="hint" id="qty-hint">소수점 매수 가능</p>
             </div>
             <div class="field">
               <label for="prc">체결 단가 (USD)</label>
-              <input id="prc" type="number" step="0.0001" placeholder="0">
+              <input id="prc" type="number" step="0.0001" placeholder="0" inputmode="decimal">
+              <p class="hint">1주 가격입니다</p>
             </div>
             <div class="field">
               <label for="fx">적용 환율</label>
-              <input id="fx" type="number" step="0.0001" placeholder="비우면 그날 환율">
-              <p class="hint accent">체결일 기준 자동 입력 · 수정 가능</p>
+              <input id="fx" type="number" step="0.0001" placeholder="비우면 그날 환율" inputmode="decimal">
+              <p class="hint accent" id="fx-hint">체결일 기준 자동 입력 · 수정 가능</p>
             </div>
             <div class="field">
               <label for="fee">수수료 (USD)</label>
-              <input id="fee" type="number" step="0.0001" placeholder="0">
+              <input id="fee" type="number" step="0.0001" placeholder="0" inputmode="decimal">
+              <p class="hint">비우면 0으로 기록됩니다</p>
             </div>
           </div>
         </section>
@@ -288,9 +301,18 @@
   var err = document.getElementById("form-error");
   var save = document.getElementById("save-btn");
 
-  /* 오늘 날짜를 기본값으로 넣는다. 대부분의 기록은 당일 것이다 */
+  /* 오늘 날짜를 기본값으로 넣는다. 대부분의 기록은 당일 것이다.
+     단 "오늘" 은 한국이 아니라 **미국 거래일** 기준이다(라벨도 그렇게 적혀 있다).
+     한국 날짜를 넣으면 미국은 아직 어제여서 TX_TRADE_DATE_FUTURE 로 늘 거절당한다.
+     같은 이유로 max 를 걸어 미래 거래일을 아예 고를 수 없게 한다(2.6). */
+  function marketToday() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  }
   var dt = document.getElementById("dt");
-  if (dt) dt.value = new Date().toISOString().slice(0, 10);
+  if (dt) {
+    dt.value = marketToday();
+    dt.max = marketToday();
+  }
 
   /* 토글 버튼의 현재 값. aria-pressed 가 곧 상태다 */
   function pressed(sel, fallback) {
@@ -312,6 +334,155 @@
     save.disabled = false;
   }
 
+  /* ── 수량 단위 (주 / 원화 금액) ────────────────────────────
+     국내 증권사 소수점 매수는 "몇 주" 가 아니라 "얼마어치" 로, 그것도 **원화 금액**으로 주문한다.
+     $100 어치가 아니라 13만원어치를 산다. 그대로 적게 두고 주 수는 여기서 환산한다 —
+     사용자에게 계산기를 두 번(원화→달러, 달러→주) 두드리게 하면 그 자리에서 반올림이 어긋난다.
+
+         주 수 = 원화 금액 ÷ 적용 환율 ÷ 체결 단가
+
+     서버로 나가는 값은 언제나 주 수다. 원장에 금액을 넣을 자리는 없다(2.1). */
+  var QTY_SCALE = 6;          /* 스키마의 DECIMAL(18,6) */
+  var qtyInput = document.getElementById("qty");
+  var qtyLabel = document.getElementById("qty-label");
+  var qtyHint = document.getElementById("qty-hint");
+  var prcInput = document.getElementById("prc");
+  var fxInput = document.getElementById("fx");
+  var fxHint = document.getElementById("fx-hint");
+
+  function qtyUnit() {
+    return pressed("[data-qty-unit]", "SHARES");
+  }
+
+  function numberOf(el) {
+    var v = el.value.trim();
+    if (v === "") return null;
+    var n = Number(v);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+
+  /* 원화 금액 → 주 수. 환율과 단가가 둘 다 있어야 구할 수 있다 */
+  function sharesOf(krw) {
+    var a = Number(krw), fx = numberOf(fxInput), p = numberOf(prcInput);
+    if (!isFinite(a) || a <= 0 || fx === null || p === null) return null;
+    return a / fx / p;
+  }
+
+  /* 주 수 → 원화 금액 */
+  function krwOf(shares) {
+    var q = Number(shares), fx = numberOf(fxInput), p = numberOf(prcInput);
+    if (!isFinite(q) || q <= 0 || fx === null || p === null) return null;
+    return q * p * fx;
+  }
+
+  /* 보여줄 때는 꼬리 0 을 뗀다. 0.500000 주보다 0.5 주가 읽기 쉽다 */
+  function trimNum(v, scale) {
+    var t = Number(v).toFixed(scale);
+    return t.indexOf(".") < 0 ? t : t.replace(/0+$/, "").replace(/\.$/, "");
+  }
+
+  function drawQtyHint() {
+    if (!qtyInput) return;
+    if (qtyUnit() === "SHARES") {
+      qtyLabel.textContent = "수량 (주)";
+      qtyInput.step = "0.000001";
+      qtyInput.placeholder = "0";
+      qtyHint.classList.remove("err");
+      qtyHint.textContent = "소수점 매수 가능";
+      return;
+    }
+    qtyLabel.textContent = "금액 (원)";
+    qtyInput.step = "1";
+    qtyInput.placeholder = "0";
+
+    var amount = qtyInput.value.trim();
+    if (amount === "") {
+      qtyHint.classList.remove("err");
+      qtyHint.textContent = "산 원화 금액을 적으면 주 수로 바꿔 기록합니다";
+      return;
+    }
+    /* 무엇이 비어서 환산이 안 되는지 짚어 준다. "환산할 수 없습니다" 만으로는 뭘 채워야 할지 모른다 */
+    if (numberOf(prcInput) === null) {
+      qtyHint.classList.add("err");
+      qtyHint.textContent = "체결 단가를 먼저 입력해주세요";
+      return;
+    }
+    if (numberOf(fxInput) === null) {
+      qtyHint.classList.add("err");
+      qtyHint.textContent = "적용 환율을 먼저 입력해주세요";
+      return;
+    }
+    qtyHint.classList.remove("err");
+    qtyHint.textContent = trimNum(sharesOf(amount), QTY_SCALE) + "주로 기록됩니다";
+  }
+
+  /* 단위를 바꾸면 값도 같은 거래를 가리키도록 옮겨 준다. 숫자만 그대로 두면
+     "10주" 가 "10원" 이 되어 전혀 다른 거래가 된다 */
+  var qtyGroup = document.querySelector("[data-qty-unit]");
+  if (qtyGroup) {
+    qtyGroup.addEventListener("mj:change", function (e) {
+      var v = qtyInput.value.trim();
+      if (v !== "") {
+        var moved = e.detail === "AMOUNT" ? krwOf(v) : sharesOf(v);
+        /* 환산할 수 없으면 비운다. 남겨두면 뜻이 바뀐다 */
+        qtyInput.value = moved === null ? ""
+            : (e.detail === "AMOUNT" ? String(Math.round(moved)) : trimNum(moved, QTY_SCALE));
+      }
+      drawQtyHint();
+    });
+  }
+  if (qtyInput) qtyInput.addEventListener("input", drawQtyHint);
+  if (prcInput) prcInput.addEventListener("input", drawQtyHint);
+
+  /* ── 거래일 환율 자동 입력 ─────────────────────────────────
+     원화 금액으로 적으려면 환율이 있어야 한다. 사용자가 매번 찾아 적을 이유가 없고,
+     화면이 환산에 쓴 환율과 서버에 저장되는 환율이 달라도 안 된다 — 그래서 칸에 실제로 채운다.
+     직접 고쳐 넣은 값은 건드리지 않는다(힌트가 "수정 가능" 이라고 약속한다). */
+  var fxAuto = true;
+  if (fxInput) {
+    fxInput.addEventListener("input", function () {
+      fxAuto = false;                 // 손댄 순간부터는 자동으로 덮지 않는다
+      /* 자동 입력에 실패했다는 빨간 안내를 그대로 두면, 직접 채워 넣은 뒤에도 뭔가 잘못된 것처럼 보인다 */
+      if (numberOf(fxInput) !== null) {
+        fxHint.classList.remove("err");
+        fxHint.textContent = "직접 입력한 환율로 기록됩니다";
+      }
+      drawQtyHint();
+    });
+  }
+
+  async function fillFxRate() {
+    if (!fxInput || !fxAuto) return;
+    var date = document.getElementById("dt").value;
+    if (!date) return;
+    try {
+      var res = await fetch("/api/fx/rates?date=" + encodeURIComponent(date));
+      if (res.status === 401) { location.href = "/login"; return; }
+      var out = await res.json();
+      var rate = out.success ? out.data : null;
+      if (!rate) {
+        fxInput.value = "";
+        fxHint.classList.add("err");
+        fxHint.textContent = "그날 환율이 없습니다 · 직접 입력해주세요";
+      } else {
+        fxInput.value = rate.rate;
+        fxHint.classList.remove("err");
+        /* 주말·휴일이면 직전 영업일 값으로 대체된다. 어느 날 값인지 밝힌다 */
+        fxHint.textContent = rate.substituted
+            ? rate.substitutedFrom + " 환율로 대체 · 수정 가능"
+            : "체결일 기준 자동 입력 · 수정 가능";
+      }
+    } catch (e) {
+      fxHint.textContent = "환율을 불러오지 못했습니다 · 직접 입력해주세요";
+    }
+    drawQtyHint();
+  }
+
+  var dtInput = document.getElementById("dt");
+  if (dtInput) dtInput.addEventListener("change", function () { fillFxRate(); });
+  fillFxRate();
+  drawQtyHint();
+
   /* 종목 선택 모달이 고른 티커를 버튼에 담아 둔다. 폼은 그 값만 읽는다 */
   document.addEventListener("mj:symbol-pick", function (e) {
     var btn = document.getElementById("sym-btn");
@@ -331,10 +502,20 @@
     if (!symbol) { show("종목을 선택해주세요"); return; }
 
     /* 서버는 LocalDateTime 을 받는다. 날짜만 고르므로 장 마감 시각을 붙인다 */
+    /* 원화 금액으로 적었으면 여기서 주 수로 바꿔 보낸다. 서버는 주 수만 받는다 */
+    var quantity = num("qty");
+    if (quantity !== null && qtyUnit() === "AMOUNT") {
+      if (numberOf(prcInput) === null) { show("체결 단가를 먼저 입력해주세요"); return; }
+      if (numberOf(fxInput) === null) { show("적용 환율을 먼저 입력해주세요"); return; }
+      var shares = sharesOf(quantity);
+      quantity = shares.toFixed(QTY_SCALE);
+      if (Number(quantity) <= 0) { show("금액이 너무 작아 1주의 소수점으로도 담기지 않습니다"); return; }
+    }
+
     var body = {
       symbol: symbol,
       side: pressed("[data-side]", "BUY"),
-      quantity: num("qty"),
+      quantity: quantity,
       price: num("prc"),
       fxRate: num("fx"),
       fee: num("fee"),
@@ -458,6 +639,12 @@
     return v == null ? "—" : Number(v).toLocaleString("ko-KR",
       { minimumFractionDigits: digits, maximumFractionDigits: digits }) + (suffix || "");
   }
+
+  /* 보유 수량은 자리수를 고정하지 않는다. 0 자리로 맞추면 0.53주가 1주로 보인다 */
+  function shares(v) {
+    return v == null ? "—" : Number(v).toLocaleString("ko-KR",
+      { minimumFractionDigits: 0, maximumFractionDigits: 6 }) + "주";
+  }
   function text(id, value) {
     var el = document.getElementById(id);
     if (el) el.textContent = value;
@@ -481,10 +668,10 @@
       text("sym-hint", symbol ? "아직 보유하지 않은 종목입니다" : "기록할 종목을 먼저 고릅니다");
       return;
     }
-    text("prev-qty", num(h.quantity, 0, "주"));
+    text("prev-qty", shares(h.quantity));
     text("prev-avg", h.avgPrice == null ? "—" : "$" + num(h.avgPrice, 2));
     text("prev-fx", num(h.avgFxRate, 1));
-    text("sym-hint", "보유 중 " + num(h.quantity, 0, "주"));
+    text("sym-hint", "보유 중 " + shares(h.quantity));
   }
 
   document.addEventListener("mj:symbol-pick", function (e) {
