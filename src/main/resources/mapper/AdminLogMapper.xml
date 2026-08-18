@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  AdminLogMapper.xml — 운영 로그 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+-->
+<mapper namespace="com.example.mijang.admin.mapper.AdminLogMapper">
+
+    <insert id="insert">
+        INSERT INTO admin_logs
+            (admin_id, action, target_type, target_id, target_label, detail, result)
+        VALUES
+            (#{adminId}, #{action}, #{targetType}, #{targetId},
+             #{targetLabel}, #{detail}, #{result})
+    </insert>
+
+    <!-- record 는 순서로 매핑된다. AdminLogResponse 선언 순서와 같아야 한다.
+         관리자가 탈퇴해도 기록은 남아야 하므로 LEFT JOIN 이다 -->
+    <select id="findRecent" resultType="com.example.mijang.admin.dto.AdminLogResponse">
+        SELECT l.id, u.nickname, l.action, l.target_type, l.target_id,
+               l.target_label, l.detail, l.result, l.created_at
+          FROM admin_logs l
+          LEFT JOIN users u ON u.id = l.admin_id
+         ORDER BY l.id DESC
+         LIMIT #{limit}
+    </select>
+
+</mapper>

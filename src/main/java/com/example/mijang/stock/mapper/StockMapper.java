@@ -72,6 +72,36 @@ public interface StockMapper {
     java.time.LocalDateTime now();
 
     /**
+     * 관리자 화면의 종목 목록. {@code ADMIN-01}
+     *
+     * <p>검색 화면({@code search})과 달리 <b>비활성 종목까지 본다.</b> 관리자가 내린 종목을
+     * 다시 올리려면 목록에 보여야 한다. 비활성이 아래로 가도록 정렬한다.
+     *
+     * @param active     true 면 활성만, false 면 비활성만, null 이면 전부
+     * @param assetClass 자산 구분. null 이면 전부
+     * @param q          티커·종목명 앞부분. null 이면 전부
+     */
+    List<StockSearchResponse> findForAdmin(@Param("active") Boolean active,
+                                           @Param("assetClass") String assetClass,
+                                           @Param("q") String q,
+                                           @Param("limit") int limit);
+
+    /** 위 조건에 걸리는 전체 건수. 목록은 limit 로 잘려 나가므로 총계는 따로 센다. */
+    int countForAdmin(@Param("active") Boolean active,
+                      @Param("assetClass") String assetClass,
+                      @Param("q") String q);
+
+    /**
+     * 활성·비활성 전환. {@code ADMIN-01}
+     *
+     * <p><b>지우지 않는다</b>(2.6). 과거 매매 기록이 이 종목을 참조하고 있다.
+     * 다시 올릴 때는 사유를 비운다 — 내려간 이유가 남아 있으면 왜 비활성인지 헷갈린다.
+     */
+    int setActive(@Param("symbol") String symbol,
+                  @Param("active") boolean active,
+                  @Param("reason") String reason);
+
+    /**
      * 이번 동기화에서 보이지 않은 종목을 비활성으로 내린다.
      *
      * <p>{@code synced_at} 이 이번 회차보다 오래된 행이 대상이다. 벤더 목록에서 빠졌다는 것은

@@ -123,4 +123,35 @@
         SELECT symbol FROM stocks WHERE is_active = 1 ORDER BY symbol
     </select>
 
+    <sql id="adminWhere">
+        <where>
+            <if test="active != null">     is_active = #{active}          </if>
+            <if test="assetClass != null"> AND asset_class = #{assetClass}</if>
+            <if test="q != null">
+                AND (symbol LIKE CONCAT(#{q}, '%') OR name LIKE CONCAT(#{q}, '%')
+                     OR name_ko LIKE CONCAT(#{q}, '%'))
+            </if>
+        </where>
+    </sql>
+
+    <select id="findForAdmin" resultType="com.example.mijang.stock.dto.StockSearchResponse">
+        SELECT symbol, name, name_ko AS nameKo, exchange, asset_class AS assetClass, is_active AS active
+          FROM stocks
+        <include refid="adminWhere"/>
+         ORDER BY is_active DESC, symbol
+         LIMIT #{limit}
+    </select>
+
+    <select id="countForAdmin" resultType="_int">
+        SELECT COUNT(*) FROM stocks
+        <include refid="adminWhere"/>
+    </select>
+
+    <update id="setActive">
+        UPDATE stocks
+           SET is_active       = #{active},
+               inactive_reason = <if test="active">NULL</if><if test="!active">#{reason}</if>
+         WHERE symbol = #{symbol}
+    </update>
+
 </mapper>

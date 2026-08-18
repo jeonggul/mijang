@@ -15,6 +15,7 @@ package com.example.mijang.fx.batch;
 import com.example.mijang.common.time.TradingClock;
 import com.example.mijang.fx.service.FxConfirmService;
 import java.time.LocalDate;
+import com.example.mijang.admin.service.BatchLogWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -29,14 +30,21 @@ import org.springframework.stereotype.Component;
 public class FxConfirmScheduler {
 
     private final FxConfirmService confirmService;
+    private final BatchLogWriter batchLogWriter;
 
     /** 23:50 KST. 한국의 하루를 기준으로 자른다. */
     @Scheduled(cron = "0 50 23 * * *", zone = "Asia/Seoul")
     public void run() {
         LocalDate today = LocalDate.now(TradingClock.SERVICE_ZONE);
-        confirmService.confirm(today).ifPresentOrElse(
-                r -> log.info("[배치] 환율 확정 — {} {}{}", r.rateDate(), r.usdKrw(),
-                        r.substituted() ? " (대체)" : ""),
-                () -> log.warn("[배치] {} 환율을 확정하지 못했다", today));
+        /* 확정했으면 1, 못 했으면 0 을 건수로 남긴다. 관리자 화면은 건수로 성패를 읽는다 */
+        batchLogWriter.run("환율 확정", () ->
+                confirmService.confirm(today).map(r -> {
+                    log.info("[배치] 환율 확정 — {} {}{}", r.rateDate(), r.usdKrw(),
+                            r.substituted() ? " (대체)" : "");
+                    return 1;
+                }).orElseGet(() -> {
+                    log.warn("[배치] {} 환율을 확정하지 못했다", today);
+                    return 0;
+                }));
     }
 }

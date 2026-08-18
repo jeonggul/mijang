@@ -9,6 +9,9 @@
 package com.example.mijang.portfolio.batch;
 
 import com.example.mijang.portfolio.service.SnapshotService;
+import com.example.mijang.admin.service.BatchLogWriter;
+import com.example.mijang.common.time.MarketCalendar;
+import com.example.mijang.common.time.TradingClock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,6 +33,9 @@ import org.springframework.stereotype.Component;
 public class SnapshotBatchScheduler {
 
     private final SnapshotService snapshotService;
+    private final BatchLogWriter batchLogWriter;
+    private final MarketCalendar marketCalendar;
+    private final TradingClock tradingClock;
 
     /**
      * 08:00 — 일봉 수집(07:00) 한 시간 뒤다. 요일 범위도 일봉과 맞춘다.
@@ -40,6 +46,13 @@ public class SnapshotBatchScheduler {
      */
     @Scheduled(cron = "${mijang.batch.snapshot-cron:0 0 8 * * TUE-SAT}", zone = "Asia/Seoul")
     public void run() {
-        snapshotService.createDailySnapshot();
+        /* 휴장일에 안 돈 것과 실패해서 못 돈 것은 다르다(admin 2.4).
+           서비스도 같은 판정을 하지만 0 건으로만 돌려주므로 여기서 한 번 더 본다 —
+           그래야 관리자 화면이 "건너뜀" 과 "0건 처리" 를 구분해 보여준다 */
+        if (!marketCalendar.isTradingDay(tradingClock.today())) {
+            batchLogWriter.skip("일별 스냅샷", "거래일이 아니다");
+            return;
+        }
+        batchLogWriter.run("일별 스냅샷", snapshotService::createDailySnapshot);
     }
 }
