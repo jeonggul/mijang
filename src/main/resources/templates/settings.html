@@ -204,7 +204,8 @@
       <section class="card"><h2 class="card-head">통화</h2>
         <div class="setting-row">
           <span class="txt"><b>기본 통화</b><small>금액을 처음 표시할 기준입니다</small></span>
-          <span class="val"><div class="pills" data-toggle-group><button type="button" data-value="원화" aria-pressed="true">원화</button><button type="button" data-value="달러" aria-pressed="false">달러</button></div></span>
+          <!-- 서버에 저장한다(2.4). 브라우저에만 두면 기기를 바꿨을 때 초기화된다 -->
+          <span class="val"><div class="pills" data-toggle-group data-base-currency><button type="button" data-value="KRW" aria-pressed="true">원화</button><button type="button" data-value="USD" aria-pressed="false">달러</button></div></span>
         </div>
         <div class="setting-row">
           <span class="txt"><b>달러 병기</b><small>원화 옆에 달러를 함께 표시합니다</small></span>
@@ -225,8 +226,10 @@
 
       <section class="card"><h2 class="card-head">테마</h2>
         <div class="setting-row">
-          <span class="txt"><b>다크모드</b><small>시스템 설정을 따릅니다</small></span>
-          <span class="val"><button class="btn btn-sm" type="button" data-theme-toggle>전환</button></span>
+          <span class="txt"><b>다크모드</b><small>고른 값이 계정에 저장됩니다</small></span>
+          <!-- 값은 서버에 저장하지만 화면 적용은 아직 localStorage 가 한다.
+               서버 값과 이어 붙이는 것은 MY-05 로 남긴다(2.4) -->
+          <span class="val"><div class="pills" data-toggle-group data-theme-pref><button type="button" data-value="SYSTEM" aria-pressed="true">시스템</button><button type="button" data-value="LIGHT" aria-pressed="false">라이트</button><button type="button" data-value="DARK" aria-pressed="false">다크</button></div></span>
         </div>
         <div class="setting-row">
           <span class="txt"><b>헤더에서 즉시 전환</b><small>헤더의 달 아이콘으로 바로 바꿀 수 있습니다</small></span>
@@ -444,6 +447,51 @@
     if (body.success) { location.href = "/"; return; }
     show(body.error ? body.error.message : "탈퇴하지 못했습니다");
     btn.disabled = false;
+  });
+})();
+</script>
+<script th:attr="nonce=${cspNonce}">
+/* 표시 설정 저장 (2.4)
+   기본 통화와 테마는 users 컬럼이다. 브라우저에만 두면 기기를 바꿨을 때 초기화된다.
+   고르는 즉시 저장한다 — 이 화면에는 저장 버튼이 없다. */
+(function () {
+  var groups = [
+    { sel: "[data-base-currency]", field: "baseCurrency" },
+    { sel: "[data-theme-pref]", field: "theme" },
+  ];
+  if (!document.querySelector(groups[0].sel)) return;
+
+  function select(sel, value) {
+    var group = document.querySelector(sel);
+    if (!group || !value) return;
+    group.querySelectorAll("button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.value === value));
+    });
+  }
+
+  /* 지금 저장된 값을 먼저 반영한다. 마크업의 기본 선택은 실제 값과 다를 수 있다 */
+  fetch("/api/users/me").then(function (res) {
+    if (res.status === 401) { location.href = "/login"; return null; }
+    return res.json();
+  }).then(function (body) {
+    if (!body || !body.success) return;
+    select("[data-base-currency]", body.data.baseCurrency);
+    select("[data-theme-pref]", body.data.theme);
+  });
+
+  groups.forEach(function (g) {
+    var group = document.querySelector(g.sel);
+    if (!group) return;
+    group.addEventListener("mj:change", async function (e) {
+      var payload = {};
+      payload[g.field] = e.detail;
+      var res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 401) { location.href = "/login"; }
+    });
   });
 })();
 </script>

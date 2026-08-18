@@ -1,6 +1,16 @@
+/*
+ * UserMapper — users 테이블 접근
+ *
+ * 이 파일이 하는 일
+ *   회원 정보를 읽고 쓰는 통로다. auth 범위에서 쓰던 것에 세 가지가 늘었다 —
+ *   닉네임 중복 확인(나 자신은 빼고), 프로필 갱신, 프로필 조회.
+ *   "나 자신은 빼고" 가 중요하다. 안 빼면 내 닉네임을 그대로 두고
+ *   다른 값만 고치려 할 때 내 것이 중복으로 잡힌다.
+ */
 package com.example.mijang.user.mapper;
 
 import com.example.mijang.user.domain.User;
+import com.example.mijang.user.dto.UserResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -38,6 +48,31 @@ public interface UserMapper {
 
     /** 탈퇴 처리. 지우지 않고 상태와 시각만 바꾼다. */
     int withdraw(@Param("id") Long id);
+
+
+    /**
+     * 닉네임 중복 확인 — <b>자기 자신은 뺀다</b>(2.2).
+     *
+     * <p>이걸 빼먹으면 닉네임을 그대로 두고 다른 항목만 바꿀 때 "이미 사용 중"이 뜬다.
+     */
+    int countByNicknameExcluding(@Param("nickname") String nickname,
+                                 @Param("excludeUserId") Long excludeUserId);
+
+    /**
+     * 프로필 수정. null 인 항목은 건드리지 않는다.
+     *
+     * <p>XML 의 {@code <set>} 이 보낸 값만 골라 넣는다.
+     *
+     * @return 바뀐 행 수
+     */
+    int updateProfile(@Param("id") Long id,
+                      @Param("nickname") String nickname,
+                      @Param("profileImageUrl") String profileImageUrl,
+                      @Param("baseCurrency") String baseCurrency,
+                      @Param("theme") String theme);
+
+    /** 프로필 응답용 조회. 비밀번호 해시를 담지 않는 DTO 로 바로 받는다. */
+    UserResponse findProfile(@Param("id") Long id);
 
     /** 저장 후 생성된 id 를 user.id 가 아니라 별도 홀더로 받는다. */
     int insert(UserInsert param);

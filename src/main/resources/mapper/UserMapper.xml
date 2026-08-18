@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  UserMapper.xml — 회원 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    프로필 갱신은 보낸 값만 SET 에 들어가도록 조건으로 감싼다.
+-->
 <!-- 개발명세서(MVC): "UserMapper XML id 일치" -->
 <mapper namespace="com.example.mijang.user.mapper.UserMapper">
 
@@ -92,5 +99,38 @@
          WHERE id = #{id}
            AND status &lt;&gt; 'WITHDRAWN'
     </update>
+
+    <!-- 자기 자신을 빼고 센다(2.2) -->
+    <select id="countByNicknameExcluding" resultType="int">
+        SELECT COUNT(*)
+          FROM users
+         WHERE nickname = #{nickname}
+           AND id &lt;&gt; #{excludeUserId}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 보낸 값만 바꾼다. set 안이 전부 비면 문장을 만들 수 없으므로
+         "바꿀 것이 없으면 부르지 않는다"를 서비스가 보장한다 -->
+    <update id="updateProfile">
+        UPDATE users
+        <set>
+            <if test="nickname != null">        nickname = #{nickname},                </if>
+            <if test="profileImageUrl != null"> profile_image_url = #{profileImageUrl}, </if>
+            <if test="baseCurrency != null">    base_currency = #{baseCurrency},        </if>
+            <if test="theme != null">           theme = #{theme},                       </if>
+        </set>
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </update>
+
+    <!-- record 는 순서로 매핑된다. UserResponse 선언 순서와 같아야 한다 -->
+    <select id="findProfile" parameterType="long"
+            resultType="com.example.mijang.user.dto.UserResponse">
+        SELECT id AS userId, email, nickname, profile_image_url, role,
+               base_currency, theme, created_at
+          FROM users
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
 
 </mapper>
