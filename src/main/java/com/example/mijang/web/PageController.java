@@ -95,12 +95,6 @@ public class PageController {
         return "index";
     }
 
-    /** 보유 종목이 없을 때의 대시보드. 빈 상태 확인용. */
-    @GetMapping("/dashboard-empty")
-    public String dashboardEmpty() {
-        return "dashboard-empty";
-    }
-
     @GetMapping("/portfolio")
     public String portfolio() {
         return "portfolio";
@@ -143,12 +137,6 @@ public class PageController {
     @GetMapping("/search")
     public String search() {
         return "search";
-    }
-
-    /** 검색 결과가 없을 때. 빈 상태 확인용. */
-    @GetMapping("/search-empty")
-    public String searchEmpty() {
-        return "search-empty";
     }
 
     @GetMapping("/stock")

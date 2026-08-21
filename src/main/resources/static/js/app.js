@@ -95,6 +95,15 @@ async function loadDashboard() {
     changeRate: w.dayChangeRate == null ? null : Number(w.dayChangeRate) / 100,
   }));
 
+  /* 보유가 없으면 손익 분해와 보유 표를 통째로 감추고 다음 행동을 제시한다.
+     빈 표에 0원과 0% 를 채워 두면 "계산해 봤더니 0" 으로 읽힌다.
+     별도 페이지(dashboard-empty)를 두지 않는다 — 한 주소가 두 상태를 다 처리한다 */
+  var blank = holdings.length === 0;
+  toggle("dash-empty", blank);
+  toggle("dash-breakdown", !blank);
+  toggle("dash-holdings", !blank);
+  if (blank) { renderSidebarEmpty(); renderWatchlist(); renderFxCard(); return; }
+
   /* 환율을 못 구하면 손익이 성립하지 않는다(2.6). 안내만 띄우고 나머지는 그린다 */
   renderBreakdown();
   renderHoldings();
@@ -148,6 +157,30 @@ const krw  = n => n == null ? DASH : Math.round(n).toLocaleString("ko-KR") + "�
 const usd  = n => n == null ? DASH : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct  = (r, d = 1) => r == null ? DASH : (r >= 0 ? "+" : "−") + (Math.abs(r) * 100).toFixed(d) + "%";
 const pct2 = r => pct(r, 2);
+/** hidden 속성 하나로 켜고 끈다. style 을 직접 만지면 원래 display 를 잃는다. */
+function toggle(id, on) {
+  var el = document.getElementById(id);
+  if (el) el.hidden = !on;
+}
+
+/** 보유가 없을 때의 사이드바. 종목 수만 0 이고 손익은 — 다 — 계산된 0 이 아니다. */
+function renderSidebarEmpty() {
+  document.getElementById("stat-count").textContent = "0";
+  ["stat-price", "stat-fx"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = DASH; el.className = "v"; }
+  });
+  var nav = document.getElementById("holdings-nav");
+  if (nav) {
+    nav.replaceChildren();
+    var li = document.createElement("li");
+    var note = document.createElement("span");
+    note.className = "note";
+    note.textContent = "아직 보유 종목이 없습니다";
+    li.appendChild(note); nav.appendChild(li);
+  }
+}
+
 /** 부호를 항상 붙인다. 색만으로 손익을 구분하지 않는다. */
 const sKrw = n => n == null ? DASH : (n >= 0 ? "+" : "−") + Math.abs(Math.round(n)).toLocaleString("ko-KR");
 /** 값이 없으면 손익 색을 붙이지 않는다. 없는 값에 빨강·파랑이 붙으면 방향이 있는 것처럼 보인다 */

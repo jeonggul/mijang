@@ -135,8 +135,18 @@
 
   <!-- ── 중앙 ──────────────────────────────────────────────── -->
   <main>
+    <!-- 보유가 없을 때. 빈 화면을 두지 않고 다음 행동을 제시한다 (화면설계서 SR-003-1).
+         별도 페이지를 두지 않는 이유 — 같은 화면이 두 상태를 다 처리해야 주소가 하나로 남고,
+         첫 기록을 넣은 뒤 다시 들어와도 같은 자리에서 이어진다 -->
+    <div class="empty" id="dash-empty" hidden>
+      <h2>첫 매매 기록을 남겨보세요</h2>
+      <p>증권사에서 체결한 내역을 입력하면 손익이 주가 요인과 환율 요인으로 나뉘어 보입니다.
+         왜 샀는지도 함께 적어두면 나중에 그 판단을 되돌아볼 수 있습니다.</p>
+      <a class="btn btn-primary" th:href="@{/record-new}">첫 매매 기록 추가하기</a>
+    </div>
+
     <!-- 시그니처: 손익을 주가 요인과 환율 요인으로 분해한다 -->
-    <section class="card breakdown" aria-labelledby="bd-title">
+    <section class="card breakdown" id="dash-breakdown" aria-labelledby="bd-title">
       <p class="total-label">총 평가금액</p>
       <p class="total-row">
         <span class="total-krw" id="total-krw">—</span>
@@ -177,7 +187,7 @@
     </section>
 
     <!-- 손익 컬럼을 주가/환율로 분리한다. 합계 단독 표시는 두지 않는다 -->
-    <section class="card">
+    <section class="card" id="dash-holdings">
       <h2 class="card-head">보유 종목 <span class="sub num" id="holdings-count">0</span></h2>
       <div class="table-wrap">
         <table class="holdings">

@@ -301,7 +301,8 @@
     }
     countEl.textContent = list.length + "건";
     if (list.length === 0) {
-      tbody.appendChild(notice("검색 결과가 없습니다"));
+      tbody.appendChild(notice("검색 결과가 없습니다. 미장은 미국 상장 종목만 다룹니다 — "
+              + "티커(AAPL)나 영문 종목명으로 검색해보세요. 상장폐지된 종목은 검색에서 제외됩니다."));
       return;
     }
     list.forEach(function (s) { tbody.appendChild(row(s)); });
