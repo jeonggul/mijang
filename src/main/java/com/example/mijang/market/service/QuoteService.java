@@ -10,6 +10,7 @@ package com.example.mijang.market.service;
 
 import com.example.mijang.market.cache.QuoteCacheService;
 import com.example.mijang.market.dto.QuoteResponse;
+import com.example.mijang.market.domain.MarketSession;
 import com.example.mijang.market.pool.SubscriptionPoolManager;
 import com.example.mijang.stock.dto.CandleResponse;
 import com.example.mijang.stock.mapper.DailyPriceMapper;
@@ -48,7 +49,7 @@ public class QuoteService {
      */
     @Transactional(readOnly = true)
     public Optional<QuoteResponse> quote(String symbol) {
-        return quote(symbol, marketOpen());
+        return quote(symbol, calendar.currentSession());
     }
 
     /**
@@ -61,25 +62,31 @@ public class QuoteService {
      */
     @Transactional(readOnly = true)
     public List<QuoteResponse> quotes(List<String> symbols) {
-        boolean open = marketOpen();
+        MarketSession session = calendar.currentSession();
         return symbols.stream()
-                .map(s -> quote(s, open))
+                .map(s -> quote(s, session))
                 .flatMap(Optional::stream)
                 .toList();
     }
 
-    /** 지금 값이 움직이는 시간인가. 프리마켓·정규장·시간외면 참이다 */
-    private boolean marketOpen() {
-        return calendar.currentSession().live();
-    }
-
-    private Optional<QuoteResponse> quote(String symbol, boolean marketOpen) {
+    private Optional<QuoteResponse> quote(String symbol, MarketSession session) {
         String key = normalize(symbol);
         Optional<QuoteResponse> cached = cache.get(key);
         if (cached.isPresent()) {
-            return marketOpen ? cached : cached.map(QuoteService::demoteToClosed);
+            return cached.map(quote -> forSession(quote, session));
         }
         return fromDailyClose(key);
+    }
+
+    /**
+     * 정규장 IEX 값이 프리마켓·애프터마켓에서 계속 "실시간"으로 보이지 않게 한다.
+     * 지연 SIP의 첫 체결이 도착하기 전에는 값은 유지하되 화면이 대기 상태로 읽도록 내린다.
+     */
+    private static QuoteResponse forSession(QuoteResponse quote, MarketSession session) {
+        if (!session.live() || (session != MarketSession.REGULAR && !quote.delayed())) {
+            return demoteToClosed(quote);
+        }
+        return quote;
     }
 
     /**

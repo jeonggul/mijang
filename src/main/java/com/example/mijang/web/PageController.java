@@ -237,6 +237,13 @@ public class PageController {
         return "settings";
     }
 
+    /** 공지 상세는 일반 게시글과 달리 반응·댓글·신고 기능이 없는 읽기 전용 화면이다. */
+    @GetMapping("/notices/{noticeId}")
+    public String notice(@PathVariable Long noticeId, Model model) {
+        model.addAttribute("noticeId", noticeId);
+        return "notice-detail";
+    }
+
     /* ── 관리자 ──────────────────────────────────────────────── */
 
     @GetMapping("/admin")

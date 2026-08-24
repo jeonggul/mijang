@@ -58,21 +58,62 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: var(--text-sub);
 }
 
+.market-status-wrap { position: relative; }
 .market-badge {
   display: flex; align-items: center; gap: 7px;
+  margin: 0;
   padding: 6px 10px; border-radius: var(--radius-ctl);
   background: var(--surface-soft); border: 1px solid var(--line);
-  font-size: var(--fs-label); font-weight: 500; white-space: nowrap;
+  font-size: var(--fs-label); font-weight: 500; white-space: nowrap; cursor: help;
 }
 .market-badge .dot {
   width: 7px; height: 7px; border-radius: 50%; background: var(--rise);
 }
+.market-badge.market-regular { border-color: color-mix(in srgb, #1f9d55 45%, var(--line)); }
+.market-badge.market-regular .dot { background: #1f9d55; }
+.market-badge.market-closed { border-color: color-mix(in srgb, #d14343 45%, var(--line)); }
+.market-badge.market-closed .dot { background: #d14343; }
+.market-hours-tooltip {
+  position: absolute; top: calc(100% + 10px); left: 50%; z-index: 20;
+  width: 340px; padding: 14px 16px;
+  color: var(--text); background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-ctl); box-shadow: 0 10px 28px rgba(15, 23, 42, .16);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: translate(-50%, -4px); transition: opacity .16s ease, transform .16s ease, visibility .16s;
+}
+.market-hours-tooltip::before {
+  content: ""; position: absolute; bottom: 100%; left: 50%;
+  width: 9px; height: 9px; background: var(--surface);
+  border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+  transform: translate(-50%, 5px) rotate(45deg);
+}
+.market-status-wrap:hover .market-hours-tooltip,
+.market-status-wrap:focus-within .market-hours-tooltip {
+  opacity: 1; visibility: visible; transform: translate(-50%, 0);
+}
+.market-hours-title { margin: 0 0 10px; font-size: var(--fs-card); font-weight: 600; }
+.market-hours-tooltip ul { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.market-hours-tooltip li {
+  display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; align-items: start; gap: 8px;
+  font-size: var(--fs-label);
+}
+.market-hours-tooltip li b { font-weight: 600; }
+.market-hours-tooltip li span { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.market-hours-tooltip li small { display: block; margin-top: 2px; color: var(--text-sub); font-family: var(--font-sans); }
+.market-hours-tooltip li em { color: #d14343; font-size: var(--fs-badge); font-style: normal; white-space: nowrap; }
+.market-hours-tooltip li em.live { color: #1f9d55; }
+.market-hours-note { margin: 11px 0 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--text-sub); font-size: var(--fs-badge); }
 
 .icon-btn {
   display: grid; place-items: center;
   width: 34px; height: 34px;
   background: var(--surface-soft);
   border: 1px solid var(--line); border-radius: 9px;
+}
+.menu-anchor > .icon-btn { position: relative; }
+.notif-dot {
+  position: absolute; top: 5px; right: 5px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--rise); box-shadow: 0 0 0 2px var(--surface);
 }
 .avatar-btn {
   display: flex; align-items: center; gap: 8px;
@@ -113,6 +154,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ── 사이드바 ──────────────────────────────────────────────── */
 .sidebar { padding: 16px 14px; }
+.sidebar-title { margin: 0; padding: 0; font-size: var(--fs-card); font-weight: 600; }
 .switcher {
   display: flex; align-items: center; gap: 6px; width: 100%;
   padding: 9px 10px; border-radius: var(--radius-ctl);
@@ -272,6 +314,18 @@ table.holdings .stack { display: grid; gap: 3px; }
 .news .meta .tk { font-family: var(--font-mono); font-size: var(--fs-num-xs); color: var(--record); }
 .news .meta time { font-size: var(--fs-badge); color: var(--text-sub); }
 .news p { margin: 0; font-size: var(--fs-body); line-height: 1.5; }
+.news-more {
+  appearance: none; border: 0; padding: 0; background: none; font: inherit; cursor: pointer;
+}
+.news-more:hover { color: var(--record); text-decoration: underline; }
+.related-news .meta { justify-content: space-between; }
+.related-news .meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.related-news .headline a { color: inherit; }
+.related-news .headline a:hover { color: var(--record); text-decoration: underline; }
+.related-news .news-empty { color: var(--text-sub); font-size: var(--fs-label); }
+.holding-news .headline a { color: inherit; }
+.holding-news .headline a:hover { color: var(--record); text-decoration: underline; }
+.holding-news .news-empty { padding: 8px 0; color: var(--text-sub); font-size: var(--fs-label); }
 
 /* ── 토글 ──────────────────────────────────────────────────── */
 .seg { display: flex; gap: 0; padding: 3px; background: var(--surface-soft);
@@ -290,7 +344,7 @@ table.holdings .stack { display: grid; gap: 3px; }
 }
 @media (max-width: 860px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .nav, .market-badge { display: none; }
+  .nav, .market-status-wrap { display: none; }
   .total-pnl { flex-wrap: wrap; }
 }
 
@@ -463,6 +517,14 @@ table.holdings .stack { display: grid; gap: 3px; }
 .empty p  { margin: 0; max-width: 420px; color: var(--text-sub); line-height: 1.7; }
 .empty .btn { margin-top: 14px; }
 
+/* ETF 는 기업용 프로필·재무제표의 대상이 아니다. 빈 대시 표 대신 이유를 설명한다. */
+.asset-empty {
+  display: grid; justify-items: center; gap: 9px;
+  padding: 44px 24px; text-align: center;
+}
+.asset-empty h3 { margin: 2px 0 0; font-size: var(--fs-section); }
+.asset-empty p { margin: 0; max-width: 520px; color: var(--text-sub); line-height: 1.7; }
+
 /* ── 모달 · 드롭다운 ───────────────────────────────────────── */
 .overlay {
   position: fixed; inset: 0; z-index: 50;
@@ -479,11 +541,12 @@ table.holdings .stack { display: grid; gap: 3px; }
 .modal h2 { margin: 0 0 8px; font-size: var(--fs-section); }
 .modal > p { margin: 0 0 22px; color: var(--text-sub); line-height: 1.7; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
-.kv { display: grid; gap: 11px; padding: 14px 16px; background: var(--surface-soft);
+.kv { display: grid; gap: 11px; margin: 0; padding: 14px 16px; list-style: none; background: var(--surface-soft);
       border: 1px solid var(--line); border-radius: 10px; }
-.kv > div { display: flex; align-items: baseline; gap: 10px; }
+.kv > div, .kv > li { display: flex; align-items: baseline; gap: 10px; }
 .kv .k { flex: 1; color: var(--text-sub); }
 .kv .v { font-family: var(--font-mono); font-size: var(--fs-num-md); font-weight: 500; }
+.modal > .kv { margin-bottom: 16px; }
 
 /* 드롭다운은 각자의 앵커 기준으로 내려온다 */
 .menu-anchor { position: relative; }
@@ -521,6 +584,8 @@ table.holdings .stack { display: grid; gap: 3px; }
 .notif li { border-top: 1px solid var(--line); }
 .notif li:first-child { border-top: 0; }
 .notif .row { display: block; padding: 13px 18px; }
+.notif .row.unread { background: color-mix(in srgb, var(--record) 8%, var(--surface)); }
+.notif li.empty { padding: 28px 18px; text-align: center; }
 .notif .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 .notif .kind { font-size: var(--fs-badge); font-weight: 500; color: var(--record); }
 .notif time  { margin-left: auto; font-size: var(--fs-badge); color: var(--text-sub); }
@@ -824,12 +889,24 @@ body.landing .card {
 
 /* ── FAQ (SR-012-4) ────────────────────────────────────────
    피그마는 질문·답변 앞에 Q/A 글리프를 둔다. 답변이 길어 줄바꿈을 허용한다. */
-.faq .qa { display: grid; gap: 6px; }
-.faq .q, .faq .a { display: grid; grid-template-columns: 20px 1fr; gap: 8px; margin: 0; }
-.faq .q { font-weight: 500; }
-.faq .a { font-size: var(--fs-label); color: var(--text-sub); line-height: 1.7; }
+.faq li { padding: 0; }
+.faq .qa { display: grid; gap: 0; }
+.faq .q {
+  width: 100%; display: grid; grid-template-columns: 22px 1fr 18px; align-items: center;
+  gap: 12px; margin: 0; padding: 16px 22px; border: 0; background: none;
+  text-align: left; font-weight: 500;
+}
+.faq .q::after { content: "⌄"; color: var(--text-sub); transition: transform .18s ease; }
+.faq .q[aria-expanded="true"]::after { transform: rotate(180deg); }
+.faq .a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 12px;
+  margin: 0; padding: 0 22px 18px; font-size: var(--fs-label);
+  color: var(--text-sub); line-height: 1.7;
+}
 .faq .mark { font-family: var(--font-mono); font-weight: 600; color: var(--record); }
 .faq .a .mark { color: var(--text-sub); }
+
+.tbl .c, .tbl th.c, .tbl td.c { text-align: center; }
 
 /* 검색 입력 박스 — 피그마는 라벨 없이 아이콘 + 우측 힌트가 한 줄에 들어간 큰 입력이다 */
 .searchbox {
@@ -1369,6 +1446,7 @@ body.landing .card {
 /* ── 헤더 검색 자동완성 ─────────────────────────────────────────────
    .search 는 원래 링크였다. 이제 입력창과 목록을 품는 상자다 */
 .header .search { position: relative; }
+.stock-detail-page .header .search { display: none; }
 
 .header .search input {
   border: 0;

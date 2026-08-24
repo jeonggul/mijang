@@ -23,12 +23,23 @@ import java.time.LocalDate;
  * @param substituted     직전 값을 복사한 것이면 true — 화면이 "직전 영업일 기준" 배지를 띄운다
  * @param substitutedFrom 복사해 온 날짜. 복사가 아니면 null
  * @param quotedAt        벤더가 찍은 시각. 현재 환율 조회에서만 채워진다
+ * @param lastUpdatedAt   DB에 마지막으로 수집된 시세 시각. 확정값으로 대체해도 갱신 상태를 알 수 있게 한다
  */
 public record FxRateResponse(BigDecimal rate,
                              LocalDate rateDate,
                              boolean substituted,
                              LocalDate substitutedFrom,
-                             Instant quotedAt) {
+                             Instant quotedAt,
+                             Instant lastUpdatedAt) {
+
+    /** 기존 호출부는 현재 시세라면 그 시각을 마지막 갱신 시각으로도 쓴다. */
+    public FxRateResponse(BigDecimal rate,
+                          LocalDate rateDate,
+                          boolean substituted,
+                          LocalDate substitutedFrom,
+                          Instant quotedAt) {
+        this(rate, rateDate, substituted, substitutedFrom, quotedAt, quotedAt);
+    }
 
     /** 확정 환율(일별)에서 만든다. 시세 시각은 의미가 없어 비운다. */
     public static FxRateResponse ofDaily(com.example.mijang.fx.domain.FxRate r) {
@@ -38,5 +49,10 @@ public record FxRateResponse(BigDecimal rate,
     /** 현재 시세에서 만든다. 그날 확정이 아니므로 대체 여부는 따지지 않는다. */
     public static FxRateResponse ofLive(com.example.mijang.fx.domain.FxQuote q, LocalDate date) {
         return new FxRateResponse(q.basePrice(), date, false, null, q.quotedAt());
+    }
+
+    /** 반환값은 확정 환율이지만 마지막 수집 상태는 별도 메타데이터로 보존한다. */
+    public FxRateResponse withLastUpdatedAt(Instant value) {
+        return new FxRateResponse(rate, rateDate, substituted, substitutedFrom, quotedAt, value);
     }
 }

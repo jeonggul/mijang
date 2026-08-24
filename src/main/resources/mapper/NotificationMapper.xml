@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.user.mapper.NotificationMapper">
+
+    <select id="findRecent" resultType="com.example.mijang.user.dto.NotificationResponse">
+        SELECT id, type, symbol, title, body, link_url,
+               is_read AS `read`, created_at
+          FROM notifications
+         WHERE user_id = #{userId}
+         ORDER BY created_at DESC
+         LIMIT #{limit}
+    </select>
+
+    <update id="markAllRead">
+        UPDATE notifications SET is_read = 1 WHERE user_id = #{userId} AND is_read = 0
+    </update>
+
+    <select id="findSettings" resultType="com.example.mijang.user.dto.NotificationSettingsResponse">
+        SELECT target_price_enabled, volatility_enabled, volatility_threshold,
+               dividend_enabled, news_enabled
+          FROM notification_settings
+         WHERE user_id = #{userId}
+    </select>
+
+    <insert id="upsertSettings">
+        INSERT INTO notification_settings
+            (user_id, target_price_enabled, volatility_enabled, volatility_threshold,
+             dividend_enabled, news_enabled)
+        VALUES
+            (#{userId}, #{form.targetPriceEnabled}, #{form.volatilityEnabled},
+             #{form.volatilityThreshold}, #{form.dividendEnabled}, #{form.newsEnabled})
+        ON DUPLICATE KEY UPDATE
+            target_price_enabled = VALUES(target_price_enabled),
+            volatility_enabled = VALUES(volatility_enabled),
+            volatility_threshold = VALUES(volatility_threshold),
+            dividend_enabled = VALUES(dividend_enabled),
+            news_enabled = VALUES(news_enabled)
+    </insert>
+</mapper>

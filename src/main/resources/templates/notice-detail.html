@@ -1,0 +1,27 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 공지사항</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+<main class="page narrow">
+  <div class="page-head"><div><h1>공지사항</h1></div><a class="btn btn-sm" th:href="@{/settings}">목록</a></div>
+  <article class="card" th:attr="data-notice-id=${noticeId}" id="notice-detail">
+    <header class="row-between"><div><span class="badge badge-line" id="notice-pinned" hidden>고정</span><h2 id="notice-title">불러오는 중입니다</h2></div><time class="note" id="notice-date"></time></header>
+    <div class="legal-body" id="notice-content"></div>
+  </article>
+</main>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/notice-detail.js}" defer></script>
+</body>
+</html>
