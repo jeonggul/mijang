@@ -51,6 +51,14 @@ public interface HoldingMapper {
     BigDecimal sumMarketValueKrw(@Param("userId") Long userId, @Param("fxRate") BigDecimal fxRate);
 
     /**
+     * 한 종목의 보유 수량. 산 적이 없으면 null, 전량 매도했으면 0.
+     *
+     * <p>커뮤니티의 "주주" 배지가 이 값만 본다(COM-002). 배지 하나 때문에 보유 목록을
+     * 통째로 읽고 시세와 환율까지 붙이면 화면에 쓰지도 않을 계산이 따라온다.
+     */
+    BigDecimal findQuantity(@Param("userId") Long userId, @Param("symbol") String symbol);
+
+    /**
      * 손익 분해 입력값. 보유 종목마다 평단가·평균환율·현재가를 모아 준다.
      *
      * <p>현재가가 없는 종목도 <b>돌려준다.</b> 걸러내는 것은 계산기가 하고,

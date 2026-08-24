@@ -163,6 +163,32 @@ class HoldingCalculatorTest {
 
             assertThat(h.realizedPnlKrw()).isEqualByComparingTo("1760000.00");
         }
+
+        @Test
+        @DisplayName("매도 건별로 그때의 원가를 함께 돌려준다")
+        void 건별원가() {
+            /* 커뮤니티 글에 붙는 매매 카드가 수익률을 내려면 나눌 원가가 필요하다.
+               원가 = 수량 × 그 시점 평단가 × 평균매수환율 이고, 평단가는 뒤에 또 사면
+               달라지므로 훑는 도중에 담아 두지 않으면 다시 구할 수 없다.
+               4 × 200 × 1,300 = 1,040,000 원 */
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1, buy("10", "200", "1300", "0", 1)),
+                    withId(2, sell("4", "500", "1400", "0", 2)),
+                    withId(3, buy("10", "400", "1300", "0", 3))));
+
+            assertThat(c.costBasisBySellId().get(2L)).isEqualByComparingTo("1040000.00");
+            // 나중 매수가 평단가를 올렸어도 앞선 매도의 원가는 그대로다
+            assertThat(c.realizedBySellId().get(2L)).isEqualByComparingTo("1760000.00");
+        }
+
+        @Test
+        @DisplayName("매수에는 원가가 담기지 않는다 — 처분한 몫이 없다")
+        void 매수는원가없음() {
+            HoldingCalculator.Calculation c = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1, buy("10", "200", "1300", "0", 1))));
+
+            assertThat(c.costBasisBySellId()).isEmpty();
+        }
     }
 
     @Nested

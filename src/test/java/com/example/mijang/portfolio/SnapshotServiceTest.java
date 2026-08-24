@@ -81,6 +81,8 @@ class SnapshotServiceTest {
 
         @Override public BigDecimal sumMarketValueKrw(Long userId, BigDecimal fxRate) { return null; }
 
+        @Override public BigDecimal findQuantity(Long userId, String symbol) { return null; }
+
         @Override public List<SymbolPnl> findForPnl(Long userId, String symbol) {
             askedLatest = true;      // 이 경로로 오면 과거 스냅샷이 오늘 종가로 찍힌다
             return rows;

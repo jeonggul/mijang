@@ -1,14 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- 개발명세서(MVC): "CommentMapper XML id 일치" -->
+<!--
+  CommentMapper.xml — 댓글 SQL
+
+  이 파일이 하는 일
+    한 글의 댓글을 원댓글 → 그 대댓글 순으로 꺼낸다.
+    COALESCE(parent_id, id) 로 묶으면 원댓글과 그 답글이 같은 값을 가지므로
+    한 번 정렬로 무리가 지어진다. 애플리케이션에서 다시 묶을 필요가 없다.
+
+  개발명세서(MVC): "CommentMapper XML id 일치"
+-->
 <mapper namespace="com.example.mijang.community.mapper.CommentMapper">
+
+    <insert id="insert">
+        INSERT INTO comments (post_id, user_id, parent_id, content)
+        VALUES (#{postId}, #{userId}, #{parentId}, #{content})
+    </insert>
+
+    <select id="findLastInsertedId" resultType="java.lang.Long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+    <!-- record 는 선언 순서로 매핑된다. CommentResponse 순서와 같아야 한다 -->
+    <select id="findByPost" resultType="com.example.mijang.community.dto.CommentResponse">
+        SELECT c.id, c.parent_id, u.nickname, c.content, c.created_at
+          FROM comments c
+          JOIN users u ON u.id = c.user_id
+         WHERE c.post_id = #{postId}
+           AND c.status  = 'PUBLISHED'
+         ORDER BY COALESCE(c.parent_id, c.id), c.id
+    </select>
+
+    <!-- parent_id IS NULL 조건이 깊이를 1단계로 묶는다. 대댓글은 여기서 걸러져
+         null 이 나가고, 서비스가 그걸 거절로 읽는다 -->
+    <select id="findRepliableParentPostId" resultType="java.lang.Long">
+        SELECT post_id
+          FROM comments
+         WHERE id        = #{commentId}
+           AND parent_id IS NULL
+           AND status    = 'PUBLISHED'
+    </select>
 
     <select id="countByPost" resultType="long">
         SELECT COUNT(*)
           FROM comments
          WHERE post_id = #{postId}
-           AND deleted = 0
+           AND status  = 'PUBLISHED'
     </select>
 
 </mapper>
