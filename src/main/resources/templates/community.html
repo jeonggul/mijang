@@ -108,86 +108,77 @@
 <div class="layout no-panel">
 
   <aside class="card sidebar">
-    <a class="btn-record" th:href="@{/community-write}">글쓰기</a>
+    <a class="btn-record"
+       th:href="${symbol} != null ? @{/community-write/{s}(s=${symbol})} : @{/community-write}">글쓰기</a>
 
-    <p class="nav-label">내 보유 종목</p>
-    <ul class="holdings-nav">
-      <li><a th:href="@{/community}"><span class="tk">AAPL</span><span class="pc">128</span></a></li>
-      <li><a th:href="@{/community}"><span class="tk">NVDA</span><span class="pc">342</span></a></li>
-      <li><a th:href="@{/community}"><span class="tk">MSFT</span><span class="pc">76</span></a></li>
-      <li><a th:href="@{/community}"><span class="tk">TSLA</span><span class="pc">512</span></a></li>
-      <li><a th:href="@{/community}"><span class="tk">SCHD</span><span class="pc">41</span></a></li>
-    </ul>
+    <!-- 일반 커뮤니티에서는 게시판을 고른다. 종목이 없는 자리라 보유 종목이 올 수 없다 -->
+    <th:block th:if="${symbol} == null">
+      <p class="nav-label">게시판</p>
+      <ul class="holdings-nav">
+        <li><a th:href="@{/community}"
+               th:attr="aria-current=${board == 'FREE'} ? 'page' : null"><span class="tk">자유</span></a></li>
+        <li><a th:href="@{/community(board='qna')}"
+               th:attr="aria-current=${board == 'QNA'} ? 'page' : null"><span class="tk">질문</span></a></li>
+      </ul>
+    </th:block>
 
-    <p class="nav-label">인기 게시판</p>
+    <!-- 종목별 커뮤니티에서는 내가 든 종목이 곧 게시판 목록이다 -->
+    <th:block th:if="${symbol} != null">
+      <p class="nav-label">내 보유 종목</p>
+      <ul class="holdings-nav" id="my-boards"></ul>
+      <p class="note" id="my-boards-empty" style="padding:0 4px" hidden>매매를 기록하면 표시됩니다</p>
+    </th:block>
+
+    <p class="nav-label">인기 종목 게시판</p>
     <ul class="holdings-nav">
-      <li><a th:href="@{/community}"><span class="tk">PLTR</span><span class="pc">881</span></a></li>
-      <li><a th:href="@{/community}"><span class="tk">AMD</span><span class="pc">604</span></a></li>
-      <li><a th:href="@{/community}"><span class="tk">COIN</span><span class="pc">497</span></a></li>
+      <li><a th:href="@{/community/PLTR}"><span class="tk">PLTR</span><span class="pc">881</span></a></li>
+      <li><a th:href="@{/community/AMD}"><span class="tk">AMD</span><span class="pc">604</span></a></li>
+      <li><a th:href="@{/community/COIN}"><span class="tk">COIN</span><span class="pc">497</span></a></li>
     </ul>
   </aside>
 
   <main>
     <div class="page-head">
-      <div><h1>AAPL 게시판</h1><p>글에는 작성 시점 주가가 함께 저장됩니다</p></div>
+      <div>
+        <h1 th:if="${symbol} != null" th:text="${symbol} + ' 게시판'">AAPL 게시판</h1>
+        <h1 th:if="${symbol} == null" th:text="${board == 'QNA'} ? '질문 게시판' : '자유 게시판'">자유 게시판</h1>
+
+        <p th:if="${symbol} != null">글에는 작성 시점 주가가 함께 저장됩니다</p>
+        <p th:if="${symbol} == null and ${board} == 'FREE'">미국 주식에 대한 생각을 자유롭게 나누는 곳입니다</p>
+        <p th:if="${symbol} == null and ${board} == 'QNA'">모르는 것을 묻고 아는 것을 답하는 곳입니다</p>
+      </div>
       <span class="grow"></span>
-      <div class="pills" data-toggle-group>
+      <div class="pills" id="sort" data-toggle-group>
         <button type="button" data-value="NEW" aria-pressed="true">최신</button>
         <button type="button" data-value="HOT" aria-pressed="false">인기</button>
       </div>
     </div>
 
-    <section class="card">
-      <h2 class="card-head">게시글 <span class="sub num">128건</span></h2>
-      <ul class="list post-list">
-        <li><a th:href="@{/community-post}" class="post">
-          <p class="ttl">인도 생산 확대 뉴스 어떻게 보시나요</p>
-          <p class="sum">환율 때문에 원화 수익률은 생각보다 별로네요. 그래도 장기로는…</p>
-          <p class="meta">
-            <span class="at">작성 시점 <b class="num">$182.40</b> <i class="num rise">+7.7%</i></span>
-            <span class="who">정하</span><span class="badge badge-line">보유 12주</span><time>3시간 전</time>
-            <span class="spacer"></span>
-            <span class="react">좋아요 24</span><span class="react">댓글 8</span>
-          </p>
-        </a></li>
-        <li><a th:href="@{/community-post}" class="post">
-          <p class="ttl">서비스 매출 비중 정리해봤습니다</p>
-          <p class="sum">분기별로 뽑아보니 추세가 뚜렷합니다. 표로 정리했어요</p>
-          <p class="meta">
-            <span class="at">작성 시점 <b class="num">$188.10</b> <i class="num rise">+4.4%</i></span>
-            <span class="who">김선호</span><time>어제</time>
-            <span class="spacer"></span>
-            <span class="react">좋아요 61</span><span class="react">댓글 19</span>
-          </p>
-        </a></li>
-        <li><a th:href="@{/community-post}" class="post">
-          <p class="ttl">$200 넘으면 일부 정리 예정</p>
-          <p class="sum">목표가 근처라 분할 매도 생각 중입니다. 다들 어떻게 하시나요</p>
-          <p class="meta">
-            <span class="at">작성 시점 <b class="num">$194.80</b> <i class="num rise">+0.8%</i></span>
-            <span class="who">이한결</span><span class="badge badge-line">보유 40주</span><time>2일 전</time>
-            <span class="spacer"></span>
-            <span class="react">좋아요 37</span><span class="react">댓글 24</span>
-          </p>
-        </a></li>
-        <li><a th:href="@{/community-post}" class="post">
-          <p class="ttl">환차손 계산이 자꾸 헷갈립니다</p>
-          <p class="sum">평균매수환율 개념을 이제야 이해했네요</p>
-          <p class="meta">
-            <span class="at">작성 시점 <b class="num">$196.10</b> <i class="num rise">+0.2%</i></span>
-            <span class="who">박도윤</span><time>3일 전</time>
-            <span class="spacer"></span>
-            <span class="react">좋아요 12</span><span class="react">댓글 6</span>
-          </p>
-        </a></li>
-      </ul>
+    <section class="card" id="post-card">
+      <h2 class="card-head">게시글 <span class="sub num" id="post-count">—</span></h2>
+      <ul class="list post-list" id="post-list"></ul>
     </section>
 
-    <p class="note" style="margin-top:14px">작성 시점 주가는 글이 등록될 때 저장되며 수정되지 않습니다</p>
+    <div class="empty" id="post-empty" hidden>
+      <h2>아직 글이 없습니다</h2>
+      <p>첫 글을 남겨보세요. 종목 게시판에 쓴 글에는 작성 시점 주가가 함께 저장되어,
+        나중에 그때 판단이 어땠는지 대조해 볼 수 있습니다.</p>
+      <a class="btn btn-primary" id="empty-write"
+         th:href="${symbol} != null ? @{/community-write/{s}(s=${symbol})} : @{/community-write}">글쓰기</a>
+    </div>
+
+    <p class="note" style="margin-top:14px" th:if="${symbol} != null">
+      작성 시점 주가는 글이 등록될 때 저장되며 수정되지 않습니다</p>
   </main>
 </div>
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:inline="javascript">
+  /* 화면이 어느 게시판인지 서버가 정해서 내려 준다. 경로를 다시 파싱하면
+     /community/{symbol} 과 /community?board= 두 규칙을 JS 가 또 알아야 한다 */
+  window.MIJANG_BOARD = { board: /*[[${board}]]*/ 'FREE', symbol: /*[[${symbol}]]*/ null };
+</script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/community.js}" defer></script>
 </body>
 </html>

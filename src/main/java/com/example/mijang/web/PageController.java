@@ -3,11 +3,14 @@ package com.example.mijang.web;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.config.PasswordResetProperties;
 import com.example.mijang.user.service.PasswordService;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.view.RedirectView;
 
 /**
  * 화면 라우팅 전용 컨트롤러.
@@ -151,18 +154,69 @@ public class PageController {
 
     /* ── 커뮤니티 ────────────────────────────────────────────── */
 
+    /**
+     * 일반 커뮤니티. 헤더 메뉴의 "커뮤니티" 가 여기로 온다.
+     *
+     * <p>게시판은 자유와 질문 둘이고 종목이 없다. 종목별 게시판은 아래
+     * {@link #communityStock(String, Model)} 이 맡는다 — 경로를 나눠 두면 링크만 보고도
+     * 어느 커뮤니티인지 알 수 있고, 화면도 종목 유무를 모델 하나로 갈라 그린다.
+     *
+     * @param board {@code free}(기본) 또는 {@code qna}
+     */
     @GetMapping("/community")
-    public String community() {
+    public String community(@RequestParam(defaultValue = "free") String board, Model model) {
+        model.addAttribute("board", "qna".equalsIgnoreCase(board) ? "QNA" : "FREE");
+        model.addAttribute("symbol", null);
         return "community";
     }
 
-    @GetMapping("/community-post")
-    public String communityPost() {
+    /** 종목별 게시판. 종목 상세의 "커뮤니티" 메뉴와 사이드바 보유 종목이 여기로 온다. */
+    @GetMapping("/community/{symbol}")
+    public String communityStock(@PathVariable String symbol, Model model) {
+        model.addAttribute("board", "STOCK");
+        model.addAttribute("symbol", symbol.toUpperCase(Locale.ROOT));
+        return "community";
+    }
+
+    /**
+     * 게시글 상세.
+     *
+     * <p>글 번호가 경로에 있어야 링크를 복사해 남에게 보낼 수 있다. 번호 없는
+     * {@code /community-post} 는 예전 링크라 목록으로 돌려보낸다.
+     */
+    @GetMapping("/community-post/{postId}")
+    public String communityPost(@PathVariable Long postId, Model model) {
+        model.addAttribute("postId", postId);
         return "community-post";
     }
 
+    @GetMapping("/community-post")
+    public RedirectView communityPostWithoutId() {
+        RedirectView redirect = new RedirectView("/community");
+        /* 모델을 붙이지 않는다. 기본값으로 두면 CSP nonce 가 쿼리스트링에 실려
+           주소창과 리퍼러에 남는다 — 매 요청 새로 만드는 값이라 새는 것 자체가 문제다 */
+        redirect.setExposeModelAttributes(false);
+        return redirect;
+    }
+
+    /** 일반 커뮤니티 글쓰기. 게시판(자유·질문)을 화면에서 고른다. */
     @GetMapping("/community-write")
-    public String communityWrite() {
+    public String communityWrite(Model model) {
+        model.addAttribute("board", "FREE");
+        model.addAttribute("symbol", null);
+        return "community-write";
+    }
+
+    /**
+     * 종목별 글쓰기.
+     *
+     * <p>게시판을 고르는 칸이 없다 — 경로가 이미 게시판을 정했다. 대신 그 종목의
+     * 내 매매를 골라 본문에 카드로 붙일 수 있다.
+     */
+    @GetMapping("/community-write/{symbol}")
+    public String communityWriteStock(@PathVariable String symbol, Model model) {
+        model.addAttribute("board", "STOCK");
+        model.addAttribute("symbol", symbol.toUpperCase(Locale.ROOT));
         return "community-write";
     }
 

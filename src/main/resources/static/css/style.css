@@ -135,6 +135,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .holdings-nav button:hover,
 .holdings-nav a:hover { background: var(--surface-soft); }
+/* 지금 보고 있는 게시판. 커뮤니티 사이드바가 자유 · 질문 · 종목을 같은 모양으로
+   늘어놓아서, 표시가 없으면 어디에 있는지 알 수 없다 */
+.holdings-nav a[aria-current="page"] { background: var(--surface-soft); }
+.holdings-nav a[aria-current="page"] .tk { font-weight: 600; color: var(--text); }
 /* 보유 0건일 때의 안내 문구 (SR-003-1) */
 .holdings-nav .note { display: block; padding: 8px; }
 .holdings-nav .tk { flex: 1; text-align: left; font-family: var(--font-mono); font-size: var(--fs-num-sm); }
@@ -333,6 +337,14 @@ table.holdings .stack { display: grid; gap: 3px; }
   background: none; font-size: var(--fs-card); font-weight: 600; color: var(--text-sub);
 }
 .tabs button[aria-selected="true"] { background: var(--surface); border-color: var(--line); color: var(--text); }
+/* 탭 줄에 섞인 링크 — 패널을 바꾸는 게 아니라 다른 화면으로 나간다(종목 상세의 커뮤니티).
+   생김새는 탭과 같게 두고, 화살표로 나간다는 것만 알린다 */
+.tabs a {
+  padding: 10px 16px; border: 1px solid transparent; border-radius: 9px;
+  font-size: var(--fs-card); font-weight: 600; color: var(--text-sub); text-decoration: none;
+}
+.tabs a::after { content: " ↗"; font-size: var(--fs-badge); }
+.tabs a:hover { color: var(--text); }
 [role="tabpanel"][hidden] { display: none; }
 
 /* ── 폼 ────────────────────────────────────────────────────── */
@@ -1118,11 +1130,41 @@ body.landing .card {
 .post-meta .spacer { flex: 1; }
 .post-meta .at { padding: 2px 7px; border-radius: 5px; background: var(--surface-soft); }
 .post-meta .at b { font-weight: 500; color: var(--text); }
-.post-body { margin: 0 0 18px; line-height: 1.9; }
+.post-body { margin: 0 0 18px; line-height: 1.9; white-space: pre-wrap; }
+
+/* 글에 붙은 매매 카드 (SR-009)
+   왼쪽 타일이 매수인지 매도인지, 오른쪽이 무엇을 얼마에 했는지다.
+   타일 색은 --record 다 — 기록을 뜻하는 토큰이라 여기가 제자리고,
+   손익 색(--rise/--fall)을 쓰면 매도 타일이 손실처럼 읽힌다.
+   수량은 그리지 않는다. */
+.trade-card {
+  display: flex; align-items: stretch; gap: 14px;
+  margin: 0 0 14px; padding: 14px 16px;
+  border: 1px solid var(--line); border-radius: var(--radius-card);
+}
+.trade-card .side {
+  display: grid; place-items: center; align-self: center;
+  min-width: 56px; padding: 16px 10px; border-radius: 10px;
+  background: var(--surface-soft); color: var(--record);
+  font-size: var(--fs-label); font-weight: 600;
+}
+.trade-card .body { display: grid; gap: 3px; align-content: center; }
+.trade-card .tk  { margin: 0; font-family: var(--font-mono); font-size: var(--fs-num-md);
+                   font-weight: 600; color: var(--text); }
+.trade-card .pnl { margin: 0; font-size: var(--fs-num-md); font-weight: 600; }
+.trade-card .sub { margin: 0; font-size: var(--fs-label); color: var(--text-sub); }
+
+/* 목록 안의 카드는 한 줄 요약과 메타 사이에 끼므로 조금 눌러 둔다 */
+.post-list .trade-card { margin: 8px 0 9px; padding: 11px 13px; }
+.post-list .trade-card .side { min-width: 48px; padding: 12px 8px; }
+.post-list .trade-card .tk,
+.post-list .trade-card .pnl { font-size: var(--fs-num-sm); }
 .post-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
                 padding-top: 14px; border-top: 1px solid var(--line); }
 
-.comment-list { list-style: none; margin: 0; padding: 0; }
+/* 마지막 항목이 대댓글이면 배경이 카드의 둥근 모서리 밖으로 삐져나온다. 여기서 잘라 준다 */
+.comment-list { list-style: none; margin: 0; padding: 0;
+                overflow: hidden; border-radius: 0 0 var(--radius-card) var(--radius-card); }
 .comment-list li { padding: 13px 18px; }
 .comment-list li + li { border-top: 1px solid var(--line); }
 .comment-list .reply { padding-left: 40px; background: var(--surface-soft); }

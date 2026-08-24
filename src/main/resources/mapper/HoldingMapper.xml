@@ -62,6 +62,17 @@
            AND h.quantity &gt; 0
     </select>
 
+    <!-- ix_holdings_user_symbol 을 탄다. 전량 매도한 행도 표에 남아 있으므로(2.4)
+         "행이 있다" 가 아니라 수량을 그대로 돌려주고 판단은 부르는 쪽이 한다.
+         UNIQUE 는 (portfolio_id, symbol) 이라 한 사람이 포트폴리오를 여럿 두면
+         같은 종목이 여러 행이 된다. SUM 으로 합쳐 두 행이 오는 순간 터지지 않게 한다 -->
+    <select id="findQuantity" resultType="java.math.BigDecimal">
+        SELECT SUM(quantity)
+          FROM holdings
+         WHERE user_id = #{userId}
+           AND symbol  = #{symbol}
+    </select>
+
     <!-- 현재가가 없는 종목도 돌려준다. 거르는 것은 계산기 몫이다(2.5).
          symbol 을 주면 그 종목만 — 종목 상세의 분해가 같은 문장을 쓴다(2.4) -->
     <select id="findForPnl" resultType="com.example.mijang.portfolio.dto.SymbolPnl">

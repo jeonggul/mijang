@@ -51,10 +51,18 @@ public final class HoldingCalculator {
      * <p>원장(`transactions`)에 저장하지 않는 이유 — 파생값이기 때문이다(2.1). 과거 날짜를
      * 나중에 끼워 넣으면 그 뒤 매도들의 실현손익이 전부 달라진다. 저장해 두면 그 순간 틀린 값이 된다.
      *
-     * @param holding         보유 현황
+     * <p>원가({@code costBasisBySellId})도 같이 담는다. 손익 <b>금액</b>만으로는 수익률을
+     * 만들 수 없고, 나눌 원가는 그 매도 시점의 평단가·평균매수환율에서 나오므로 이 루프
+     * 밖에서는 다시 구할 수 없다. 커뮤니티 글에 붙는 매매 카드가 이 값으로 수익률을 낸다.
+     *
+     * @param holding          보유 현황
      * @param realizedBySellId 매도 기록 id → 그 매도가 확정한 손익(원). 매수는 들어 있지 않다
+     * @param costBasisBySellId 매도 기록 id → 그 매도가 처분한 몫의 원가(원). 수수료는 빼지 않는다 —
+     *                          원가는 원가고, 수수료는 손익 쪽에서 이미 차감됐다
      */
-    public record Calculation(Holding holding, Map<Long, BigDecimal> realizedBySellId) {
+    public record Calculation(Holding holding,
+                              Map<Long, BigDecimal> realizedBySellId,
+                              Map<Long, BigDecimal> costBasisBySellId) {
     }
 
     /**
@@ -87,6 +95,7 @@ public final class HoldingCalculator {
         BigDecimal totalFee = BigDecimal.ZERO;
         BigDecimal realizedPnlKrw = BigDecimal.ZERO;
         Map<Long, BigDecimal> realizedBySellId = new LinkedHashMap<>();
+        Map<Long, BigDecimal> costBasisBySellId = new LinkedHashMap<>();
 
         for (Transaction tx : transactions) {
             totalFee = totalFee.add(tx.fee());
@@ -109,6 +118,10 @@ public final class HoldingCalculator {
                 realizedPnlKrw = realizedPnlKrw.add(thisSell);
                 if (tx.id() != null) {
                     realizedBySellId.put(tx.id(), thisSell.setScale(KRW_SCALE, RoundingMode.HALF_UP));
+                    // 처분한 몫의 원가. 평단가·평균환율이 이 매도 뒤에 바뀔 수 있으므로 지금 담는다
+                    costBasisBySellId.put(tx.id(), tx.quantity()
+                            .multiply(avgPrice).multiply(avgFxRate)
+                            .setScale(KRW_SCALE, RoundingMode.HALF_UP));
                 }
                 // 매도는 평단가·평균환율을 바꾸지 않는다. 판 것은 남은 것의 원가와 무관하다(2.3)
                 quantity = quantity.subtract(tx.quantity());
@@ -121,7 +134,9 @@ public final class HoldingCalculator {
                 avgFxRate.setScale(FX_SCALE, RoundingMode.HALF_UP),
                 totalFee.setScale(4, RoundingMode.HALF_UP),
                 realizedPnlKrw.setScale(KRW_SCALE, RoundingMode.HALF_UP));
-        return new Calculation(holding, Collections.unmodifiableMap(realizedBySellId));
+        return new Calculation(holding,
+                Collections.unmodifiableMap(realizedBySellId),
+                Collections.unmodifiableMap(costBasisBySellId));
     }
 
     /**

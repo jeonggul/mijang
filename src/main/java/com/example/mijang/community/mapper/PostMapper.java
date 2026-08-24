@@ -1,5 +1,19 @@
+/*
+ * PostMapper — posts(게시글) 테이블 접근
+ *
+ * 이 파일이 하는 일
+ *   목록·상세·저장 통로다. 목록이 둘로 갈린다 —
+ *     findByBoard   자유·질문. 종목이 없다
+ *     findBySymbol  종목별. 게시판이 곧 종목이다
+ *   한 메서드에 board 와 symbol 을 함께 받아 분기시킬 수도 있지만, 그러면 두 조회가
+ *   서로 다른 인덱스를 타는데 SQL 한 덩이가 그 사실을 가린다.
+ */
 package com.example.mijang.community.mapper;
 
+import com.example.mijang.community.domain.PostRow;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -11,6 +25,60 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface PostMapper {
 
+    /**
+     * 저장.
+     *
+     * <p>인자가 많지만 전부 서버가 정한 값이다. 화면이 보낸 것은 제목·본문·배지 여부뿐이고
+     * 나머지는 서비스가 구해서 넣는다.
+     */
+    int insert(@Param("userId") Long userId,
+               @Param("board") String board,
+               @Param("symbol") String symbol,
+               @Param("title") String title,
+               @Param("content") String content,
+               @Param("priceAtWrite") BigDecimal priceAtWrite,
+               @Param("fxAtWrite") BigDecimal fxAtWrite,
+               @Param("showHoldingBadge") boolean showHoldingBadge,
+               @Param("holdingQtyAtWrite") BigDecimal holdingQtyAtWrite,
+               @Param("tradeTxId") Long tradeTxId,
+               @Param("tradeSide") String tradeSide,
+               @Param("tradeSymbol") String tradeSymbol,
+               @Param("tradePrice") BigDecimal tradePrice,
+               @Param("tradeAt") LocalDateTime tradeAt,
+               @Param("tradePnlKrw") BigDecimal tradePnlKrw,
+               @Param("tradePnlRate") BigDecimal tradePnlRate);
+
+    /** 방금 저장한 글의 id. insert 직후에만 의미가 있다. */
+    Long findLastInsertedId();
+
+    /**
+     * 일반 커뮤니티 목록. {@code COM-001}
+     *
+     * @param sort {@code HOT} 이면 좋아요 순, 그 외에는 최신순
+     */
+    List<PostRow> findByBoard(@Param("board") String board,
+                              @Param("sort") String sort,
+                              @Param("limit") int limit,
+                              @Param("offset") int offset);
+
+    /** 일반 커뮤니티 글 수. 페이징에 쓴다. */
+    long countByBoard(@Param("board") String board);
+
+    /** 종목별 게시판 목록. {@code COM-001} */
+    List<PostRow> findBySymbol(@Param("symbol") String symbol,
+                               @Param("sort") String sort,
+                               @Param("limit") int limit,
+                               @Param("offset") int offset);
+
     /** 종목별 게시글 수. COM-001 */
     long countBySymbol(@Param("symbol") String symbol);
+
+    /** 상세. 숨김·삭제된 글은 없는 것으로 본다. {@code COM-003} */
+    PostRow findById(@Param("postId") Long postId);
+
+    /** 조회수 +1. 상세를 열 때마다 부른다. */
+    int increaseViewCount(@Param("postId") Long postId);
+
+    /** 댓글 수 +1. 댓글을 달 때마다 부른다 — 목록에서 매번 세면 글 수만큼 COUNT 가 나간다. */
+    int increaseCommentCount(@Param("postId") Long postId);
 }
