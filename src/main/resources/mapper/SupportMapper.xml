@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.common.mapper.SupportMapper">
+
+    <select id="findNotices" resultType="com.example.mijang.common.dto.NoticeResponse">
+        SELECT id, title, content, is_pinned AS pinned, created_at, updated_at
+          FROM notices
+         WHERE deleted_at IS NULL
+         ORDER BY is_pinned DESC, created_at DESC
+    </select>
+
+    <select id="findNoticeById" resultType="com.example.mijang.common.dto.NoticeResponse">
+        SELECT id, title, content, is_pinned AS pinned, created_at, updated_at
+          FROM notices
+         WHERE id = #{id} AND deleted_at IS NULL
+    </select>
+
+    <select id="findFaqs" resultType="com.example.mijang.common.dto.FaqResponse">
+        SELECT id, question, answer, sort_order
+          FROM faqs
+         WHERE is_published = 1
+         ORDER BY sort_order, id
+    </select>
+
+    <insert id="insertNotice" useGeneratedKeys="true" keyProperty="id"
+            parameterType="com.example.mijang.common.mapper.SupportMapper$NoticeInsert">
+        INSERT INTO notices (title, content, is_pinned, author_id)
+        VALUES (#{title}, #{content}, #{pinned}, #{authorId})
+    </insert>
+</mapper>

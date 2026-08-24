@@ -223,45 +223,38 @@
     </section>
   </section>
   <section role="tabpanel" id="a-notice" aria-labelledby="m-notice" hidden>
-    <div class="page-head"><div><h1>공지사항 관리</h1><p>고정한 공지는 설정 화면 상단에 노출됩니다</p></div>
-      <span class="grow"></span>
-      <button class="btn btn-sm btn-primary" type="button">공지 등록</button></div>
+    <div class="page-head"><div><h1>공지사항 관리</h1></div></div>
 
     <section class="card">
-      <h2 class="card-head">공지 목록 <span class="sub num">18건</span></h2>
+      <h2 class="card-head">공지 목록 <span class="sub num" id="admin-notice-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
-            <thead><tr><th class="" scope="col">고정</th><th class="txt" scope="col">제목</th><th class="" scope="col">등록일</th><th class="" scope="col">수정일</th><th class="r" scope="col">조회</th><th class="r" scope="col"></th></tr></thead>
-            <tbody>
-              <tr><td class="txt"><span class="badge badge-accent">고정</span></td><td class="txt">환율 수집 지연 안내 (8/3~8/4)</td><td class="">2025-08-03</td><td class="">2025-08-04</td><td class="r">842</td><td class="r"><button class="btn btn-sm" type="button">수정</button></td></tr>
-              <tr><td class="">—</td><td class="txt">배당 자동 산출 기능 추가</td><td class="">2025-07-28</td><td class="">—</td><td class="r">1,204</td><td class="r"><button class="btn btn-sm" type="button">수정</button></td></tr>
-              <tr><td class="">—</td><td class="txt">커뮤니티 이용 규칙 안내</td><td class="">2025-07-14</td><td class="">2025-07-15</td><td class="r">967</td><td class="r"><button class="btn btn-sm" type="button">수정</button></td></tr>
-              <tr><td class="">—</td><td class="txt">실시간 시세는 IEX 기준입니다</td><td class="">2025-06-30</td><td class="">—</td><td class="r">2,318</td><td class="r"><button class="btn btn-sm" type="button">수정</button></td></tr>
-            </tbody>
+            <thead><tr><th scope="col">고정</th><th class="txt" scope="col">제목</th><th scope="col">등록일</th><th scope="col">수정일</th></tr></thead>
+            <tbody id="admin-notice-list"><tr><td colspan="4" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
           </table>
         </div>
       <p class="note" style="padding:12px 18px 16px">등록일과 실제 수정 시각을 분리해 표시합니다</p>
     </section>
   </section>
   <section role="tabpanel" id="a-notice-new" aria-labelledby="m-notice-new" hidden>
-    <div class="page-head"><div><h1>공지 등록</h1><p>등록 즉시 설정 화면 공지사항에 노출됩니다</p></div></div>
+    <div class="page-head"><div><h1>공지 등록</h1></div></div>
 
-    <form class="card card-pad" data-noop>
+    <form class="card card-pad" id="admin-notice-form">
       <div class="field" style="margin-bottom:14px">
         <label for="nt-title">제목</label>
-        <input id="nt-title" type="text" value="환율 수집 지연 안내 (8/3~8/4)" maxlength="150">
+        <input id="nt-title" type="text" maxlength="150" required>
         <p class="hint">최대 150자</p>
       </div>
       <div class="field" style="margin-bottom:14px">
         <label for="nt-body">내용</label>
-        <textarea id="nt-body" rows="7">한국수출입은행 API 점검으로 해당 기간 환율이 직전 영업일 값으로 대체되었습니다. 손익 계산은 정상 수행되며, 화면에는 &#39;직전 영업일 기준&#39; 배지가 표시됩니다.</textarea>
+        <textarea id="nt-body" rows="7" required></textarea>
       </div>
       <div class="setting-row" style="padding-left:0;padding-right:0">
         <span class="txt"><b>상단 고정</b><small>공지 목록 맨 위에 고정합니다</small></span>
-        <span class="val"><label class="switch"><input type="checkbox"><span></span></label></span>
+        <span class="val"><label class="switch"><input id="nt-pinned" type="checkbox"><span></span></label></span>
       </div>
       <div class="modal-actions" style="margin:0">
-        <button class="btn" type="button">취소</button>
+        <button class="btn" type="reset">취소</button>
         <button class="btn btn-primary" type="submit">등록</button>
       </div>
     </form>
@@ -675,5 +668,6 @@
   loadLogs();
 })();
 </script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-notices.js}" defer></script>
 </body>
 </html>

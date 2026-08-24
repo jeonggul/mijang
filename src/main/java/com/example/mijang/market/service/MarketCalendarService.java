@@ -105,6 +105,18 @@ public class MarketCalendarService {
         return Optional.ofNullable(day).map(MarketDay::tradeDate);
     }
 
+    /** 지정한 날짜의 거래일 정보. 차트처럼 오늘이 아닌 시각을 판단할 때 쓴다. */
+    @Transactional(readOnly = true)
+    public Optional<MarketDay> tradingDay(LocalDate date) {
+        return Optional.ofNullable(marketDayMapper.findByDate(date));
+    }
+
+    /** 지정한 날짜보다 앞선 거래일의 개장·마감 정보. 주말과 휴장일을 건너뛴다. */
+    @Transactional(readOnly = true)
+    public Optional<MarketDay> previousTradingDayInfo(LocalDate base) {
+        return Optional.ofNullable(marketDayMapper.findPreviousBefore(base));
+    }
+
     /** 오늘 거래일 정보. 휴장이면 비어 있다 */
     @Transactional(readOnly = true)
     public Optional<MarketDay> today() {

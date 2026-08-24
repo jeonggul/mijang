@@ -80,7 +80,9 @@ public class FxRateService {
         if (quote != null && quote.quotedAt().isAfter(Instant.now().minus(STALE_AFTER))) {
             return Optional.of(FxRateResponse.ofLive(quote, LocalDate.now()));
         }
-        return findByDate(LocalDate.now());
+        Optional<FxRateResponse> confirmed = findByDate(LocalDate.now());
+        return quote == null ? confirmed
+                : confirmed.map(rate -> rate.withLastUpdatedAt(quote.quotedAt()));
     }
 
     /**

@@ -19,6 +19,7 @@ package com.example.mijang.stock.service;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.config.StockProperties;
+import com.example.mijang.fx.service.FxRateService;
 import com.example.mijang.market.domain.MarketSession;
 import com.example.mijang.market.cache.QuoteCacheService;
 import com.example.mijang.market.service.MarketCalendarService;
@@ -48,6 +49,7 @@ public class StockService {
     private final MarketCalendarService calendarService;
     private final ChartService chartService;
     private final QuoteCacheService quoteCache;
+    private final FxRateService fxRateService;
     private final com.example.mijang.common.time.TradingClock tradingClock;
 
     /**
@@ -96,6 +98,10 @@ public class StockService {
                 // 거래일 기준. 세션 판단이 전부 ET 인데 여기만 KST 면 경계에서 하루가 밀린다
                 key, tradingClock.today().minusDays(props.getHighLowDays()));
 
+        BigDecimal latestFx = fxRateService.latest().map(rate -> rate.rate()).orElse(null);
+        BigDecimal priceKrw = currentPrice == null || latestFx == null ? null
+                : currentPrice.multiply(latestFx).setScale(2, RoundingMode.HALF_UP);
+
         return new StockDetailResponse(
                 stock.symbol(),
                 stock.name(),
@@ -110,7 +116,7 @@ public class StockService {
                 highLow == null ? null : highLow.high(),
                 highLow == null ? null : highLow.low(),
                 lastDay != null ? lastDay : (latest == null ? null : latest.tradeDate()),
-                null,   // priceKrw — fx 범위가 붙으면 채운다 (2.6)
+                priceKrw,
                 session.name(),
                 session.label(),
                 basePrice,
