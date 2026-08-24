@@ -7,6 +7,8 @@
 let breakdown = null;
 let holdings = [];
 let watchlist = [];
+let latestFx = null;
+let displayCurrency = localStorage.getItem("mijang-base-currency") === "USD" ? "USD" : "KRW";
 
 /**
  * 응답 봉투를 벗긴다.
@@ -30,9 +32,10 @@ function toBreakdown(pnl) {
   return {
     asOf: pnl.asOf,
     totalValue: { krw: Number(pnl.totalValueKrw), usd: Number(pnl.totalValueUsd) },
-    pricePnl: { krw: Number(pnl.pricePnlKrw) },
-    fxPnl: { krw: Number(pnl.fxPnlKrw) },
-    totalPnl: { krw: Number(pnl.totalPnlKrw), returnRate: Number(pnl.returnRate) },
+    pricePnl: { krw: Number(pnl.pricePnlKrw), usd: Number(pnl.pricePnlUsd) },
+    /* 달러 기준에는 환차손익이 없다. 환율 변화는 원화로 환산할 때만 생긴다 */
+    fxPnl: { krw: Number(pnl.fxPnlKrw), usd: 0 },
+    totalPnl: { krw: Number(pnl.totalPnlKrw), usd: Number(pnl.totalPnlUsd), returnRate: Number(pnl.returnRate) },
     appliedFxRate: Number(pnl.appliedFxRate),
     fxSubstituted: pnl.fxSubstituted,
     state: pnl.state,
@@ -80,13 +83,15 @@ function returnRateOf(h) {
  * 서로 필요로 하지 않으므로 기다릴 이유가 없다.
  */
 async function loadDashboard() {
-  const [pnl, hold, watch] = await Promise.all([
+  const [pnl, hold, watch, fx] = await Promise.all([
     api("/api/portfolio/pnl"),
     api("/api/portfolio/holdings"),
     api("/api/watchlists"),
+    api("/api/fx/rates"),
   ]);
 
   breakdown = toBreakdown(pnl);
+  latestFx = fx;
   holdings = (hold || []).filter(h => Number(h.quantity) > 0).map(toHolding);
   watchlist = (watch || []).map(w => ({
     symbol: w.symbol,
@@ -94,6 +99,7 @@ async function loadDashboard() {
     /* 화면은 비율(0.0082)을 받아 퍼센트로 만든다. API 는 퍼센트(0.82)를 준다 */
     changeRate: w.dayChangeRate == null ? null : Number(w.dayChangeRate) / 100,
   }));
+  loadHoldingNews();
 
   /* 보유가 없으면 손익 분해와 보유 표를 통째로 감추고 다음 행동을 제시한다.
      빈 표에 0원과 0% 를 채워 두면 "계산해 봤더니 0" 으로 읽힌다.
@@ -110,15 +116,8 @@ async function loadDashboard() {
   renderWatchlist();
   setupCurrency();
   renderFxCard();
-  noteSkipped();
 }
 
-/**
- * 계산에서 빠진 종목을 밝힌다(2.5).
- *
- * 조용히 빼면 사용자는 합계가 왜 작은지 알 수 없다. 일봉이 아직 없는 종목이라
- * 시간이 지나면 저절로 들어온다는 것까지 말해 준다.
- */
 /**
  * 환율 카드. <b>손익 계산에 실제로 쓴 값</b>을 보여준다.
  *
@@ -129,7 +128,9 @@ function renderFxCard() {
   const rate = document.getElementById("fx-rate");
   const asOf = document.getElementById("fx-asof");
   const note = document.getElementById("fx-note");
+  const updated = document.getElementById("fx-updated");
   if (!rate) return;
+  if (updated) updated.textContent = fxUpdatedAt(latestFx);
   if (!breakdown) { rate.textContent = DASH; asOf.textContent = DASH; return; }
 
   rate.textContent = breakdown.appliedFxRate.toLocaleString("ko-KR",
@@ -138,11 +139,19 @@ function renderFxCard() {
   note.textContent = breakdown.fxSubstituted ? "직전 영업일 값" : "";
 }
 
-function noteSkipped() {
-  const note = document.getElementById("cur-note");
-  if (!note || !breakdown || !breakdown.skippedSymbols) return;
-  note.textContent =
-    `시세를 아직 못 구한 ${breakdown.skippedSymbols}종목은 손익 계산에서 빠져 있습니다`;
+function fxUpdatedAt(fx) {
+  const value = fx && (fx.lastUpdatedAt || fx.quotedAt);
+  if (!value) return "확인 불가";
+  const quotedAt = new Date(value);
+  if (Number.isNaN(quotedAt.getTime())) return "확인 불가";
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(quotedAt);
 }
 
 loadDashboard();
@@ -183,6 +192,14 @@ function renderSidebarEmpty() {
 
 /** 부호를 항상 붙인다. 색만으로 손익을 구분하지 않는다. */
 const sKrw = n => n == null ? DASH : (n >= 0 ? "+" : "−") + Math.abs(Math.round(n)).toLocaleString("ko-KR");
+const signedMoney = (n, currency = displayCurrency) => {
+  if (n == null) return DASH;
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  const value = Math.abs(Number(n));
+  return currency === "USD"
+    ? sign + "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : sign + Math.round(value).toLocaleString("ko-KR") + "원";
+};
 /** 값이 없으면 손익 색을 붙이지 않는다. 없는 값에 빨강·파랑이 붙으면 방향이 있는 것처럼 보인다 */
 const dir  = n => n == null ? "" : (n >= 0 ? "rise" : "fall");
 
@@ -209,33 +226,46 @@ function renderBreakdown() {
 
   const { pricePnl, fxPnl, totalPnl, totalValue } = breakdown;
 
-  document.getElementById("total-krw").textContent = krw(totalValue.krw);
-  document.getElementById("total-usd").textContent = usd(totalValue.usd);
+  document.getElementById("total-krw").textContent = displayCurrency === "USD"
+    ? usd(totalValue.usd) : krw(totalValue.krw);
+  document.getElementById("total-usd").textContent = displayCurrency === "USD"
+    ? krw(totalValue.krw) : usd(totalValue.usd);
 
   /* 상쇄 여부는 서버가 정한다(2.3). 화면이 부호를 다시 비교하면 기준이 갈린다 */
   chip.textContent = "상쇄";
-  chip.hidden = breakdown.state !== "OFFSET";
+  chip.hidden = displayCurrency === "USD" || breakdown.state !== "OFFSET";
 
   // 두 요인 중 큰 쪽을 100%로 잡고 상대 길이를 계산
-  const max = Math.max(Math.abs(pricePnl.krw), Math.abs(fxPnl.krw)) || 1;
+  const priceValue = displayCurrency === "USD" ? pricePnl.usd : pricePnl.krw;
+  const fxValue = displayCurrency === "USD" ? fxPnl.usd : fxPnl.krw;
+  const max = Math.max(Math.abs(priceValue), Math.abs(fxValue)) || 1;
   const set = (id, value) => {
     const f = document.getElementById(id);
     const bar = f.querySelector(".bar");
+    if (value == null || value === 0) {
+      f.dataset.dir = "right";
+      f.querySelector(".v").textContent = signedMoney(value);
+      f.querySelector(".v").className = "v";
+      f.querySelector(".right").appendChild(bar);
+      bar.style.width = "0%";
+      return;
+    }
     const positive = value >= 0;
     f.dataset.dir = positive ? "right" : "left";
-    f.querySelector(".v").textContent = sKrw(value) + "원";
+    f.querySelector(".v").textContent = signedMoney(value);
     f.querySelector(".v").className = "v " + dir(value);
     // 막대는 방향에 맞는 트랙으로 옮긴다
     f.querySelector(positive ? ".right" : ".left").appendChild(bar);
     bar.style.width = (Math.abs(value) / max * 100) + "%";
     bar.style.background = `var(--${positive ? "rise" : "fall"})`;
   };
-  set("factor-price", pricePnl.krw);
-  set("factor-fx", fxPnl.krw);
+  set("factor-price", priceValue);
+  set("factor-fx", fxValue);
 
   const amt = document.getElementById("total-pnl");
-  amt.innerHTML = `<b class="${dir(totalPnl.krw)}">${sKrw(totalPnl.krw)}원</b>` +
-                  `<i class="${dir(totalPnl.krw)}">${pct2(totalPnl.returnRate)}</i>`;
+  const totalValuePnl = displayCurrency === "USD" ? totalPnl.usd : totalPnl.krw;
+  amt.innerHTML = `<b class="${dir(totalValuePnl)}">${signedMoney(totalValuePnl)}</b>` +
+                  `<i class="${dir(totalValuePnl)}">${pct2(totalPnl.returnRate)}</i>`;
 }
 
 /* ── 사이드바 · 표 ─────────────────────────────────────────── */
@@ -243,14 +273,14 @@ function renderHoldings() {
   /* 사이드바의 주가·환차손익은 전 종목 합계다. 보유 목록을 더해서 만들지 않는다 —
      종목별 분해는 이 응답에 없어서 더하면 전부 0 이 된다. 그 합계는 손익 분해가
      이미 갖고 있다(2.4 — 종목별로 계산해서 합친 값이 곧 전체다) */
-  const priceSum = breakdown ? breakdown.pricePnl.krw : null;
-  const fxSum    = breakdown ? breakdown.fxPnl.krw : null;
+  const priceSum = breakdown ? breakdown.pricePnl[displayCurrency.toLowerCase()] : null;
+  const fxSum    = breakdown ? breakdown.fxPnl[displayCurrency.toLowerCase()] : null;
 
   document.getElementById("stat-count").textContent = holdings.length;
   const sp = document.getElementById("stat-price");
-  sp.textContent = sKrw(priceSum); sp.className = ("v " + dir(priceSum)).trim();
+  sp.textContent = signedMoney(priceSum); sp.className = ("v " + dir(priceSum)).trim();
   const sf = document.getElementById("stat-fx");
-  sf.textContent = sKrw(fxSum); sf.className = ("v " + dir(fxSum)).trim();
+  sf.textContent = signedMoney(fxSum); sf.className = ("v " + dir(fxSum)).trim();
 
   document.getElementById("holdings-nav").innerHTML = holdings.map(h => `
     <li><button type="button">
@@ -264,7 +294,9 @@ function renderHoldings() {
       <td><div class="stack"><span>${h.quantity.toLocaleString("ko-KR", { maximumFractionDigits: 6 })}</span><span class="name">${usd(h.avgPrice)}</span></div></td>
       <td><div class="stack"><span>${usd(h.currentPrice)}</span>
           <span class="name ${dir(h.dayChangeRate)}">${pct2(h.dayChangeRate)}</span></div></td>
-      <td><div class="stack"><span>${krw(h.marketValueKrw)}</span>
+      <td><div class="stack"><span>${displayCurrency === "USD"
+        ? usd(h.currentPrice == null ? null : h.quantity * h.currentPrice)
+        : krw(h.marketValueKrw)}</span>
           <span class="name ${dir(h.returnRate)}">${pct(h.returnRate)}</span></div></td>
       <td class="${dir(h.pricePnlKrw)}">${sKrw(h.pricePnlKrw)}</td>
       <td class="${dir(h.fxPnlKrw)}">${sKrw(h.fxPnlKrw)}</td>
@@ -283,29 +315,123 @@ function renderWatchlist() {
     </li>`).join("");
 }
 
+/* 보유 종목 가운데 최대 다섯 종목의 뉴스를 모아 최신 세 건만 보여준다.
+   Finnhub 분당 한도를 지키기 위해 보유 종목 수만큼 무제한 호출하지 않는다. */
+async function loadHoldingNews() {
+  const box = document.getElementById("holding-news");
+  if (!box) return;
+
+  box.setAttribute("aria-busy", "true");
+  if (holdings.length === 0) {
+    renderHoldingNewsEmpty(box, "보유 종목이 없습니다");
+    return;
+  }
+
+  const results = await Promise.all(holdings.slice(0, 5).map(h =>
+    api("/api/stocks/" + encodeURIComponent(h.symbol) + "/news")
+      .then(items => ({ symbol: h.symbol, items }))
+      .catch(() => ({ symbol: h.symbol, items: null }))
+  ));
+  const loaded = results.some(result => Array.isArray(result.items));
+  const seen = new Set();
+  const items = results.flatMap(result => (result.items || []).map(item => ({
+    symbol: result.symbol,
+    headline: item.headline,
+    publishedAt: item.publishedAt,
+    url: item.url,
+  }))).filter(item => {
+    const key = item.url || item.headline;
+    if (!item.headline || !safeExternalUrl(item.url) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    .slice(0, 3);
+
+  box.replaceChildren();
+  box.setAttribute("aria-busy", "false");
+  if (items.length === 0) {
+    renderHoldingNewsEmpty(box, loaded ? "최근 보유 종목 뉴스가 없습니다" : "뉴스를 불러오지 못했습니다");
+    return;
+  }
+
+  items.forEach(item => {
+    const li = document.createElement("li");
+    const meta = document.createElement("p");
+    meta.className = "meta";
+    const ticker = document.createElement("span");
+    ticker.className = "tk";
+    ticker.textContent = item.symbol;
+    const time = document.createElement("time");
+    time.dateTime = item.publishedAt || "";
+    time.textContent = relativeNewsTime(item.publishedAt);
+    meta.append(ticker, time);
+
+    const headline = document.createElement("p");
+    headline.className = "headline";
+    const link = document.createElement("a");
+    link.href = safeExternalUrl(item.url);
+    link.target = "_blank";
+    link.rel = "noreferrer noopener";
+    link.textContent = item.headline;
+    headline.appendChild(link);
+    li.append(meta, headline);
+    box.appendChild(li);
+  });
+}
+
+function renderHoldingNewsEmpty(box, message) {
+  box.replaceChildren();
+  box.setAttribute("aria-busy", "false");
+  const li = document.createElement("li");
+  li.className = "news-empty";
+  li.textContent = message;
+  box.appendChild(li);
+}
+
+function safeExternalUrl(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(value, location.origin);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function relativeNewsTime(value) {
+  const published = new Date(value).getTime();
+  if (!published) return "";
+  const minutes = Math.max(0, Math.floor((Date.now() - published) / 60000));
+  if (minutes < 60) return minutes + "분 전";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + "시간 전";
+  const days = Math.floor(hours / 24);
+  return days < 7 ? days + "일 전" : new Date(value).toLocaleDateString("ko-KR");
+}
+
 /* ── 통화 전환 ────────────────────────────────────────────────
    원화·달러는 표시 기준일 뿐 계산 기준이 아니다. */
 function setupCurrency() {
-  if (!breakdown) return;      // 환율을 못 구하면 바꿔 보여 줄 값이 없다
-  const rate = breakdown.appliedFxRate;
   document.querySelectorAll("[data-currency] button").forEach(btn => {
+    btn.setAttribute("aria-pressed", String(btn.dataset.cur === displayCurrency));
     btn.addEventListener("click", () => {
-      const group = btn.closest("[data-currency]");
-      group.querySelectorAll("button").forEach(b =>
-        b.setAttribute("aria-pressed", String(b === btn)));
-      const isUsd = btn.dataset.cur === "USD";
-      document.getElementById("total-krw").textContent =
-        isUsd ? usd(breakdown.totalValue.usd) : krw(breakdown.totalValue.krw);
-      document.getElementById("total-usd").textContent =
-        isUsd ? krw(breakdown.totalValue.krw) : usd(breakdown.totalValue.usd);
-      document.querySelectorAll("#holdings-body .stack > span:first-child").forEach(() => {});
-      document.getElementById("cur-note").textContent = isUsd
-        ? "환차손익은 원화 기준 개념이라 달러 표시에서는 참고값입니다"
-        : "예수금·현금 자산은 포함되지 않습니다";
-      void rate;
+      applyCurrency(btn.dataset.cur);
     });
   });
 }
+
+function applyCurrency(currency) {
+  displayCurrency = currency === "USD" ? "USD" : "KRW";
+  document.querySelectorAll("[data-currency] button").forEach(btn => {
+    btn.setAttribute("aria-pressed", String(btn.dataset.cur === displayCurrency));
+  });
+  if (breakdown) renderBreakdown();
+  if (holdings.length > 0) renderHoldings();
+}
+
+document.addEventListener("mijang:currency-change", function (event) {
+  applyCurrency(event.detail);
+});
 
 /* 즉시 호출하지 않는다. 응답이 오기 전에 그리면 breakdown 이 null 이라 터진다 —
    그리는 순서는 loadDashboard 가 쥔다 */

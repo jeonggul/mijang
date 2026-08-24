@@ -54,7 +54,8 @@ class UserServiceTest {
         @Override public UserResponse findProfile(Long id) {
             return new UserResponse(id, "me@mijang.app", nickname == null ? "정하" : nickname,
                     profileImageUrl, "USER", baseCurrency == null ? "KRW" : baseCurrency,
-                    theme == null ? "SYSTEM" : theme, LocalDateTime.of(2026, 8, 1, 0, 0));
+                    theme == null ? "SYSTEM" : theme, LocalDateTime.of(2026, 8, 1, 0, 0),
+                    LocalDateTime.of(2026, 8, 1, 0, 0));
         }
     }
 

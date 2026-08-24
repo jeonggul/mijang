@@ -1,0 +1,77 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<body>
+<header class="header" th:fragment="siteHeader">
+  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
+
+  <nav class="nav" aria-label="주요 메뉴">
+    <a th:href="@{/dashboard}" data-nav="dashboard">대시보드</a>
+    <a th:href="@{/portfolio}" data-nav="portfolio">포트폴리오</a>
+    <a th:href="@{/search}" data-nav="search">종목</a>
+    <a th:href="@{/community}" data-nav="community">커뮤니티</a>
+  </nav>
+  <div class="spacer"></div>
+
+  <div class="search" role="combobox" aria-haspopup="listbox" aria-owns="hs-list">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input id="hs-input" type="search" autocomplete="off" placeholder="티커 또는 종목명 검색"
+           aria-label="종목 검색" aria-autocomplete="list" aria-controls="hs-list" aria-expanded="false">
+    <ul class="hs-list" id="hs-list" role="listbox" aria-label="검색 결과" hidden></ul>
+  </div>
+
+  <div class="market-status-wrap">
+    <p class="market-badge market-closed" id="market-status" tabindex="0"
+       aria-live="polite" aria-describedby="market-hours-tooltip">
+      <span class="dot"></span><span data-market-label>장 상태 확인 중</span>
+      <span class="num sub" data-market-clock>--:--:--</span>
+    </p>
+    <div class="market-hours-tooltip" id="market-hours-tooltip" role="tooltip">
+      <p class="market-hours-title">미국 주식시장 거래시간</p>
+      <ul>
+        <li><b>프리마켓</b><span>04:00–09:30 ET<small>한국 17:00–22:30</small></span><em>15분 지연</em></li>
+        <li><b>정규장</b><span>09:30–16:00 ET<small>한국 22:30–익일 05:00</small></span><em class="live">실시간</em></li>
+        <li><b>애프터마켓</b><span>16:00–20:00 ET<small>한국 익일 05:00–09:00</small></span><em>15분 지연</em></li>
+      </ul>
+      <p class="market-hours-note">한국시간은 미국 서머타임 기준이며, 표준시에는 1시간 늦어집니다.</p>
+    </div>
+  </div>
+
+  <button class="icon-btn" type="button" data-theme-toggle aria-label="다크모드 전환">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="menu-anchor">
+    <button class="icon-btn" type="button" aria-label="알림" data-open="notif-menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span class="notif-dot" data-notif-dot hidden></span>
+    </button>
+    <div class="dropdown notif" id="notif-menu" hidden>
+      <p class="head">알림 <button type="button" data-read-all>모두 읽음</button></p>
+      <ul data-notification-list><li class="empty sub">알림을 불러오는 중입니다</li></ul>
+    </div>
+  </div>
+
+  <button class="icon-btn" type="button" aria-label="설정" data-go="/settings">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34A1.7 1.7 0 0 0 14 20.93V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.53 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.53a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.47 9c.24.6.81 1 1.46 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="menu-anchor">
+    <button class="avatar-btn" type="button" data-open="user-menu" aria-label="사용자 메뉴">
+      <span class="ava" aria-hidden="true"></span>
+      <span class="who"><b data-header-nickname></b><small data-header-email></small></span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="dropdown user-menu" id="user-menu" hidden>
+      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 프로필</span></a>
+      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
+      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
+      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
+      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
+      <button class="row danger" type="button" data-logout>로그아웃</button>
+    </div>
+  </div>
+
+  <script th:attr="nonce=${cspNonce}" th:src="@{/js/header.js}" defer></script>
+</header>
+</body>
+</html>

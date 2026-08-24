@@ -11,90 +11,9 @@
 <link rel="stylesheet" th:href="@{/css/tokens.css}">
 <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="stock-detail-page">
 
-<header class="header">
-  <a class="logo" th:href="@{/dashboard}"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></a>
-
-  <nav class="nav" aria-label="주요 메뉴">
-    <a th:href="@{/dashboard}">대시보드</a>
-    <a th:href="@{/portfolio}">포트폴리오</a>
-    <a th:href="@{/search}" aria-current="page">종목</a>
-    <a th:href="@{/community}">커뮤니티</a>
-  </nav>
-
-  <div class="spacer"></div>
-
-
-  <p class="market-badge"><span class="dot"></span>정규장 <span class="num sub">마감 3:24</span></p>
-
-  <button class="icon-btn" type="button" data-theme-toggle aria-label="다크모드 전환">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"
-            stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-    </svg>
-  </button>
-
-  <div class="menu-anchor">
-    <button class="icon-btn" type="button" aria-label="알림" data-open="notif-menu">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-        <path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-    </button>
-
-    <div class="dropdown notif" id="notif-menu" hidden>
-      <p class="head">알림 <button type="button">모두 읽음</button></p>
-      <ul>
-        <li><a class="row" th:href="@{/stock}">
-          <span class="meta"><span class="kind">목표가 도달</span><time datetime="2025-08-05T21:32">10분 전</time></span>
-          <span class="body">AAPL이 목표가 $218.00에 도달했습니다</span>
-        </a></li>
-        <li><a class="row" th:href="@{/stock}">
-          <span class="meta"><span class="kind">급등락</span><time datetime="2025-08-05T19:40">2시간 전</time></span>
-          <span class="body">NVDA가 오늘 +6.2% 움직였습니다</span>
-        </a></li>
-        <li><a class="row" th:href="@{/dividend}">
-          <span class="meta"><span class="kind">배당</span><time datetime="2025-08-04">어제</time></span>
-          <span class="body">SCHD 배당락일이 8월 12일입니다</span>
-        </a></li>
-        <li><a class="row" th:href="@{/report}">
-          <span class="meta"><span class="kind">재계산 완료</span><time datetime="2025-08-03">2일 전</time></span>
-          <span class="body">2025-03-14 이후 손익 재계산이 끝났습니다</span>
-        </a></li>
-      </ul>
-      <p class="foot">목표가 알림은 매도 권유가 아닙니다. 회고 화면으로 이동합니다.</p>
-    </div>
-  </div>
-
-  <button class="icon-btn" type="button" aria-label="설정" data-go="/settings">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/>
-      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.53 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.53a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.47 9c.24.6.81 1 1.46 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"
-            stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-    </svg>
-  </button>
-
-  <!-- 마이페이지 진입점. 이 아바타가 유일한 입구다. -->
-  <div class="menu-anchor">
-    <!-- 펼치면 이 버튼이 그대로 메뉴의 프로필 행이 된다. 이메일은 펼쳤을 때만 보인다. -->
-    <button class="avatar-btn" type="button" data-open="user-menu">
-      <span class="ava" aria-hidden="true"></span>
-      <span class="who"><b>정하</b><small>dlwjdgkw@gmail.com</small></span>
-      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <div class="dropdown user-menu" id="user-menu" hidden>
-      <a class="row two" th:href="@{/mypage}"><span class="ttl">마이페이지</span><span class="meta">보유 요약 · 작성 글</span></a>
-      <a class="row two" th:href="@{/record-list}"><span class="ttl">매매 기록</span><span class="meta">입력한 체결 내역</span></a>
-      <a class="row two" th:href="@{/retrospect}"><span class="ttl">투자 회고</span><span class="meta">판단과 결과 대조</span></a>
-      <a class="row two" th:href="@{/watchlist}"><span class="ttl">관심 종목</span><span class="meta">실시간 구독 대상</span></a>
-      <a class="row two" th:href="@{/settings}"><span class="ttl">설정</span><span class="meta">계정 · 알림 · 표시</span></a>
-      <button class="row danger" type="button" data-logout>로그아웃</button>
-    </div>
-  </div>
-</header>
+<header th:replace="~{fragments/header :: siteHeader}"></header>
 
 <div class="page-wide">
   <div class="grid-2">
@@ -218,30 +137,44 @@
     <div class="stack-v">
       <div class="card card-pad">
         <h2 class="form-sec">기업 정보</h2>
-        <div class="metrics">
-          <div><span class="k">산업</span><span class="v" id="ci-industry">—</span></div>
-          <div><span class="k">상장일</span><span class="v" id="ci-ipo">—</span></div>
-          <div><span class="k">국가</span><span class="v" id="ci-country">—</span></div>
-          <div><span class="k">발행주식수</span><span class="v" id="ci-shares">—</span></div>
-          <div><span class="k">시가총액</span><span class="v" id="ci-cap">—</span></div>
-          <div><span class="k">홈페이지</span><span class="v" id="ci-web">—</span></div>
+        <div data-company-only>
+          <div class="metrics">
+            <div><span class="k">산업</span><span class="v" id="ci-industry">—</span></div>
+            <div><span class="k">상장일</span><span class="v" id="ci-ipo">—</span></div>
+            <div><span class="k">국가</span><span class="v" id="ci-country">—</span></div>
+            <div><span class="k">발행주식수</span><span class="v" id="ci-shares">—</span></div>
+            <div><span class="k">시가총액</span><span class="v" id="ci-cap">—</span></div>
+            <div><span class="k">홈페이지</span><span class="v" id="ci-web">—</span></div>
+          </div>
+          <p class="note" style="margin-top:14px">출처: Finnhub · 일 1회 갱신</p>
         </div>
-        <p class="note" style="margin-top:14px">출처: Finnhub · 일 1회 갱신</p>
+        <div class="asset-empty" data-etf-only hidden>
+          <span class="badge badge-line">ETF</span>
+          <h3>ETF에는 기업 정보가 없습니다</h3>
+          <p>이 종목은 상장지수상품이라 산업·발행주식수·기업 홈페이지 같은 기업용 프로필을 표시하지 않습니다.</p>
+        </div>
       </div>
 
       <div class="card">
         <h2 class="card-head">재무제표 <span class="sub">SEC EDGAR · 연간</span></h2>
-        <div class="table-wrap">
-          <table class="tbl tbl-band">
-            <thead><tr id="fin-head">
-              <th class="txt" scope="col">항목</th>
-            </tr></thead>
-            <tbody id="fin-rows"><!-- 스크립트가 채운다 --></tbody>
-          </table>
+        <div data-company-only>
+          <div class="table-wrap">
+            <table class="tbl tbl-band">
+              <thead><tr id="fin-head">
+                <th class="txt" scope="col">항목</th>
+              </tr></thead>
+              <tbody id="fin-rows"><!-- 스크립트가 채운다 --></tbody>
+            </table>
+          </div>
+          <p class="note" style="padding:12px 18px 16px">
+            SEC EDGAR companyfacts(XBRL)에서 직접 조회합니다 · 벤더 호출 한도를 쓰지 않습니다
+          </p>
         </div>
-        <p class="note" style="padding:12px 18px 16px">
-          SEC EDGAR companyfacts(XBRL)에서 직접 조회합니다 · 벤더 호출 한도를 쓰지 않습니다
-        </p>
+        <div class="asset-empty" data-etf-only hidden>
+          <span class="badge badge-line">ETF</span>
+          <h3>ETF에는 기업 재무제표가 없습니다</h3>
+          <p>기업의 매출·영업이익·순이익을 공시하는 대상이 아니므로 SEC 기업 재무 지표를 조회하지 않습니다.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -250,15 +183,22 @@
   <section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
     <div class="card">
       <h2 class="card-head">주요 재무 지표 <span class="sub">최근 4개 분기</span></h2>
-      <div class="table-wrap">
-        <table class="tbl">
-          <thead><tr id="q-head">
-            <th class="txt" scope="col">항목</th>
-          </tr></thead>
-          <tbody id="q-rows"><!-- 스크립트가 채운다 --></tbody>
-        </table>
+      <div data-company-only>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr id="q-head">
+              <th class="txt" scope="col">항목</th>
+            </tr></thead>
+            <tbody id="q-rows"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+        <p class="note" style="padding:12px 18px">SEC EDGAR XBRL 원문 기준. 회계 기준 차이로 벤더 집계와 다를 수 있습니다.</p>
       </div>
-      <p class="note" style="padding:12px 18px">SEC EDGAR XBRL 원문 기준. 회계 기준 차이로 벤더 집계와 다를 수 있습니다.</p>
+      <div class="asset-empty" data-etf-only hidden>
+        <span class="badge badge-line">ETF</span>
+        <h3>ETF에는 분기 재무 지표가 없습니다</h3>
+        <p>기업 실적 대신 기초자산과 운용 구조로 평가하는 상품이므로 기업용 분기 지표를 조회하지 않습니다.</p>
+      </div>
     </div>
   </section>
 
@@ -372,17 +312,10 @@
       <section class="card card-pad">
         <h2 style="margin:0 0 12px;font-size:var(--fs-card);display:flex;align-items:center">관련 뉴스
           <span class="spacer" style="flex:1"></span>
-          <a class="sub" th:href="@{/stock}">더보기</a>
+          <button class="news-more sub" type="button" id="related-news-more" hidden>더보기</button>
         </h2>
-        <ul class="news">
-          <li>
-            <p class="meta"><time datetime="2025-08-05T19:00">2시간 전</time></p>
-            <p>Apple expands India manufacturing footprint</p>
-          </li>
-          <li>
-            <p class="meta"><time datetime="2025-08-04">어제</time></p>
-            <p>Services revenue hits record in latest quarter</p>
-          </li>
+        <ul class="news related-news" id="related-news-list" aria-live="polite" aria-busy="true">
+          <li class="news-empty">뉴스를 불러오는 중입니다</li>
         </ul>
       </section>
     </aside>
@@ -398,6 +331,11 @@
   var chart = document.getElementById("candle-body");
   var star = document.getElementById("sym-star");
   var watchId = null;
+  var displayCurrency = localStorage.getItem("mijang-base-currency") === "USD" ? "USD" : "KRW";
+  var fxRate = null;
+  var currentPrice = null;
+  var previousClose = null;
+  var quoteBox = null;
 
   /* 커뮤니티 메뉴는 이 종목의 게시판으로 간다. 티커를 여기서 알기 때문에
      서버가 미리 링크를 만들어 둘 수 없다 */
@@ -412,8 +350,22 @@
       { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   function krw(v) { return v == null ? "—" : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function priceKrw(v) { return v == null || fxRate == null ? null : Number(v) * fxRate; }
+  function displayMoney(v) { return displayCurrency === "KRW" ? krw(priceKrw(v)) : money(v); }
+  function secondaryMoney(v) { return displayCurrency === "KRW" ? money(v) : krw(priceKrw(v)); }
   function count(v) { return v == null ? "—" : Number(v).toLocaleString("ko-KR"); }
   function percent(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + Number(v).toFixed(2) + "%"; }
+
+  function renderPrices() {
+    text("sym-price", displayMoney(currentPrice));
+    text("sym-krw", secondaryMoney(currentPrice));
+    text("q-prev", displayMoney(previousClose));
+    if (quoteBox) {
+      text("q-open", displayMoney(quoteBox.open));
+      text("q-high", displayMoney(quoteBox.high));
+      text("q-low", displayMoney(quoteBox.low));
+    }
+  }
 
   /* 응답 봉투를 벗겨 {성공 여부, 값} 으로 돌려준다.
      값만 돌려주면 안 된다 — 담기·빼기는 성공해도 data 가 null 이라
@@ -448,7 +400,7 @@
     var basis = $("sym-basis");
     if (basis) {
       basis.textContent = (rate == null || basePrice == null) ? ""
-          : (session === "AFTER" ? "정규장 종가" : "전일 종가") + " " + money(basePrice) + " 대비";
+          : (session === "AFTER" ? "정규장 종가" : "전일 종가") + " " + displayMoney(basePrice) + " 대비";
     }
   }
 
@@ -467,15 +419,22 @@
        티커만으로는 무슨 회사인지 모르는 사람이 많고, 영문명은 기록·검색의 근거라 지우지 않는다 */
     text("sym-name", d.nameKo ? d.nameKo + " (" + d.name + ")" : d.name);
     text("sym-exchange", d.exchange || "—");
-    text("sym-price", money(d.currentPrice));
-    text("sym-krw", krw(d.priceKrw));
+    currentPrice = d.currentPrice == null ? null : Number(d.currentPrice);
+    previousClose = d.previousClose == null ? null : Number(d.previousClose);
+    fxRate = currentPrice && d.priceKrw != null ? Number(d.priceKrw) / currentPrice : null;
+    renderPrices();
     text("sym-asof", d.asOf || "—");
-    text("q-prev", money(d.previousClose));
     /* 기준가는 서버가 세션을 보고 정한다(2.15).
        정규장이면 전일 종가, 시간외면 당일 정규장 종가다 */
     session = d.session;
     sessionLabel = d.sessionLabel;
     basePrice = d.basePrice == null ? null : Number(d.basePrice);
+    stockActive = d.active;
+    renderAssetInformation(d.assetClass);
+    document.dispatchEvent(new CustomEvent("mijang:stock-detail-loaded", {
+      detail: { symbol: d.symbol, assetClass: d.assetClass }
+    }));
+    loadMetrics();
 
     /* 상장폐지·거래정지는 이유까지 보여준다. 배지만으로는 왜인지 알 수 없다 */
     if (!d.active) {
@@ -491,6 +450,9 @@
      종류만 바뀌면 받아 둔 것을 다시 그린다. */
   var SVG = "http://www.w3.org/2000/svg";
   var W = 1012, H = 300, PAD = 20;      // 위아래 여백. 꼭짓점이 잘리지 않게 둔다
+  var KST_DATE = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit"
+  });
   var range = "LIVE";
   var chartType = "LINE";
   var points = [];
@@ -617,10 +579,15 @@
     if (vs.length === 0) return;
 
     var first = vs[0].at, last = vs[vs.length - 1].at;
+    function kstDate(value) {
+      var values = {};
+      KST_DATE.formatToParts(new Date(value)).forEach(function (part) { values[part.type] = part.value; });
+      return values.year + "-" + values.month + "-" + values.day;
+    }
     /* 분봉은 날짜가 넘어갈 때, 일봉 이상은 해가 바뀔 때만 앞자리를 붙인다.
        늘 붙이면 좁은 축에 글자가 넘쳐 읽히지 않는다 */
     var wide = (meta && meta.intraday)
-        ? first.slice(0, 10) !== last.slice(0, 10)
+        ? kstDate(first) !== kstDate(last)
         : first.slice(0, 4) !== last.slice(0, 4);
 
     /* 눈금은 다섯 개다. 간격을 나눗셈으로 잡으면 여섯 개가 되는 경우가 생긴다 */
@@ -630,8 +597,10 @@
       var at = vs[i].at;
       var span = document.createElement("span");
       if (meta && meta.intraday) {
-        var time = new Date(at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
-        span.textContent = wide ? at.slice(5, 10) + " " + time : time;
+        var time = new Date(at).toLocaleTimeString("ko-KR", {
+          timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false
+        });
+        span.textContent = wide ? kstDate(at).slice(5) + " " + time : time;
       } else {
         span.textContent = wide ? at.slice(2, 10) : at.slice(5, 10);
       }
@@ -678,7 +647,7 @@
     var up = Number(last.close) >= Number(vs[0].close);
     var tone = up ? "rise" : "fall";
 
-    tag.textContent = money(value);
+    tag.textContent = displayMoney(value);
     tag.className = "chart-last " + tone;
     tag.style.top = topPercent;
     tag.hidden = false;
@@ -711,7 +680,7 @@
     if (n) {
       var tf = meta ? meta.timeframe : "";
       n.textContent =
-        meta && meta.intraday ? "분봉입니다. 프리마켓·애프터마켓을 포함하며 표시용입니다. 손익 계산에는 일봉 종가를 씁니다."
+        meta && meta.intraday ? "분봉입니다. 시각은 한국시간(KST)이며 프리마켓·애프터마켓을 포함합니다. 손익 계산에는 일봉 종가를 씁니다."
         : tf === "1Day"       ? "일봉 종가 기준입니다. 손익 계산 기준가와 같습니다."
         :                       "벤더가 집계한 " + (tf === "1Week" ? "주봉" : "월봉") + "입니다. 손익 계산에는 쓰지 않습니다.";
     }
@@ -740,9 +709,12 @@
       volume += Number(p.volume || 0);
     });
 
-    text("q-open", money(day[0].open));
-    text("q-high", money(high === -Infinity ? null : high));
-    text("q-low", money(low === Infinity ? null : low));
+    quoteBox = {
+      open: day[0].open,
+      high: high === -Infinity ? null : high,
+      low: low === Infinity ? null : low
+    };
+    renderPrices();
     text("q-volume", count(volume));
   }
 
@@ -765,6 +737,10 @@
     meta = r.data;
     points = r.data.points || [];
     if (keep) restoreView(keep); else resetView();
+    if (points.length === 0 && range === "LIVE" && session && session !== "CLOSED") {
+      note(session === "REGULAR" ? "실시간 체결을 기다리는 중입니다" : "15분 지연 시세를 기다리는 중입니다");
+      return;
+    }
     draw();
   }
 
@@ -1011,6 +987,17 @@
     }
   }
 
+  /** ETF 에 기업용 프로필과 SEC 재무제표를 빈 칸으로 보여주지 않는다. */
+  function renderAssetInformation(assetClass) {
+    var etf = assetClass === "ETF";
+    document.querySelectorAll("[data-company-only]").forEach(function (el) {
+      el.hidden = etf;
+    });
+    document.querySelectorAll("[data-etf-only]").forEach(function (el) {
+      el.hidden = !etf;
+    });
+  }
+
   /**
    * 종목 뉴스.
    *
@@ -1023,9 +1010,15 @@
     var meta = $("news-meta");
     if (!box) return;
 
-    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/news");
-    var items = r.ok && r.data ? r.data : [];
+    var r;
+    try {
+      r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/news");
+    } catch (e) {
+      r = { ok: false, data: null };
+    }
+    var items = r.ok && Array.isArray(r.data) ? r.data : [];
     box.replaceChildren();
+    box.setAttribute("aria-busy", "false");
 
     if (meta) {
       meta.textContent = items.length === 0 ? "—"
@@ -1036,8 +1029,9 @@
       var empty = document.createElement("li");
       empty.className = "sub";
       empty.style.padding = "22px";
-      empty.textContent = "관련 뉴스가 없습니다";
+      empty.textContent = r.ok ? "관련 뉴스가 없습니다" : "뉴스를 불러오지 못했습니다";
       box.appendChild(empty);
+      renderRelatedNews(items, r.ok);
       return;
     }
 
@@ -1077,6 +1071,68 @@
     });
 
     fitNews(box, items.length);
+    renderRelatedNews(items, true);
+  }
+
+  /** 오른쪽 카드는 같은 응답에서 상위 세 건만 추려 보여준다. 별도 호출은 하지 않는다. */
+  function renderRelatedNews(items, loaded) {
+    var box = $("related-news-list");
+    var more = $("related-news-more");
+    if (!box) return;
+
+    box.replaceChildren();
+    box.setAttribute("aria-busy", "false");
+    if (more) more.hidden = items.length === 0;
+
+    if (items.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "news-empty";
+      empty.textContent = loaded ? "관련 뉴스가 없습니다" : "뉴스를 불러오지 못했습니다";
+      box.appendChild(empty);
+      return;
+    }
+
+    items.slice(0, 3).forEach(function (n) {
+      var li = document.createElement("li");
+      var metaLine = document.createElement("p");
+      metaLine.className = "meta";
+      var when = document.createElement("time");
+      when.dateTime = n.publishedAt || "";
+      when.textContent = ago(n.publishedAt);
+      metaLine.appendChild(when);
+      if (n.source) {
+        var source = document.createElement("span");
+        source.textContent = n.source;
+        metaLine.prepend(source);
+      }
+
+      var title = document.createElement("p");
+      title.className = "headline";
+      var url = safeUrl(n.url);
+      if (url !== "#") {
+        var link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noreferrer noopener";
+        link.textContent = n.headline;
+        title.appendChild(link);
+      } else {
+        title.textContent = n.headline;
+      }
+      li.append(metaLine, title);
+      box.appendChild(li);
+    });
+  }
+
+  var relatedMore = $("related-news-more");
+  if (relatedMore) {
+    relatedMore.addEventListener("click", function () {
+      var newsTab = $("t5");
+      if (!newsTab) return;
+      newsTab.click();
+      newsTab.focus();
+      newsTab.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   /** 상세 화면에서 한 번에 펼치는 뉴스 건수. 나머지는 상자 안에서 굴려 본다 */
@@ -1141,12 +1197,14 @@
   var basePrice = null;      // 이 세션의 등락률 기준가. 서버가 세션을 보고 정해 준다
   var session = null;        // PRE·REGULAR·AFTER·CLOSED
   var sessionLabel = "";
+  var stockActive = true;
 
   function applyLive(quote) {
     if (quote.symbol !== symbol) return;
 
     var price = Number(quote.price);
-    text("sym-price", money(price));
+    currentPrice = price;
+    renderPrices();
 
     /* 등락률은 서버가 체결마다 주지 않는다. 세션 기준가로 화면에서 구한다 */
     if (basePrice) {
@@ -1157,6 +1215,7 @@
     if (feed) {
       /* 세 가지 상태를 구분한다. 지연값을 실시간인 척 보여 주면 지금 값으로 오해한다 */
       feed.innerHTML = session === "CLOSED" ? '<i class="dot"></i>휴장'
+        : !quote.live && session !== "REGULAR" ? '<i class="dot"></i>SIP 15분 지연 대기'
         : !quote.live ? '<i class="dot"></i>종가 기준'
         : quote.delayed ? '<i class="dot"></i>SIP 15분 지연'
         : '<i class="dot"></i>IEX 실시간';
@@ -1173,7 +1232,16 @@
    * 분이 바뀌면 새 봉을 하나 붙인다. 분봉이 만들어지는 방식 그대로다.
    */
   function appendLive(price, at) {
-    if (range !== "LIVE" || points.length === 0) return;
+    if (range !== "LIVE") return;
+
+    /* 세션은 열렸지만 지연 피드의 첫 분봉이 아직 없었던 경우다.
+       첫 체결로 새 차트를 시작해야 다음 1분 새로고침까지 빈 화면에 머물지 않는다. */
+    if (points.length === 0) {
+      points.push({ at: at, open: price, high: price, low: price, close: price, volume: 0 });
+      resetView();
+      draw();
+      return;
+    }
 
     var minute = String(at).slice(0, 16);              // "2026-08-13T13:31"
     var last = points[points.length - 1];
@@ -1217,7 +1285,7 @@
     /* 아주 오래된 브라우저에는 EventSource 가 없다. 그때는 실시간만 빠지고
        종가 기준 화면은 그대로 돌아야 한다 */
     if (typeof EventSource === "undefined") return;
-    if (source) source.close();
+    if (source) return;
     source = new EventSource("/api/market/stream?symbols=" + encodeURIComponent(symbol));
     source.addEventListener("quote", function (e) { applyLive(JSON.parse(e.data)); });
     /* 끊기면 브라우저가 알아서 다시 붙는다. 여기서 할 일이 없다 */
@@ -1232,17 +1300,58 @@
     }
   });
 
+  /**
+   * 페이지를 계속 열어 둔 채 장 시작 시각을 지나도 처음 받은 CLOSED 상태에 머물지 않게 한다.
+   * 상태가 바뀔 때만 상세를 다시 받아 등락률 기준가까지 새 세션에 맞춘다.
+   */
+  async function refreshSession() {
+    try {
+      var r = await call("/api/market/session");
+      if (!r.ok || !r.data || r.data.session === session) return false;
+
+      session = r.data.session;
+      sessionLabel = r.data.label;
+      await loadDetail();
+
+      if (session === "CLOSED") {
+        if (source) { source.close(); source = null; }
+        if (stockActive) {
+          var feed = $("sym-feed");
+          feed.innerHTML = '<i class="dot"></i>휴장';
+          feed.classList.add("stale");
+        }
+      } else {
+        openStream();
+      }
+
+      if (range === "LIVE") await loadChart();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /* 실시간 구간의 앞부분은 15분 지연된 SIP 라 체결만으로는 채워지지 않는다.
      주기적으로 다시 받아 그 구간을 메운다. 다른 기간은 값이 확정돼 있어 부르지 않는다 */
-  setInterval(function () {
-    if (range === "LIVE" && session !== "CLOSED" && !document.hidden) loadChart(true);
+  setInterval(async function () {
+    var changed = await refreshSession();
+    if (!changed && range === "LIVE" && session !== "CLOSED" && !document.hidden) loadChart(true);
   }, 60000);
 
-  loadDetail().then(function () { openStream(); });
-  fillQuoteBox();
-  loadMetrics();
+  document.addEventListener("mijang:currency-change", function (event) {
+    displayCurrency = event.detail === "USD" ? "USD" : "KRW";
+    renderPrices();
+    showChange(basePrice == null || currentPrice == null ? null
+      : (currentPrice - basePrice) / basePrice * 100);
+    draw();
+  });
+
+  loadDetail().then(function () {
+    openStream();
+    fillQuoteBox();
+    loadChart();
+  });
   loadNews();
-  loadChart();
   loadWatch();
 })();
 
@@ -1346,7 +1455,7 @@
     });
   }
 
-  (async function () {
+  async function loadFinancials() {
     var byMetric = {}, quarterly = {};
     for (var i = 0; i < METRICS.length; i++) {
       var list = await api("/api/stocks/" + encodeURIComponent(symbol)
@@ -1399,7 +1508,13 @@
       td.textContent = (op && rev && Number(rev.value))
         ? (Number(op.value) / Number(rev.value) * 100).toFixed(1) + "%" : "—";
     });
-  })();
+  }
+
+  /* 상세 API 가 알려 준 자산 유형을 기다린다. ETF 면 SEC 기업 재무 API를 부르지 않는다. */
+  document.addEventListener("mijang:stock-detail-loaded", function (event) {
+    if (event.detail && event.detail.assetClass === "ETF") return;
+    loadFinancials();
+  }, { once: true });
 })();
 
 /* 이 종목의 내 보유 현황 (PROFIT-07 종목별 손익)
@@ -1412,6 +1527,7 @@
   var symbol = new URLSearchParams(location.search).get("symbol");
   if (!symbol) return;
   var DASH = "—";
+  var displayCurrency = localStorage.getItem("mijang-base-currency") === "USD" ? "USD" : "KRW";
 
   function put(id, v) {
     var el = document.getElementById(id);
@@ -1454,10 +1570,13 @@
 
     put("hold-qty", shares(mine.quantity));
     put("mh-qty", shares(mine.quantity));
-    put("mh-avg", usd(mine.avgPrice));
+    put("mh-avg", displayCurrency === "KRW"
+      ? krw(mine.avgPrice == null || mine.avgFxRate == null ? null : Number(mine.avgPrice) * Number(mine.avgFxRate))
+      : usd(mine.avgPrice));
     put("mh-fx", mine.avgFxRate == null ? DASH
       : Number(mine.avgFxRate).toLocaleString("ko-KR", { maximumFractionDigits: 2 }) + "원");
-    put("mh-value", krw(mine.marketValueKrw));
+    put("mh-value", displayCurrency === "KRW" ? krw(mine.marketValueKrw)
+      : usd(mine.currentPrice == null ? null : Number(mine.quantity) * Number(mine.currentPrice)));
     put("hold-pnl", signed(mine.evalPnlKrw));
     tone("hold-pnl", mine.evalPnlKrw);
 

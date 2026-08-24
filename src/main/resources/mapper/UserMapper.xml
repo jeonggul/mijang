@@ -84,7 +84,8 @@
     <update id="updatePassword">
         UPDATE users
            SET password_hash = #{passwordHash},
-               password_version = password_version + 1
+               password_version = password_version + 1,
+               password_changed_at = CURRENT_TIMESTAMP(3)
          WHERE id = #{id}
            AND status &lt;&gt; 'WITHDRAWN'
            AND password_hash = #{expectedHash}
@@ -127,7 +128,7 @@
     <select id="findProfile" parameterType="long"
             resultType="com.example.mijang.user.dto.UserResponse">
         SELECT id AS userId, email, nickname, profile_image_url, role,
-               base_currency, theme, created_at
+               base_currency, theme, created_at, password_changed_at
           FROM users
          WHERE id = #{id}
            AND status &lt;&gt; 'WITHDRAWN'

@@ -24,5 +24,6 @@ public record UserResponse(
         String role,
         String baseCurrency,
         String theme,
-        LocalDateTime joinedAt) {
+        LocalDateTime joinedAt,
+        LocalDateTime passwordChangedAt) {
 }

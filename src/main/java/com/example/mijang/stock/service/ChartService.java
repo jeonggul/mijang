@@ -19,6 +19,8 @@ package com.example.mijang.stock.service;
 
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
+import com.example.mijang.market.domain.MarketDay;
+import com.example.mijang.market.service.MarketCalendarService;
 import com.example.mijang.stock.client.AlpacaStockClient;
 import com.example.mijang.stock.domain.ChartRange;
 import com.example.mijang.stock.dto.ChartPoint;
@@ -87,6 +89,11 @@ public class ChartService {
      */
     private final Map<String, LocalDate> historyFloor = new ConcurrentHashMap<>();
     private final com.example.mijang.common.time.TradingClock tradingClock;
+    private final MarketCalendarService marketCalendarService;
+
+    /** 벤더에 요청할 정확한 시작·끝. 휴장 중에는 직전 거래 세션을 가리킨다. */
+    record ChartWindow(Instant from, Instant to, boolean currentSession) {
+    }
 
     private record Cached(Instant until, List<ChartPoint> points) {
         boolean alive() {
@@ -202,15 +209,22 @@ public class ChartService {
      * 채우고, 남은 16분은 IEX 로 받는다. IEX 만 쓰면 장 시간 밖이 통째로 빈다.
      */
     private List<ChartPoint> fromVendor(String symbol, ChartRange range) {
-        Instant to = Instant.now();
-        Instant from = startOf(range, to);
+        Instant requestTime = Instant.now();
+        ChartWindow window = windowOf(range, requestTime);
+        Instant from = window.from();
+        Instant to = window.to();
 
         if (!range.intraday()) {
             return toPoints(barsOf(alpacaClient.bars(
                     List.of(symbol), range.timeframe(), from.toString(), to.toString()), symbol));
         }
 
-        Instant sipEnd = to.minus(SIP_DELAY);
+        /* SIP 제한은 조회 구간의 끝이 아니라 실제 현재 시각 기준이다. 직전 거래일처럼
+           이미 16분이 지난 구간은 끝까지 SIP 로 받을 수 있다. */
+        Instant sipEnd = requestTime.minus(SIP_DELAY);
+        if (sipEnd.isAfter(to)) {
+            sipEnd = to;
+        }
         List<ChartPoint> merged = new ArrayList<>();
 
         /* 앞부분 — SIP. 전 거래소를 합친 값이라 장 시간 밖이 들어 있다 */
@@ -220,8 +234,10 @@ public class ChartService {
         }
 
         /* 끝부분 — IEX. SIP 가 못 주는 최근 16분을 메운다. 얇지만 없는 것보다 낫다 */
-        List<ChartPoint> tail = toPoints(barsOf(alpacaClient.bars(
-                List.of(symbol), range.timeframe(), sipEnd.toString(), to.toString(), "iex"), symbol));
+        List<ChartPoint> tail = sipEnd.isBefore(to)
+                ? toPoints(barsOf(alpacaClient.bars(
+                        List.of(symbol), range.timeframe(), sipEnd.toString(), to.toString(), "iex"), symbol))
+                : List.of();
 
         /* 경계에서 같은 시각의 봉이 양쪽에 있을 수 있다. SIP 쪽을 남긴다 — 더 많이 본 값이다 */
         String lastAt = merged.isEmpty() ? "" : merged.get(merged.size() - 1).at();
@@ -231,11 +247,19 @@ public class ChartService {
             }
         }
 
-        /* 주말·휴장일이면 그 구간에 봉이 하나도 없다. 빈 차트를 보여주느니
-           기간만큼 넓혀 직전 거래일을 보여준다 */
-        if (merged.isEmpty() && from.isAfter(to.minus(range.lookback()))) {
-            return toPoints(barsOf(alpacaClient.bars(List.of(symbol), range.timeframe(),
-                    to.minus(range.lookback()).toString(), sipEnd.toString(), "sip"), symbol));
+        /* 달력 테이블이 아직 비어 있거나 범위 밖이면 정확한 직전 거래일을 구할 수 없다.
+           그때만 넓게 한 번 받아 실제로 마지막 봉이 있던 하루를 골라 빈 화면을 피한다. */
+        if (merged.isEmpty() && (range == ChartRange.LIVE || range == ChartRange.ONE_DAY)) {
+            /* 장은 열렸지만 15분 지연 데이터가 아직 도착하지 않은 구간이다.
+               직전 거래일을 현재 차트처럼 보여주지 말고 화면이 대기 상태를 표시하게 둔다. */
+            if (window.currentSession()) {
+                return merged;
+            }
+            Instant fallbackFrom = requestTime.minus(Duration.ofDays(7));
+            Instant fallbackTo = requestTime.minus(SIP_DELAY);
+            List<ChartPoint> fallback = toPoints(barsOf(alpacaClient.bars(List.of(symbol), range.timeframe(),
+                    fallbackFrom.toString(), fallbackTo.toString(), "sip"), symbol));
+            return lastSession(fallback, range);
         }
         return merged;
     }
@@ -250,24 +274,63 @@ public class ChartService {
      * <p>새벽(프리마켓 전)이면 아직 오늘 장이 시작되지 않았으므로 어제 것을 보여준다.
      * 주말·휴장일에는 그 구간에 봉이 없어 빈 차트가 되는데, 그때는 기간만큼 넓혀 잡는다.
      */
-    private Instant startOf(ChartRange range, Instant now) {
+    ChartWindow windowOf(ChartRange range, Instant now) {
         if (range != ChartRange.LIVE && range != ChartRange.ONE_DAY) {
-            return now.minus(range.lookback());
+            return new ChartWindow(now.minus(range.lookback()), now, false);
         }
         ZonedDateTime et = now.atZone(ET);
+        LocalDate date = et.toLocalDate();
+
+        /* 오늘 세션이 이미 시작했으면 오늘, 아직 시작 전이거나 휴장이면 직전 거래일이다.
+           단순히 하루를 빼면 월요일 새벽에 일요일을 조회하고 공휴일도 건너뛰지 못한다. */
+        MarketDay day = marketCalendarService.tradingDay(date)
+                .filter(current -> !et.toLocalTime().isBefore(current.sessionOpen()))
+                .orElseGet(() -> marketCalendarService.previousTradingDayInfo(date).orElse(null));
+
+        if (day != null) {
+            Instant sessionStart = day.tradeDate().atTime(day.sessionOpen()).atZone(ET).toInstant();
+            Instant sessionClose = day.tradeDate().atTime(day.sessionClose()).atZone(ET).toInstant();
+            Instant end = now.isBefore(sessionClose) ? now : sessionClose;
+            Instant start = range == ChartRange.ONE_DAY ? sessionStart : end.minus(range.lookback());
+            if (start.isBefore(sessionStart)) {
+                start = sessionStart;
+            }
+            boolean currentSession = day.tradeDate().equals(date) && end.equals(now);
+            return new ChartWindow(start, end, currentSession);
+        }
+
+        /* 달력을 아직 한 번도 받지 못한 로컬 환경의 안전한 기본값. 조회 결과가 비면
+           fromVendor 가 최근 7일에서 마지막 실제 거래 세션을 다시 찾는다. */
         ZonedDateTime open = et.toLocalTime().isBefore(PRE_MARKET_OPEN)
                 ? et.minusDays(1).with(PRE_MARKET_OPEN)
                 : et.with(PRE_MARKET_OPEN);
 
         if (range == ChartRange.ONE_DAY) {
-            return open.toInstant();
+            return new ChartWindow(open.toInstant(), now, false);
         }
 
         /* 실시간은 최근 다섯 시간이다. 다만 그날 프리마켓이 열린 시각보다 앞으로는 가지 않는다 —
            새벽에 다섯 시간을 거슬러 올라가면 어제 애프터마켓이 섞여 어느 날 값인지 알 수 없다 */
         Instant rolling = now.minus(range.lookback());
         Instant sessionStart = open.toInstant();
-        return rolling.isBefore(sessionStart) ? sessionStart : rolling;
+        return new ChartWindow(rolling.isBefore(sessionStart) ? sessionStart : rolling, now, false);
+    }
+
+    /** 넓게 받은 분봉 중 마지막으로 거래가 있었던 미국 날짜만 남긴다. */
+    private List<ChartPoint> lastSession(List<ChartPoint> points, ChartRange range) {
+        if (points.isEmpty()) {
+            return points;
+        }
+        Instant lastAt = Instant.parse(points.get(points.size() - 1).at());
+        LocalDate lastDate = lastAt.atZone(ET).toLocalDate();
+        Instant liveFrom = lastAt.minus(range.lookback());
+        return points.stream()
+                .filter(point -> {
+                    Instant at = Instant.parse(point.at());
+                    return at.atZone(ET).toLocalDate().equals(lastDate)
+                            && (range != ChartRange.LIVE || !at.isBefore(liveFrom));
+                })
+                .toList();
     }
 
     /**
