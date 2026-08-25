@@ -9,6 +9,7 @@ import com.example.mijang.user.domain.User;
 import com.example.mijang.user.mail.MailTransport;
 import com.example.mijang.user.mapper.PasswordResetTokenMapper;
 import com.example.mijang.user.mapper.UserMapper;
+import com.example.mijang.user.policy.SignupPolicy;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -142,6 +143,11 @@ public class PasswordService {
         if (passwordEncoder.matches(newPassword, user.passwordHash())) {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_UNCHANGED, "password");
         }
+        /* 링크로 들어온 사람도 가입과 같은 기준을 받는다.
+           재설정만 느슨하면 비밀번호를 잊은 뒤 오히려 약한 값으로 바꿀 수 있다 */
+        if (SignupPolicy.containsProfileInfo(newPassword, user.nickname(), user.email())) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_TOO_GUESSABLE, "password");
+        }
 
         int changed = userMapper.updatePassword(
                 user.id(), passwordEncoder.encode(newPassword), user.passwordHash());
@@ -176,6 +182,9 @@ public class PasswordService {
         }
         if (passwordEncoder.matches(newPassword, user.passwordHash())) {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_UNCHANGED, "newPassword");
+        }
+        if (SignupPolicy.containsProfileInfo(newPassword, user.nickname(), user.email())) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_TOO_GUESSABLE, "newPassword");
         }
 
         int changed = userMapper.updatePassword(

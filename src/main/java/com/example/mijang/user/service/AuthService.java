@@ -84,6 +84,12 @@ public class AuthService {
         if (SignupPolicy.containsForbiddenWord(form.getNickname())) {
             throw new BusinessException(ErrorCode.AUTH_NICKNAME_FORBIDDEN, "nickname");
         }
+        /* 형식 규칙은 mijang12 를 통과시킨다. 닉네임은 커뮤니티에 그대로 보이고
+           이메일 아이디도 알기 어렵지 않아, 그대로 쓰면 시도 목록의 맨 앞에 놓인다 */
+        if (SignupPolicy.containsProfileInfo(
+                form.getPassword(), form.getNickname(), form.getEmail())) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_TOO_GUESSABLE, "password");
+        }
         if (userMapper.countByNickname(form.getNickname()) > 0) {
             throw new BusinessException(ErrorCode.AUTH_NICKNAME_DUPLICATED, "nickname");
         }

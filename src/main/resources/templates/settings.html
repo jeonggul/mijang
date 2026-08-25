@@ -92,7 +92,8 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pm-t">
     <h2 id="pm-t">비밀번호 변경</h2>
     <div class="field"><label for="pm-cur">현재 비밀번호</label><input id="pm-cur" type="password" autocomplete="current-password"></div>
-    <div class="field"><label for="pm-new">새 비밀번호</label><input id="pm-new" type="password" autocomplete="new-password" placeholder="영문과 숫자를 포함해 8~16자"></div>
+    <div class="field"><label for="pm-new">새 비밀번호</label><input id="pm-new" type="password" autocomplete="new-password" placeholder="영문과 숫자를 포함해 8~16자">
+      <p class="hint">닉네임이나 이메일 아이디가 들어간 비밀번호는 사용할 수 없습니다</p></div>
     <div class="field"><label for="pm-new2">새 비밀번호 확인</label><input id="pm-new2" type="password" autocomplete="new-password"></div>
     <p class="msg" id="pm-msg" hidden></p>
     <div class="modal-actions"><button class="btn" type="button" data-close>취소</button><button class="btn btn-primary" type="button" id="pm-submit">변경</button></div>
