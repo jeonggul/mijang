@@ -38,6 +38,13 @@ public enum ErrorCode {
     /** 로그인된 사용자가 현재 비밀번호를 틀린 경우. 이미 인증된 상태라 401 이 아니라 400 이다. */
     AUTH_PASSWORD_MISMATCH("AUTH_PASSWORD_MISMATCH", HttpStatus.BAD_REQUEST,
             "현재 비밀번호가 올바르지 않습니다"),
+    /**
+     * 형식은 맞지만 닉네임이나 이메일 아이디가 들어 있다.
+     *
+     * <p>형식 오류가 아니라 <b>추측하기 쉬운 값</b>이라 막는 것이라 422다.
+     */
+    AUTH_PASSWORD_TOO_GUESSABLE("AUTH_PASSWORD_TOO_GUESSABLE", HttpStatus.UNPROCESSABLE_CONTENT,
+            "닉네임이나 이메일 아이디가 들어간 비밀번호는 사용할 수 없습니다"),
     /** 형식은 맞지만 이전과 같은 값이다. 형식 오류가 아니므로 422다. */
     AUTH_PASSWORD_UNCHANGED("AUTH_PASSWORD_UNCHANGED", HttpStatus.UNPROCESSABLE_CONTENT,
             "이전과 다른 비밀번호를 입력해주세요"),

@@ -31,7 +31,7 @@
         <div class="field">
           <label for="s-pw">비밀번호</label>
           <input id="s-pw" type="password" autocomplete="new-password" maxlength="16" placeholder="비밀번호 입력">
-          <p class="hint">영문과 숫자를 모두 포함해 8~16자</p>
+          <p class="hint">영문과 숫자를 모두 포함해 8~16자. 닉네임·이메일 아이디는 쓸 수 없습니다</p>
           <p class="msg" id="m-pw" hidden></p>
         </div>
 
@@ -80,6 +80,19 @@
   var PW    = /^(?=.*[A-Za-z])(?=.*[0-9])[!-~]{8,16}$/;   // 영문+숫자, 8~16자
   var NICK  = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
+  /* 닉네임·이메일 아이디를 품은 비밀번호는 형식은 맞아도 막는다 (SignupPolicy.containsProfileInfo).
+     두 글자 미만은 우연히 겹치는 일이 흔해 보지 않는다 */
+  function hasProfileInfo(password, nickname, emailValue) {
+    if (!password) { return false; }
+    var lower = password.toLowerCase();
+    if (nickname && nickname.length >= 2 && lower.indexOf(nickname.toLowerCase()) !== -1) {
+      return true;
+    }
+    var at = (emailValue || "").indexOf("@");
+    var local = at > 0 ? emailValue.slice(0, at) : "";
+    return local.length >= 2 && lower.indexOf(local.toLowerCase()) !== -1;
+  }
+
   var el = function (id) { return document.getElementById(id); };
   var email = el("s-email"), pw = el("s-pw"), pw2 = el("s-pw2"), nick = el("s-nick");
   var terms = el("s-terms"), advice = el("s-advice"), submit = el("btn-signup");
@@ -127,13 +140,26 @@
   /* ── 비밀번호 ── */
   pw.addEventListener("input", function () {
     if (!pw.value) { pass.pw = false; hide("m-pw", pw); sync(); recheckPw2(); return; }
-    pass.pw = PW.test(pw.value);
+    var okForm = PW.test(pw.value);
+    /* 형식을 통과해도 닉네임·이메일이 들어 있으면 막는다. 서버가 같은 기준으로 다시 본다 */
+    var guessable = okForm && hasProfileInfo(pw.value, nick.value, email.value);
+    pass.pw = okForm && !guessable;
     say("m-pw",
-        pass.pw ? "사용 가능한 비밀번호입니다" : "영문과 숫자를 모두 포함해 8~16자로 입력해주세요",
+        pass.pw ? "사용 가능한 비밀번호입니다"
+                : guessable ? "닉네임이나 이메일 아이디가 들어간 비밀번호는 사용할 수 없습니다"
+                            : "영문과 숫자를 모두 포함해 8~16자로 입력해주세요",
         pass.pw, pw);
     recheckPw2();
     sync();
   });
+
+  /* 닉네임·이메일을 나중에 고치면 이미 통과한 비밀번호가 규칙에 걸릴 수 있다.
+     그대로 두면 화면은 통과인데 서버가 거절한다 */
+  function recheckPw() {
+    if (pw.value) { pw.dispatchEvent(new Event("input")); }
+  }
+  nick.addEventListener("input", recheckPw);
+  email.addEventListener("input", recheckPw);
 
   /* ── 비밀번호 확인 — 일치하면 그 사실을 알려 준다 ── */
   function recheckPw2() {

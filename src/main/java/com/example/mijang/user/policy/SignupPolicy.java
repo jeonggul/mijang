@@ -1,3 +1,11 @@
+/*
+ * SignupPolicy — 가입 입력 규칙
+ *
+ * 이 파일이 하는 일
+ *   비밀번호가 어때야 하는지, 닉네임에 무엇을 쓸 수 있는지를 한 곳에서 정한다.
+ *   가입·재설정·변경 세 군데가 같은 규칙을 봐야 하는데, 각자 적으면
+ *   언젠가 한 곳만 느슨해진다.
+ */
 package com.example.mijang.user.policy;
 
 import java.util.List;
@@ -48,6 +56,48 @@ public final class SignupPolicy {
             // 혐오·차별
             "일베", "한남", "김치녀", "된장녀"
     );
+
+    /**
+     * 닉네임/이메일 아이디가 너무 짧으면 우연히 겹친다. 의미 있는 길이부터만 본다.
+     *
+     * <p>2자 미만을 검사하면 닉네임이 "김" 인 사람은 비밀번호에 "김" 을 못 쓴다.
+     */
+    private static final int MIN_PROFILE_MATCH_LENGTH = 2;
+
+    /**
+     * 비밀번호가 닉네임이나 이메일 아이디를 품고 있는가.
+     *
+     * <p>형식 규칙만으로는 {@code mijang12} 같은 값을 막지 못한다. 형식은 통과하지만
+     * <b>공개된 정보로 만든 비밀번호</b>다. 닉네임은 커뮤니티에 그대로 노출되고
+     * 이메일 아이디도 알아내기 어렵지 않아, 둘 다 시도 목록의 맨 앞에 온다.
+     *
+     * <p>대소문자를 구분하지 않는다. {@code Mijang12} 를 다르게 보면 막는 의미가 없다.
+     *
+     * @param email 전체 주소. {@code @} 앞부분만 본다 — 뒷부분은 도메인이라 개인 정보가 아니다
+     */
+    public static boolean containsProfileInfo(String password, String nickname, String email) {
+        if (password == null || password.isBlank()) {
+            return false;
+        }
+        String lower = password.toLowerCase(Locale.ROOT);
+
+        if (nickname != null && nickname.length() >= MIN_PROFILE_MATCH_LENGTH
+                && lower.contains(nickname.toLowerCase(Locale.ROOT))) {
+            return true;
+        }
+        String localPart = emailLocalPart(email);
+        return localPart != null && localPart.length() >= MIN_PROFILE_MATCH_LENGTH
+                && lower.contains(localPart.toLowerCase(Locale.ROOT));
+    }
+
+    /** {@code @} 앞부분. {@code @} 로 시작하는 값은 아이디가 없는 것으로 본다. */
+    private static String emailLocalPart(String email) {
+        if (email == null) {
+            return null;
+        }
+        int at = email.indexOf('@');
+        return at > 0 ? email.substring(0, at) : null;
+    }
 
     /** 형식이 맞는 비밀번호인가. */
     public static boolean isValidPassword(String password) {
