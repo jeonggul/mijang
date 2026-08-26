@@ -47,3 +47,10 @@ replay_pid*.log
 application-secret.properties
 *.env
 .env
+
+### AI 에이전트 메모 ###
+# 워크스페이스 루트(~/Desktop/mijang)에 두고 저장소에는 올리지 않는다.
+# 이 파일이 설명하는 범위가 저장소보다 넓다 — docs/ 볼트와 스키마까지 함께 다룬다.
+AGENTS.md
+CLAUDE.md
+.claude/
