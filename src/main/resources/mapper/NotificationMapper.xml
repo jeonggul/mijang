@@ -101,4 +101,44 @@
                               AND n.type = 'VOLATILITY'
                               AND n.created_at &gt;= CURRENT_DATE)
     </select>
+
+    <!-- 배당락일 임박 (NOTI-04). 락일 전일까지 보유해야 배당이 나온다 — 지나서 알리면 늦다.
+         type 하나(DIVIDEND)에 두 갈래(락일·지급)가 실리므로 발송 이력은 제목 표식으로 가른다 -->
+    <select id="findDividendExDateHits" resultType="com.example.mijang.user.dto.DividendExDateHit">
+        SELECT DISTINCT h.user_id, sd.symbol, sd.ex_date, sd.payable_date, sd.amount_per_share
+          FROM holdings h
+          JOIN stock_dividends sd ON sd.symbol = h.symbol
+          JOIN users u ON u.id = h.user_id AND u.status = 'ACTIVE'
+          LEFT JOIN notification_settings ns ON ns.user_id = h.user_id
+         WHERE h.quantity &gt; 0
+           AND COALESCE(ns.dividend_enabled, 1) = 1
+           AND sd.dividend_type = 'CASH'
+           AND sd.amount_per_share &gt; 0
+           AND sd.ex_date &gt; #{today}
+           AND sd.ex_date &lt;= DATE_ADD(#{today}, INTERVAL 2 DAY)
+           AND NOT EXISTS (SELECT 1 FROM notifications n
+                            WHERE n.user_id = h.user_id
+                              AND n.symbol = sd.symbol
+                              AND n.type = 'DIVIDEND'
+                              AND n.title LIKE '%배당락일%'
+                              AND n.created_at &gt;= DATE_SUB(sd.ex_date, INTERVAL 7 DAY))
+    </select>
+
+    <!-- 예상 배당 지급 예정 (NOTI-04). 예상 행 하나에 알림 하나 — 알림이 예상 생성 뒤에
+         나갔으면 다시 걸리지 않고, 확정하면 status 가 바뀌어 자연히 빠진다 -->
+    <select id="findDividendPayHits" resultType="com.example.mijang.user.dto.DividendPayHit">
+        SELECT d.user_id, d.symbol, d.pay_date, d.net_amount_usd
+          FROM dividends d
+          JOIN users u ON u.id = d.user_id AND u.status = 'ACTIVE'
+          LEFT JOIN notification_settings ns ON ns.user_id = d.user_id
+         WHERE d.status = 'ESTIMATED'
+           AND d.deleted_at IS NULL
+           AND COALESCE(ns.dividend_enabled, 1) = 1
+           AND NOT EXISTS (SELECT 1 FROM notifications n
+                            WHERE n.user_id = d.user_id
+                              AND n.symbol = d.symbol
+                              AND n.type = 'DIVIDEND'
+                              AND n.title LIKE '%지급 예정%'
+                              AND n.created_at &gt;= d.created_at)
+    </select>
 </mapper>
