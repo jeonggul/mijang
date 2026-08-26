@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  DividendMapper — dividends 접근 SQL
+
+  이 파일이 하는 일
+    배당 기록의 저장·조회·확정·삭제. 모든 문장이 user_id 를 함께 묻고,
+    deleted_at IS NULL 만 본다. 확정은 status='ESTIMATED' 조건부 갱신이라
+    이미 확정된 행은 0건으로 답한다.
+-->
+<mapper namespace="com.example.mijang.dividend.mapper.DividendMapper">
+
+  <!-- 확정 상태로 넣으면 확정 시각도 함께 찍는다 — ck_dividends_confirmed 가 요구하고,
+       confirm 갱신과 같은 시계(DB NOW)를 써야 시각의 출처가 하나가 된다 -->
+  <insert id="insert">
+    INSERT INTO dividends
+      (user_id, portfolio_id, symbol, ex_date, pay_date,
+       amount_per_share, quantity_at_ex_date, gross_amount_usd, net_amount_usd,
+       withholding_rate, fx_rate, net_amount_krw, status, source, confirmed_at)
+    VALUES
+      (#{userId}, #{portfolioId}, #{symbol}, #{exDate}, #{payDate},
+       #{amountPerShare}, #{quantityAtExDate}, #{grossAmountUsd}, #{netAmountUsd},
+       #{withholdingRate}, #{fxRate}, #{netAmountKrw}, #{status}, #{source},
+       CASE WHEN #{status} = 'CONFIRMED' THEN NOW(3) ELSE NULL END)
+  </insert>
+
+  <select id="findLastInsertedId" resultType="long">
+    SELECT LAST_INSERT_ID()
+  </select>
+
+  <select id="findByUser" resultType="com.example.mijang.dividend.dto.DividendResponse">
+    SELECT id, symbol, ex_date, pay_date, amount_per_share, quantity_at_ex_date,
+           net_amount_usd, fx_rate, net_amount_krw, status, source
+      FROM dividends
+     WHERE user_id = #{userId}
+       AND deleted_at IS NULL
+     ORDER BY pay_date DESC, id DESC
+  </select>
+
+  <select id="findById" resultType="com.example.mijang.dividend.domain.Dividend">
+    SELECT id, user_id, portfolio_id, symbol, ex_date, pay_date,
+           amount_per_share, quantity_at_ex_date, gross_amount_usd, net_amount_usd,
+           withholding_rate, fx_rate, net_amount_krw, status, source, confirmed_at
+      FROM dividends
+     WHERE id = #{id}
+       AND user_id = #{userId}
+       AND deleted_at IS NULL
+  </select>
+
+  <!-- 예상만 확정으로 바꾼다. 이미 확정된 행이면 0건 — 부르는 쪽이 409 로 답한다 -->
+  <update id="confirm">
+    UPDATE dividends
+       SET net_amount_usd = #{netAmountUsd},
+           fx_rate        = #{fxRate},
+           net_amount_krw = #{netAmountKrw},
+           pay_date       = #{payDate},
+           status         = 'CONFIRMED',
+           confirmed_at   = NOW(3)
+     WHERE id = #{id}
+       AND user_id = #{userId}
+       AND status = 'ESTIMATED'
+       AND deleted_at IS NULL
+  </update>
+
+  <update id="update">
+    UPDATE dividends
+       SET net_amount_usd = #{netAmountUsd},
+           fx_rate        = #{fxRate},
+           net_amount_krw = #{netAmountKrw},
+           pay_date       = #{payDate}
+     WHERE id = #{id}
+       AND user_id = #{userId}
+       AND deleted_at IS NULL
+  </update>
+
+  <update id="softDelete">
+    UPDATE dividends
+       SET deleted_at = NOW(3)
+     WHERE id = #{id}
+       AND user_id = #{userId}
+       AND deleted_at IS NULL
+  </update>
+
+  <!-- 확정분만 더한다. ESTIMATED 는 손익 집계에서 제외 — 명세서 7장 -->
+  <select id="sumConfirmedKrwBetween" resultType="java.math.BigDecimal">
+    SELECT SUM(net_amount_krw)
+      FROM dividends
+     WHERE user_id = #{userId}
+       AND status = 'CONFIRMED'
+       AND pay_date BETWEEN #{from} AND #{to}
+       AND deleted_at IS NULL
+  </select>
+
+  <select id="countEstimated" resultType="long">
+    SELECT COUNT(*)
+      FROM dividends
+     WHERE user_id = #{userId}
+       AND status = 'ESTIMATED'
+       AND deleted_at IS NULL
+  </select>
+
+  <select id="sumEstimatedKrw" resultType="java.math.BigDecimal">
+    SELECT SUM(net_amount_krw)
+      FROM dividends
+     WHERE user_id = #{userId}
+       AND status = 'ESTIMATED'
+       AND deleted_at IS NULL
+  </select>
+
+  <select id="findNextUpcoming" resultType="com.example.mijang.dividend.dto.DividendResponse">
+    SELECT id, symbol, ex_date, pay_date, amount_per_share, quantity_at_ex_date,
+           net_amount_usd, fx_rate, net_amount_krw, status, source
+      FROM dividends
+     WHERE user_id = #{userId}
+       AND pay_date &gt;= #{today}
+       AND deleted_at IS NULL
+     ORDER BY pay_date ASC, id ASC
+     LIMIT 1
+  </select>
+
+</mapper>
