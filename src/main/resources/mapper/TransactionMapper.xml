@@ -66,6 +66,25 @@
         <if test="symbol != null"> AND symbol = #{symbol} </if>
     </select>
 
+    <!-- CSV 는 페이지가 아니라 현재 필터의 전체 원장을 내보낸다. 사용자 조건이 첫째다 -->
+    <select id="findForExport" resultType="com.example.mijang.portfolio.dto.TransactionResponse">
+        SELECT t.id, t.symbol, s.name, t.side, t.quantity, t.price, t.fx_rate AS fxRate,
+               t.fee, t.traded_at AS tradedAt, t.trade_date AS tradeDate,
+               t.buy_reason AS buyReason, t.target_price AS targetPrice, t.sentiment,
+               NULL AS realizedPnlKrw
+          FROM transactions t
+          JOIN stocks s ON s.symbol = t.symbol
+         WHERE t.user_id = #{userId}
+           AND t.deleted_at IS NULL
+        <if test="symbol != null"> AND t.symbol = #{symbol} </if>
+        <if test="side != null"> AND t.side = #{side} </if>
+        <if test="from != null">
+           AND t.trade_date &gt;= #{from}
+           AND t.trade_date &lt; #{toExclusive}
+        </if>
+         ORDER BY t.trade_date DESC, t.id DESC
+    </select>
+
     <!-- user_id 조건이 없으면 남의 기록을 읽을 수 있다 -->
     <select id="findById" resultType="com.example.mijang.portfolio.domain.Transaction">
         SELECT <include refid="cols"/>

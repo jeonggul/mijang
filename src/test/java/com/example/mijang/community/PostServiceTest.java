@@ -141,6 +141,8 @@ class PostServiceTest {
         @Override public Long findLastInsertedId() { return 1L; }
         @Override public List<TransactionResponse> findByUser(Long u, String s,
                                                               int l, int o) { return List.of(); }
+        @Override public List<TransactionResponse> findForExport(
+                Long u, String s, String side, LocalDate from, LocalDate to) { return List.of(); }
         @Override public long countByUser(Long userId, String symbol) { return 0; }
         @Override public int softDelete(Long id, Long userId) { return 1; }
         @Override public List<String> findSymbolsByUser(Long userId) { return List.of(); }

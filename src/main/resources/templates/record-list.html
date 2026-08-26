@@ -47,7 +47,7 @@
     <div class="page-head">
       <div><h1>매매 기록</h1><p>입력한 기록의 원장입니다 · 수정하면 보유 현황이 재계산됩니다</p></div>
       <span class="grow"></span>
-      <button class="btn btn-sm" type="button">CSV 내보내기</button>
+      <button class="btn btn-sm" type="button" id="tx-export">CSV 내보내기</button>
       <a class="btn btn-primary btn-sm" th:href="@{/record-new}">＋ 기록 추가</a>
     </div>
 
@@ -419,6 +419,17 @@
   if (periodGroup) periodGroup.addEventListener("mj:change", function (e) {
     period = e.detail === "YEAR" ? "YEAR" : "ALL";
     redrawFilter();
+  });
+
+  /* 현재 화면 필터의 전체 원장을 서버에서 CSV 로 만든다. 현재 페이지만 내보내면 안 된다 */
+  var exportButton = document.getElementById("tx-export");
+  if (exportButton) exportButton.addEventListener("click", function () {
+    var params = new URLSearchParams();
+    if (symbol) params.set("symbol", symbol);
+    if (side !== "ALL") params.set("side", side);
+    if (period === "YEAR") params.set("year", String(year));
+    var query = params.toString();
+    location.href = "/api/transactions/export" + (query ? "?" + query : "");
   });
 
   /* 필터를 다시 걸 때 "조건에 맞는 기록 없음" 안내가 쌓이지 않게 먼저 걷어낸다 */
