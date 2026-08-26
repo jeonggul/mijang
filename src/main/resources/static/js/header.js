@@ -11,6 +11,29 @@
     }).then(function (body) { return body && body.success ? body.data : null; });
   }
 
+  /*
+   * 알림이 들고 온 이동 주소를 href 에 넣기 전에 거른다.
+   *
+   * 알림은 서버가 만들지만 그 내용이 어디서 오는지는 알림 종류마다 다르다. 지금은
+   * link_url 에 값을 넣는 코드가 아예 없어 위험이 없지만, 알림을 실제로 만드는 코드가
+   * 붙는 순간 javascript: 로 시작하는 값이 들어올 자리가 된다. 그때 이 파일을 다시
+   * 들여다볼 거라고 기대하지 않는다.
+   *
+   * 종목 화면의 safeUrl 과 달리 같은 출처까지 본다 — 알림이 사용자를 바깥 사이트로
+   * 보낼 이유가 없다. 걸러지면 알림 목록이 그대로 열리도록 /settings 로 떨군다.
+   */
+  function safeInternalUrl(url) {
+    if (!url) return null;
+    try {
+      var u = new URL(url, location.origin);
+      if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+      if (u.origin !== location.origin) return null;
+      return u.pathname + u.search + u.hash;
+    } catch (e) {
+      return null;                    // 주소로 읽히지 않는 값
+    }
+  }
+
   function highlightNav() {
     var path = location.pathname;
     var key = path.startsWith("/portfolio") || path.startsWith("/record") || path.startsWith("/report") || path.startsWith("/retrospect") ? "portfolio"
@@ -92,7 +115,8 @@
         var li = document.createElement("li");
         var a = document.createElement("a");
         a.className = "row" + (item.read ? "" : " unread");
-        a.href = item.linkUrl || (item.symbol ? "/stock?symbol=" + encodeURIComponent(item.symbol) : "/settings");
+        a.href = safeInternalUrl(item.linkUrl)
+          || (item.symbol ? "/stock?symbol=" + encodeURIComponent(item.symbol) : "/settings");
         var meta = document.createElement("span");
         meta.className = "meta";
         var kind = document.createElement("span");
