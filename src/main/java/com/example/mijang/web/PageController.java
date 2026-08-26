@@ -51,8 +51,17 @@ public class PageController {
         return "signup";
     }
 
+    /**
+     * 비밀번호 찾기 화면.
+     *
+     * <p>재전송 간격을 화면에 내려 준다. 화면이 따로 60 을 적어 두면 설정을 바꿨을 때
+     * 두 값이 어긋나 "다 기다렸는데 또 안 온다" 가 된다.
+     *
+     * <p>이 값은 계정마다 다르지 않은 설정값이라 내려 줘도 가입 여부가 드러나지 않는다.
+     */
     @GetMapping("/password-forgot")
-    public String passwordForgot() {
+    public String passwordForgot(Model model) {
+        model.addAttribute("resendCooldownSeconds", resetProperties.getResendCooldown().toSeconds());
         return "password-forgot";
     }
 
