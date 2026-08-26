@@ -181,26 +181,6 @@
   </div>
 </div>
 
-<!-- SR-006-3 재계산 안내 -->
-
-<!-- SR-006-2 기록 삭제 확인 -->
-<div class="overlay" id="del-modal" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dm-t">
-    <h2 id="dm-t">이 기록을 삭제할까요?</h2>
-    <p>AAPL 매수 12주 · 2025-03-14 기록입니다.</p>
-    <ul class="kv">
-      <li><span class="k">보유 수량</span><span class="v num">16.5주 → 4.5주</span></li>
-      <li><span class="k">평균단가</span><span class="v num">$183.16 → $196.40</span></li>
-    </ul>
-    <p class="prev-group">함께 삭제되는 판단 메모</p>
-    <p class="note">이 기록에 적어둔 매수 사유와 목표가도 함께 사라집니다. 회고에서 더 이상 볼 수 없습니다.</p>
-    <div class="modal-actions">
-      <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-danger" type="button" data-close>삭제</button>
-    </div>
-  </div>
-</div>
-
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
 <script th:attr="nonce=${cspNonce}">
