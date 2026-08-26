@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final AdminService adminService;
+    private final com.example.mijang.user.service.NotificationProducerService notificationProducerService;
 
     /** 종목 활성·비활성 전환. {@code ADMIN-01} */
     @PatchMapping("/stocks/active")
@@ -85,6 +86,24 @@ public class AdminController {
             @RequestParam(required = false) String assetClass,
             @RequestParam(required = false) String q) {
         return ApiResponse.ok(adminService.stockCount(status, assetClass, q));
+    }
+
+    /**
+     * 알림 생성 수동 실행. {@code ADMIN-02}
+     *
+     * <p>스케줄(07:30)을 놓쳤거나 일봉을 늦게 받았을 때 다시 돌린다. 같은 날 두 번
+     * 돌아도 안전하다 — 생성 질의가 "오늘 만든 같은 알림" 을 거른다.
+     */
+    @PostMapping("/batches/notifications")
+    public ApiResponse<Integer> produceNotifications(
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate date) {
+        /* 날짜를 주면 그날 치를 다시 만든다(스냅샷 백필과 같은 결). 안 주면
+           마지막 마감 거래일 — 아직 장중이거나 개장 전이면 하루 물린다 */
+        return ApiResponse.ok(date != null
+                ? notificationProducerService.produce(date)
+                : notificationProducerService.produceLatestClosed());
     }
 
     /** 배치 상태. {@code ADMIN-02} */
