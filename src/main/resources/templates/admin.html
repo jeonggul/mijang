@@ -48,7 +48,7 @@
            0 으로 두면 "아무도 없다" 로 읽히므로 — 로 비운다 -->
       <div><span class="k">가입 사용자</span><b class="num">—</b><span class="s">ADMIN-03 대기</span></div>
       <div><span class="k">활성 종목</span><b class="num" id="ad-active">—</b><span class="s" id="ad-inactive">&nbsp;</span></div>
-      <div><span class="k">미처리 신고</span><b class="num">—</b><span class="s">ADMIN-05 대기</span></div>
+      <div><span class="k">미처리 신고</span><b class="num" id="ov-report-count">—</b><span class="s">신고 탭에서 처리</span></div>
       <div><span class="k">오늘 매매 기록</span><b class="num">—</b><span class="s">&nbsp;</span></div>
     </div>
 
@@ -154,19 +154,14 @@
     </div>
 
     <section class="card">
-      <h2 class="card-head">게시글 <span class="sub num">4,281건 · 숨김 12</span></h2>
+      <h2 class="card-head">게시글 <span class="sub num" id="admin-post-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
-            <thead><tr><th class="txt" scope="col">제목</th><th class="" scope="col">종목</th><th class="" scope="col">작성자</th><th class="r" scope="col">좋아요</th><th class="r" scope="col">댓글</th><th class="" scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
-            <tbody>
-              <tr><td class="txt">인도 생산 확대 뉴스 어떻게 보시나요</td><td class="">AAPL</td><td class="txt">정하</td><td class="r">24</td><td class="r">8</td><td class="txt"><span class="badge badge-ok">공개</span></td><td class="r"><button class="btn btn-sm" type="button">숨김</button></td></tr>
-              <tr><td class="txt">서비스 매출 비중 정리해봤습니다</td><td class="">AAPL</td><td class="txt">김선호</td><td class="r">61</td><td class="r">19</td><td class="txt"><span class="badge badge-ok">공개</span></td><td class="r"><button class="btn btn-sm" type="button">숨김</button></td></tr>
-              <tr><td class="txt">단타 리딩방 들어오세요 수익 보장</td><td class="">PLTR</td><td class="txt">익명2841</td><td class="r">0</td><td class="r">2</td><td class="txt"><span class="badge badge-err">숨김</span></td><td class="r"><button class="btn btn-sm" type="button">복원</button></td></tr>
-              <tr><td class="txt">$200 넘으면 일부 정리 예정</td><td class="">AAPL</td><td class="txt">이한결</td><td class="r">37</td><td class="r">24</td><td class="txt"><span class="badge badge-ok">공개</span></td><td class="r"><button class="btn btn-sm" type="button">숨김</button></td></tr>
-            </tbody>
+            <thead><tr><th class="txt" scope="col">제목</th><th scope="col">게시판</th><th scope="col">작성자</th><th class="r" scope="col">좋아요</th><th class="r" scope="col">댓글</th><th scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="admin-post-list"><tr><td colspan="7" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
           </table>
         </div>
-      <p class="note" style="padding:12px 18px 16px">숨김 댓글은 작성자도 수정·삭제할 수 없으며 대댓글 대상이 아닙니다</p>
+      <p class="note" style="padding:12px 18px 16px">숨긴 글은 목록·상세에서 보이지 않지만 지워지지 않습니다. 복원하면 그대로 돌아옵니다</p>
     </section>
   </section>
   <section role="tabpanel" id="a-comments" aria-labelledby="m-comments" hidden>
@@ -179,46 +174,35 @@
     </div>
 
     <section class="card">
-      <h2 class="card-head">댓글 <span class="sub num">12,487건 · 숨김 31</span></h2>
+      <h2 class="card-head">댓글 <span class="sub num" id="admin-comment-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
-            <thead><tr><th class="txt" scope="col">내용</th><th class="txt" scope="col">게시글</th><th class="" scope="col">작성자</th><th class="r" scope="col">좋아요</th><th class="" scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
-            <tbody>
-              <tr><td class="txt">저도 비슷하게 봅니다. 다만 환율이 1,400원대라…</td><td class="txt">인도 생산 확대 뉴스</td><td class="txt">김선호</td><td class="r">6</td><td class="txt"><span class="badge badge-ok">공개</span></td><td class="r"><button class="btn btn-sm" type="button">숨김</button></td></tr>
-              <tr><td class="txt">맞습니다. 그래서 분할로 접근 중입니다.</td><td class="txt">인도 생산 확대 뉴스</td><td class="txt">정하</td><td class="r">2</td><td class="txt"><span class="badge badge-ok">공개</span></td><td class="r"><button class="btn btn-sm" type="button">숨김</button></td></tr>
-              <tr><td class="txt">이런 것도 모르면서 투자하시나요</td><td class="txt">환차손 계산이 자꾸…</td><td class="txt">익명1042</td><td class="r">0</td><td class="txt"><span class="badge badge-err">숨김</span></td><td class="r"><button class="btn btn-sm" type="button">복원</button></td></tr>
-              <tr><td class="txt">공급망 얘기는 이미 주가에 반영된 것 같은데요</td><td class="txt">인도 생산 확대 뉴스</td><td class="txt">박도윤</td><td class="r">1</td><td class="txt"><span class="badge badge-ok">공개</span></td><td class="r"><button class="btn btn-sm" type="button">숨김</button></td></tr>
-            </tbody>
+            <thead><tr><th class="txt" scope="col">내용</th><th class="txt" scope="col">게시글</th><th scope="col">작성자</th><th scope="col">작성일</th><th scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="admin-comment-list"><tr><td colspan="6" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
           </table>
         </div>
-      <p class="note" style="padding:12px 18px 16px">숨김 댓글은 작성자도 수정·삭제할 수 없으며 대댓글 대상이 아닙니다</p>
+      <p class="note" style="padding:12px 18px 16px">숨김 댓글은 작성자에게 상태 안내 문구로 치환됩니다</p>
     </section>
   </section>
   <section role="tabpanel" id="a-report" aria-labelledby="m-report" hidden>
     <div class="page-head"><div><h1>신고 관리</h1><p>미처리 신고 3건이 대기 중입니다</p></div></div>
 
-    <div class="pills" data-toggle-group style="margin-bottom:14px">
-      <button type="button" aria-pressed="true">미처리 3</button>
-      <button type="button" aria-pressed="false">처리 완료</button>
-      <button type="button" aria-pressed="false">반려</button>
+    <div class="pills" id="report-filter" data-toggle-group style="margin-bottom:14px">
+      <button type="button" data-value="PENDING" aria-pressed="true">미처리</button>
+      <button type="button" data-value="RESOLVED" aria-pressed="false">처리 완료</button>
+      <button type="button" data-value="REJECTED" aria-pressed="false">반려</button>
     </div>
 
     <section class="card">
-      <h2 class="card-head">신고 접수 <span class="sub num">3건 대기</span></h2>
+      <h2 class="card-head">신고 접수 <span class="sub num" id="admin-report-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
-            <thead><tr><th class="" scope="col">대상</th><th class="txt" scope="col">내용</th><th class="" scope="col">사유</th><th class="" scope="col">신고자</th><th class="" scope="col">접수</th><th class="r" scope="col">처리</th></tr></thead>
-            <tbody>
-              <tr><td class="txt">게시글</td><td class="txt">단타 리딩방 들어오세요 수익 보장</td><td class="txt">스팸</td><td class="txt">김선호</td><td class="">08-06 09:12</td><td class="r"><button class="btn btn-sm" type="button">숨김 처리</button></td></tr>
-              <tr><td class="txt">댓글</td><td class="txt">이런 것도 모르면서 투자하시나요</td><td class="txt">욕설·비방</td><td class="txt">이한결</td><td class="">08-05 22:40</td><td class="r"><button class="btn btn-sm" type="button">숨김 처리</button></td></tr>
-              <tr><td class="txt">게시글</td><td class="txt">이 종목 무조건 오릅니다 지금 사세요</td><td class="txt">허위정보</td><td class="txt">박도윤</td><td class="">08-05 18:03</td><td class="r"><button class="btn btn-sm" type="button">숨김 처리</button> <button class="btn btn-sm" type="button">반려</button></td></tr>
-            </tbody>
+            <thead><tr><th scope="col">대상</th><th class="txt" scope="col">내용</th><th scope="col">사유</th><th scope="col">신고자</th><th scope="col">접수</th><th class="r" scope="col">처리</th></tr></thead>
+            <tbody id="admin-report-list"><tr><td colspan="6" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
           </table>
         </div>
       <div class="row-between" style="padding:12px 18px 16px">
-        <button class="btn btn-sm btn-primary" type="button">선택 숨김 처리</button>
-        <span class="spacer" style="flex:1"></span>
-        <span class="note">동일 대상에 같은 사용자가 중복 신고할 수 없습니다</span>
+        <span class="note">숨김 처리하면 대상 글·댓글이 즉시 내려갑니다. 동일 대상에 같은 사용자가 중복 신고할 수 없습니다</span>
       </div>
     </section>
   </section>
@@ -669,5 +653,6 @@
 })();
 </script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-notices.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-community.js}" defer></script>
 </body>
 </html>

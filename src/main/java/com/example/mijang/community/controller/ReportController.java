@@ -3,6 +3,8 @@ package com.example.mijang.community.controller;
 import com.example.mijang.common.response.ApiResponse;
 import com.example.mijang.community.dto.ReportForm;
 import com.example.mijang.community.service.ReportService;
+import com.example.mijang.security.LoginUser;
+import com.example.mijang.security.SessionUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,7 +26,9 @@ public class ReportController {
 
     /** COM-005 게시글·댓글 신고. 같은 대상을 두 번 신고하면 409. */
     @PostMapping
-    public ApiResponse<Long> create(@Valid @RequestBody ReportForm form) {
-        return ApiResponse.ok(reportService.create(null, form));
+    public ApiResponse<Long> create(@LoginUser SessionUser me,
+                                    @Valid @RequestBody ReportForm form) {
+        /* 전에는 null 을 넘겼다 — 신고자가 전부 null 이면 중복 신고 판정이 무력해진다 */
+        return ApiResponse.ok(reportService.create(me.userId(), form));
     }
 }

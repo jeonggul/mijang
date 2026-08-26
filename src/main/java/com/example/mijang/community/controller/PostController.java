@@ -21,6 +21,8 @@ import com.example.mijang.common.response.PageResponse;
 import com.example.mijang.community.domain.BoardType;
 import com.example.mijang.community.dto.PostDetail;
 import com.example.mijang.community.dto.PostForm;
+import com.example.mijang.community.dto.PostUpdateForm;
+import com.example.mijang.community.dto.ReactionForm;
 import com.example.mijang.community.dto.PostSummary;
 import com.example.mijang.community.service.PostService;
 import com.example.mijang.security.LoginUser;
@@ -29,6 +31,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -109,6 +113,37 @@ public class PostController {
     @GetMapping("/api/posts/{postId}")
     public ApiResponse<PostDetail> detail(@LoginUser SessionUser me, @PathVariable Long postId) {
         return ApiResponse.ok(postService.detail(me == null ? null : me.userId(), postId));
+    }
+
+    /**
+     * 좋아요·스크랩 토글. 누르면 켜지고 다시 누르면 꺼진다.
+     *
+     * <p>켜기·끄기를 경로로 나누지 않는다 — 화면은 지금 상태를 모른 채 누른 사실만
+     * 보내고, 서버가 토글해 결과를 돌려준다. 상태 판단이 한 곳(서버)에만 있다.
+     */
+    @PostMapping("/api/posts/{postId}/reactions")
+    public ApiResponse<PostService.ReactionState> toggleReaction(
+            @LoginUser SessionUser me,
+            @PathVariable Long postId,
+            @Valid @RequestBody ReactionForm form) {
+        return ApiResponse.ok(postService.toggleReaction(
+                me.userId(), postId, form.getType().toUpperCase(java.util.Locale.ROOT)));
+    }
+
+    /** 글 수정. 제목·본문만 — 작성 시점 값은 등록 때 한 번만 기록한다(2.3). */
+    @PatchMapping("/api/posts/{postId}")
+    public ApiResponse<Void> update(@LoginUser SessionUser me,
+                                    @PathVariable Long postId,
+                                    @Valid @RequestBody PostUpdateForm form) {
+        postService.update(me.userId(), postId, form.getTitle(), form.getContent());
+        return ApiResponse.ok(null);
+    }
+
+    /** 글 삭제. 지우지 않고 status 만 바꾼다(2.6). */
+    @DeleteMapping("/api/posts/{postId}")
+    public ApiResponse<Void> delete(@LoginUser SessionUser me, @PathVariable Long postId) {
+        postService.delete(me.userId(), postId);
+        return ApiResponse.ok(null);
     }
 
     /** 이 경로가 다루는 것은 종목 없는 게시판뿐이다. */
