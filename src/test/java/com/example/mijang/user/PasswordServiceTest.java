@@ -6,10 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.config.MailProperties;
+import com.example.mijang.config.JwtProperties;
 import com.example.mijang.config.PasswordResetProperties;
 import com.example.mijang.user.domain.PasswordResetToken;
 import com.example.mijang.user.domain.User;
 import com.example.mijang.user.dto.UserResponse;
+import com.example.mijang.security.PasswordVersionRegistry;
 import com.example.mijang.user.mail.MailTransport;
 import com.example.mijang.user.mapper.PasswordResetTokenMapper;
 import com.example.mijang.user.mapper.UserMapper;
@@ -148,6 +150,7 @@ class PasswordServiceTest {
     private Tokens tokens;
     private Users users;
     private Mails mails;
+    private PasswordVersionRegistry versions;
 
     private PasswordService service() {
         return service(Duration.ofMinutes(30), Duration.ofSeconds(60));
@@ -164,7 +167,11 @@ class PasswordServiceTest {
         resetProps.setTokenTtl(ttl);
         resetProps.setResendCooldown(cooldown);
 
-        return new PasswordService(users, tokens, new Encoder(), mails, mailProps, resetProps);
+        JwtProperties jwtProps = new JwtProperties();
+        versions = new PasswordVersionRegistry(jwtProps);
+
+        return new PasswordService(users, tokens, new Encoder(), mails, mailProps, resetProps,
+                versions);
     }
 
     /** 메일에 실려 나간 링크에서 토큰 원문만 뽑는다. */
@@ -327,6 +334,24 @@ class PasswordServiceTest {
             assertThat(users.savedHash).isEqualTo("enc:newpass12");
         }
 
+        /*
+         * 8.1.7 은 이미 나간 access 토큰이 만료까지 30분 사는 것을 받아들였다.
+         * 그 30분이 곧 "비밀번호가 유출돼 급히 바꾼 사람" 에게 위험한 구간이라
+         * 세대를 메모리에 적어 다음 요청에서 끊는다. 여기서는 적히는지만 본다 —
+         * 끊는 쪽은 JwtAuthenticationFilter 의 몫이다.
+         */
+        @Test
+        @DisplayName("재설정하면 이전 세대 토큰이 끊긴다")
+        void 세대등록() {
+            String raw = 발급한토큰();
+
+            service().reset(raw, "newpass12");
+
+            assertThat(versions.isStale(1L, 1)).isTrue();    // 발급 당시 세대는 1
+            assertThat(versions.isStale(1L, 2)).isFalse();   // 바뀐 뒤 받은 토큰은 통과
+            assertThat(versions.isStale(99L, 1)).isFalse();  // 남의 계정은 건드리지 않는다
+        }
+
         @Test
         @DisplayName("같은 링크를 두 번 쓰면 막힌다")
         void 재사용() {
@@ -425,6 +450,31 @@ class PasswordServiceTest {
             service().change(1L, "이전비밀번호", "newpass12");
 
             assertThat(users.savedHash).isEqualTo("enc:newpass12");
+        }
+
+        @Test
+        @DisplayName("바꾸면 이전 세대 토큰이 끊긴다")
+        void 세대등록() {
+            users = new Users();
+            users.byId = active();
+
+            service().change(1L, "이전비밀번호", "newpass12");
+
+            assertThat(versions.isStale(1L, 1)).isTrue();
+            assertThat(versions.isStale(1L, 2)).isFalse();
+        }
+
+        /* 실패한 변경으로 남의 세션을 끊을 수 있으면 안 된다 */
+        @Test
+        @DisplayName("실패하면 세대를 올리지 않는다")
+        void 실패시미등록() {
+            users = new Users();
+            users.byId = active();
+
+            assertThatThrownBy(() -> service().change(1L, "틀린값", "newpass12"))
+                    .isInstanceOf(BusinessException.class);
+
+            assertThat(versions.isStale(1L, 1)).isFalse();
         }
 
         @Test

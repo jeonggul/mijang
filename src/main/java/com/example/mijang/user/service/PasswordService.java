@@ -9,6 +9,7 @@ import com.example.mijang.user.domain.User;
 import com.example.mijang.user.mail.MailTransport;
 import com.example.mijang.user.mapper.PasswordResetTokenMapper;
 import com.example.mijang.user.mapper.UserMapper;
+import com.example.mijang.security.PasswordVersionRegistry;
 import com.example.mijang.user.policy.SignupPolicy;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -49,6 +50,7 @@ public class PasswordService {
     private final MailTransport mailTransport;
     private final MailProperties mailProps;
     private final PasswordResetProperties resetProps;
+    private final PasswordVersionRegistry versions;
 
     /** 예측 가능한 난수로 토큰을 만들면 안 된다. Random 이 아니라 SecureRandom 이다. */
     private final SecureRandom secureRandom = new SecureRandom();
@@ -154,6 +156,9 @@ public class PasswordService {
         if (changed == 0) {
             throw new BusinessException(ErrorCode.AUTH_RESET_TOKEN_INVALID, "token");
         }
+        /* 갱신이 password_version 을 +1 한다. 이미 나간 access 토큰은 그 전 값을 들고
+           있어 다음 요청에서 걸린다 — 전에는 만료까지 30분을 살았다(8.1.7) */
+        versions.record(user.id(), user.passwordVersion() + 1);
     }
 
     /**
@@ -193,6 +198,7 @@ public class PasswordService {
             // 그 사이 다른 요청이 먼저 바꿨다. 지금 받은 현재 비밀번호는 이미 옛것이다
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_MISMATCH, "currentPassword");
         }
+        versions.record(userId, user.passwordVersion() + 1);
     }
 
     /** 존재 → 사용 여부 → 만료 순으로 본다. 실패는 전부 같은 오류다. */

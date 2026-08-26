@@ -88,9 +88,14 @@ public class JwtProvider {
      * <p>subject 에 사용자 식별자를, 클레임에 닉네임·권한을 담는다.
      * 이 세 값이면 화면 헤더 표시와 권한 판정이 되므로 요청마다 DB 를 보지 않아도 된다.
      *
+     * <p>refresh 와 같은 {@code pv}(비밀번호 세대)를 함께 담는다. 필터가 이 값으로
+     * <b>바뀌기 전에 나간 토큰</b>을 가려낸다 — 전에는 담지 않아 만료까지 30분을 살았다(8.1.7).
+     *
      * @param role users.role 값 그대로("USER"·"ADMIN"). ROLE_ 접두사는 필터가 붙인다
+     * @param passwordVersion 발급 시점의 users.password_version
      */
-    public String createAccessToken(Long userId, String nickname, String role) {
+    public String createAccessToken(Long userId, String nickname, String role,
+                                    int passwordVersion) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .issuer(props.getIssuer())
@@ -99,6 +104,7 @@ public class JwtProvider {
                 .claim(CLAIM_INSTANCE, instanceId)
                 .claim(CLAIM_NICKNAME, nickname)
                 .claim(CLAIM_ROLE, role)
+                .claim(CLAIM_PW_VERSION, passwordVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(props.getAccessTtl())))
                 .signWith(key)

@@ -196,7 +196,8 @@ public class AuthService {
      * 한쪽만 고치면 두 경로의 토큰 내용이 달라진다.
      */
     private Tokens issue(User user, boolean remember) {
-        String access = jwtProvider.createAccessToken(user.id(), user.nickname(), user.role());
+        String access = jwtProvider.createAccessToken(
+                user.id(), user.nickname(), user.role(), user.passwordVersion());
         String refresh = jwtProvider.createRefreshToken(user.id(), remember, user.passwordVersion());
         var info = new LoginResponse.LoginUserInfo(
                 user.id(), user.nickname(), user.role(), user.baseCurrency());
