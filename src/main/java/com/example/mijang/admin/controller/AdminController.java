@@ -109,17 +109,20 @@ public class AdminController {
     }
 
     /**
-     * 배당 수집·예상 생성 수동 실행. {@code ADMIN-02}
+     * 배당 수집·예상 생성·알림 수동 실행. {@code ADMIN-02}
      *
      * <p>스케줄(08:00)을 놓쳤을 때 다시 돌린다. 몇 번을 돌려도 안전하다 —
-     * 수집은 upsert, 생성은 INSERT IGNORE 라 이미 있는 것은 건드리지 않는다.
+     * 수집은 upsert, 예상 생성은 INSERT IGNORE, 알림은 발송 이력으로 중복을 거른다.
      *
      * @return 새로 만든 예상 배당 수
      */
     @PostMapping("/batches/dividends")
     public ApiResponse<Integer> produceDividends() {
         stockDividendSyncService.syncHeldSymbols();
-        return ApiResponse.ok(dividendEstimateService.produceLatest());
+        int created = dividendEstimateService.produceLatest();
+        notificationProducerService.produceDividend(
+                java.time.LocalDate.now(com.example.mijang.common.time.TradingClock.SERVICE_ZONE));
+        return ApiResponse.ok(created);
     }
 
     /** 배치 상태. {@code ADMIN-02} */

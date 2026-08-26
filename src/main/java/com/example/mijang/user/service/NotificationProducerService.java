@@ -2,15 +2,18 @@
  * NotificationProducerService — 알림을 만드는 쪽
  *
  * 이 파일이 하는 일
- *   일봉이 들어온 뒤 보유 종목을 훑어 목표가 도달(NOTI-01)과 급등락(NOTI-02)을
- *   notifications 에 넣는다. 읽는 쪽(NotificationService)은 손대지 않는다.
+ *   일봉이 들어온 뒤 목표가 도달(NOTI-01)·급등락(NOTI-02)을 만들고,
+ *   배당 수집 뒤에는 배당락일·지급 예정(NOTI-04)을 notifications 에 넣는다.
+ *   읽는 쪽(NotificationService)은 손대지 않는다.
  */
 package com.example.mijang.user.service;
 
-import com.example.mijang.user.dto.TargetPriceHit;
-import com.example.mijang.user.dto.VolatilityHit;
 import com.example.mijang.common.time.MarketCalendar;
 import com.example.mijang.common.time.TradingClock;
+import com.example.mijang.user.dto.DividendExDateHit;
+import com.example.mijang.user.dto.DividendPayHit;
+import com.example.mijang.user.dto.TargetPriceHit;
+import com.example.mijang.user.dto.VolatilityHit;
 import com.example.mijang.user.mapper.NotificationMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -22,7 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 알림 생성. 개발명세서(API) NOTI-01·02 — 확장(부록 C) · 4.5 점검 2.2
+ * 알림 생성. 개발명세서(API) NOTI-01·02·04 — 확장(부록 C) · 4.5 점검 2.2
  *
  * <p>지금까지는 <b>읽는 쪽만 있었다.</b> 설정 화면의 토글은 저장돼도 알림이 생기지 않았고
  * 헤더 종 아이콘은 항상 비어 있었다. 이 서비스가 그 빈 곳을 채운다.
@@ -100,6 +103,53 @@ public class NotificationProducerService {
                     "/stock?symbol=" + hit.symbol());
         }
         return hits.size();
+    }
+
+    /**
+     * 배당 알림(NOTI-04) — 두 갈래를 한 번에 만든다.
+     *
+     * <p>가격 알림({@link #produce})과 달리 거래일에 묶이지 않는다 — 배당 공시·지급은
+     * 달력을 따라 움직인다. 배당 수집·예상 생성 배치가 끝난 뒤 부른다.
+     *
+     * @param today 판정 기준일(KST)
+     * @return 만든 알림 수
+     */
+    @Transactional
+    public int produceDividend(LocalDate today) {
+        return produceDividendExDate(today) + produceDividendPay();
+    }
+
+    /** 배당락일 임박. 종목 화면으로 보낸다 — 락일과 주당 배당을 확인하는 자리다. */
+    private int produceDividendExDate(LocalDate today) {
+        List<DividendExDateHit> hits = notificationMapper.findDividendExDateHits(today);
+        for (DividendExDateHit hit : hits) {
+            notificationMapper.insert(hit.userId(), "DIVIDEND", hit.symbol(),
+                    hit.symbol() + " 배당락일 안내",
+                    korean(hit.exDate()) + "이 배당락일입니다. 전일까지 보유한 수량 기준으로"
+                            + " 배당이 나옵니다 (주당 " + money(hit.amountPerShare()) + ")."
+                            + (hit.payableDate() != null
+                               ? " 지급일은 " + korean(hit.payableDate()) + "입니다." : ""),
+                    "/stock?symbol=" + hit.symbol());
+        }
+        return hits.size();
+    }
+
+    /** 예상 배당 지급 예정. 확정하는 자리인 배당 관리 화면으로 보낸다. */
+    private int produceDividendPay() {
+        List<DividendPayHit> hits = notificationMapper.findDividendPayHits();
+        for (DividendPayHit hit : hits) {
+            notificationMapper.insert(hit.userId(), "DIVIDEND", hit.symbol(),
+                    hit.symbol() + " 배당 지급 예정",
+                    korean(hit.payDate()) + " 지급 예정 · 예상 세후 " + money(hit.netAmountUsd())
+                            + ". 입금을 확인하면 배당 관리에서 확정해 주세요.",
+                    "/dividend");
+        }
+        return hits.size();
+    }
+
+    /** 8월 28일 꼴. 알림 문장 안에서는 ISO 날짜보다 이 쪽이 읽힌다. */
+    private static String korean(LocalDate date) {
+        return date.getMonthValue() + "월 " + date.getDayOfMonth() + "일";
     }
 
     private static String money(BigDecimal value) {
