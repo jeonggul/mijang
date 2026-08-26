@@ -26,6 +26,16 @@ public interface DividendMapper {
     /** 저장. uk(portfolio_id, symbol, pay_date) 위반은 부르는 쪽이 409 로 바꾼다. */
     int insert(Dividend dividend);
 
+    /**
+     * 있으면 넘어가는 저장. 예상 배당 생성(PROFIT-12)이 쓴다.
+     *
+     * <p>같은 (포트폴리오·종목·지급일)이 이미 있으면 — 직접 입력했든 지난 배치가
+     * 만들었든 — 건드리지 않는다. 배치를 다시 돌려도 안전한 이유다.
+     *
+     * @return 실제로 들어간 행 수. 0 이면 이미 있던 것
+     */
+    int insertIgnore(Dividend dividend);
+
     /** 방금 저장한 기록의 id. insert 직후에만 의미가 있다. */
     Long findLastInsertedId();
 

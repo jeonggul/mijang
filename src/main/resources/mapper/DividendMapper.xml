@@ -25,6 +25,19 @@
        CASE WHEN #{status} = 'CONFIRMED' THEN NOW(3) ELSE NULL END)
   </insert>
 
+  <!-- 예상 배당 생성용. 같은 (포트폴리오·종목·지급일)이 있으면 넘어간다 — 직접 입력이 이긴다 -->
+  <insert id="insertIgnore">
+    INSERT IGNORE INTO dividends
+      (user_id, portfolio_id, symbol, ex_date, pay_date,
+       amount_per_share, quantity_at_ex_date, gross_amount_usd, net_amount_usd,
+       withholding_rate, fx_rate, net_amount_krw, status, source, confirmed_at)
+    VALUES
+      (#{userId}, #{portfolioId}, #{symbol}, #{exDate}, #{payDate},
+       #{amountPerShare}, #{quantityAtExDate}, #{grossAmountUsd}, #{netAmountUsd},
+       #{withholdingRate}, #{fxRate}, #{netAmountKrw}, #{status}, #{source},
+       CASE WHEN #{status} = 'CONFIRMED' THEN NOW(3) ELSE NULL END)
+  </insert>
+
   <select id="findLastInsertedId" resultType="long">
     SELECT LAST_INSERT_ID()
   </select>

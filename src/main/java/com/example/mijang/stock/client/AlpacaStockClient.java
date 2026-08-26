@@ -140,6 +140,44 @@ public class AlpacaStockClient {
         }
     }
 
+    /**
+     * 현금 배당 이벤트. {@code PROFIT-12}·{@code INFO-06} 의 원천이다.
+     *
+     * <p>Corporate Actions v1 은 배당락일·기준일·지급일·주당 배당금(rate)에
+     * 특별배당(special)·외국기업(foreign) 표시까지 준다 — {@code stock_dividends}
+     * 컬럼과 1:1 이다. 실측으로 2016년 이력까지 확인했다(3.11).
+     *
+     * <p>기간은 <b>배당락일 기준</b>으로 걸린다. 응답이 1,000건을 넘으면
+     * {@code next_page_token} 으로 이어 받는다 — 부르는 쪽이 돌린다.
+     *
+     * @param pageToken 이전 응답의 {@code next_page_token}. 첫 호출은 null
+     * @throws BusinessException 벤더가 응답하지 않을 때
+     */
+    public JsonNode cashDividends(List<String> symbols, LocalDate start, LocalDate end,
+                                  String pageToken) {
+        String joined = String.join(",", symbols);
+        try {
+            return dataClient.get()
+                    .uri(uri -> {
+                        var b = uri.path("/v1/corporate-actions")
+                                .queryParam("types", "cash_dividend")
+                                .queryParam("symbols", joined)
+                                .queryParam("start", start.toString())
+                                .queryParam("end", end.toString())
+                                .queryParam("limit", 1000);
+                        if (pageToken != null) {
+                            b = b.queryParam("page_token", pageToken);
+                        }
+                        return b.build();
+                    })
+                    .retrieve()
+                    .body(JsonNode.class);
+        } catch (RestClientException e) {
+            log.error("Alpaca 배당 이벤트 조회 실패 — {}건", symbols.size(), e);
+            throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
+        }
+    }
+
     public JsonNode bars(List<String> symbols, String timeframe, String start, String end, String feed) {
         String joined = String.join(",", symbols);
         try {

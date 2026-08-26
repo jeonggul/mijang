@@ -52,6 +52,10 @@ class DividendServiceTest {
             if (duplicate) throw new DuplicateKeyException("uk_dividends_pf_symbol_pay");
             saved.add(d); return 1;
         }
+        @Override public int insertIgnore(Dividend d) {
+            if (duplicate) return 0;
+            saved.add(d); return 1;
+        }
         @Override public Long findLastInsertedId() { return 17L; }
         @Override public List<DividendResponse> findByUser(Long userId) { return List.of(); }
         @Override public Dividend findById(Long id, Long userId) { return byId; }

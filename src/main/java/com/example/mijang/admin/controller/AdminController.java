@@ -40,6 +40,8 @@ public class AdminController {
 
     private final AdminService adminService;
     private final com.example.mijang.user.service.NotificationProducerService notificationProducerService;
+    private final com.example.mijang.dividend.service.StockDividendSyncService stockDividendSyncService;
+    private final com.example.mijang.dividend.service.DividendEstimateService dividendEstimateService;
 
     /** 종목 활성·비활성 전환. {@code ADMIN-01} */
     @PatchMapping("/stocks/active")
@@ -104,6 +106,20 @@ public class AdminController {
         return ApiResponse.ok(date != null
                 ? notificationProducerService.produce(date)
                 : notificationProducerService.produceLatestClosed());
+    }
+
+    /**
+     * 배당 수집·예상 생성 수동 실행. {@code ADMIN-02}
+     *
+     * <p>스케줄(08:00)을 놓쳤을 때 다시 돌린다. 몇 번을 돌려도 안전하다 —
+     * 수집은 upsert, 생성은 INSERT IGNORE 라 이미 있는 것은 건드리지 않는다.
+     *
+     * @return 새로 만든 예상 배당 수
+     */
+    @PostMapping("/batches/dividends")
+    public ApiResponse<Integer> produceDividends() {
+        stockDividendSyncService.syncHeldSymbols();
+        return ApiResponse.ok(dividendEstimateService.produceLatest());
     }
 
     /** 배치 상태. {@code ADMIN-02} */
