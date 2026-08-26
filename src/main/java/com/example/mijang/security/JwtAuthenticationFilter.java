@@ -37,12 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final TokenCookies cookies;
     private final AuthService authService;
+    private final PasswordVersionRegistry versions;
 
     public JwtAuthenticationFilter(JwtProvider jwtProvider, TokenCookies cookies,
-                                   AuthService authService) {
+                                   AuthService authService, PasswordVersionRegistry versions) {
         this.jwtProvider = jwtProvider;
         this.cookies = cookies;
         this.authService = authService;
+        this.versions = versions;
     }
 
     /**
@@ -63,8 +65,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (token != null) {
                 try {
                     Claims claims = jwtProvider.parse(token);
-                    // 갱신용 토큰으로 일반 요청을 통과시키지 않는다
-                    if (jwtProvider.isType(claims, JwtProvider.TYPE_ACCESS)) {
+                    // 갱신용 토큰으로 일반 요청을 통과시키지 않는다.
+                    // 비밀번호를 바꾸기 전에 나간 토큰도 여기서 끊는다 — 표는 메모리에
+                    // 있고 바꾼 계정만 들어 있어 매 요청 DB 를 보지 않는다(8.1.7).
+                    // 막히면 아래 slideSession 으로 내려가는데, refresh 도 세대가
+                    // 어긋나 거기서 함께 막힌다.
+                    if (jwtProvider.isType(claims, JwtProvider.TYPE_ACCESS)
+                            && !versions.isStale(jwtProvider.userId(claims),
+                                                 jwtProvider.passwordVersion(claims))) {
                         authenticate(request, claims);
                         authenticated = true;
                     }
