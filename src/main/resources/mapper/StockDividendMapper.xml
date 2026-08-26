@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  StockDividendMapper — stock_dividends 접근 SQL
+
+  이 파일이 하는 일
+    종목 배당 마스터의 upsert 와 조회. 벤더가 지급일을 정정해 보내는 일이
+    있어 같은 (종목·배당락일·유형)이면 새 값으로 덮는다. synced_at 이 곧
+    신선도 표시다.
+-->
+<mapper namespace="com.example.mijang.dividend.mapper.StockDividendMapper">
+
+  <insert id="upsert">
+    INSERT INTO stock_dividends
+      (symbol, ex_date, dividend_type, amount_per_share, record_date, payable_date,
+       process_date, is_special, is_foreign, cusip, vendor_id, source, synced_at)
+    VALUES
+      (#{symbol}, #{exDate}, #{dividendType}, #{amountPerShare}, #{recordDate}, #{payableDate},
+       #{processDate}, #{special}, #{foreign}, #{cusip}, #{vendorId}, 'ALPACA', NOW(3))
+    ON DUPLICATE KEY UPDATE
+       amount_per_share = VALUES(amount_per_share),
+       record_date      = VALUES(record_date),
+       payable_date     = VALUES(payable_date),
+       process_date     = VALUES(process_date),
+       is_special       = VALUES(is_special),
+       is_foreign       = VALUES(is_foreign),
+       cusip            = VALUES(cusip),
+       vendor_id        = VALUES(vendor_id),
+       synced_at        = NOW(3)
+  </insert>
+
+  <select id="findBySymbol" resultType="com.example.mijang.dividend.domain.StockDividend">
+    SELECT symbol, ex_date, dividend_type, amount_per_share, record_date, payable_date,
+           process_date, is_special AS special, is_foreign AS `foreign`, cusip, vendor_id
+      FROM stock_dividends
+     WHERE symbol = #{symbol}
+     ORDER BY ex_date DESC
+  </select>
+
+  <select id="findLastSyncedAt" resultType="java.time.LocalDateTime">
+    SELECT MAX(synced_at)
+      FROM stock_dividends
+     WHERE symbol = #{symbol}
+  </select>
+
+  <select id="findByExDateBetween" resultType="com.example.mijang.dividend.domain.StockDividend">
+    SELECT symbol, ex_date, dividend_type, amount_per_share, record_date, payable_date,
+           process_date, is_special AS special, is_foreign AS `foreign`, cusip, vendor_id
+      FROM stock_dividends
+     WHERE ex_date BETWEEN #{from} AND #{to}
+     ORDER BY symbol, ex_date
+  </select>
+
+  <!-- 배당락일 전일까지 보유해야 배당을 받는다(스키마 주석) — trade_date < ex_date 합이 양수인 사람 -->
+  <select id="findHoldersAtExDate" resultType="com.example.mijang.dividend.dto.HolderAtExDate">
+    SELECT user_id, portfolio_id,
+           SUM(CASE side WHEN 'BUY' THEN quantity ELSE -quantity END) AS quantity
+      FROM transactions
+     WHERE symbol = #{symbol}
+       AND trade_date &lt; #{exDate}
+       AND deleted_at IS NULL
+     GROUP BY user_id, portfolio_id
+    HAVING quantity &gt; 0
+  </select>
+
+  <select id="findHeldSymbols" resultType="string">
+    SELECT DISTINCT symbol
+      FROM holdings
+     WHERE quantity &gt; 0
+  </select>
+
+</mapper>

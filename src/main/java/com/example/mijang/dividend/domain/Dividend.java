@@ -36,6 +36,9 @@ public record Dividend(
         String source,
         LocalDateTime confirmedAt) {
 
+    /** 일반 주식 기준 원천징수율. REIT·MLP 는 다를 수 있다 — 화면이 고지한다. */
+    public static final BigDecimal DEFAULT_WITHHOLDING = new BigDecimal("0.15");
+
     /** 확정됐는지. 확정 전에는 손익 집계에서 빠진다. */
     public boolean confirmed() {
         return "CONFIRMED".equals(status);

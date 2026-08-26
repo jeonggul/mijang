@@ -39,9 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DividendService {
 
-    /** 일반 주식 기준 원천징수율. REIT·MLP 는 다를 수 있다 — 화면이 고지한다. */
-    private static final BigDecimal DEFAULT_WITHHOLDING = new BigDecimal("0.15");
-
     /** 원화 금액 자리수. 스키마의 DECIMAL(18,2). */
     private static final int KRW_SCALE = 2;
 
@@ -85,7 +82,7 @@ public class DividendService {
 
         Dividend row = new Dividend(null, userId, defaultPortfolioId(userId), symbol,
                 null, form.getPayDate(), null, null, null, form.getNetAmountUsd(),
-                DEFAULT_WITHHOLDING, fxRate, krw, "CONFIRMED", "MANUAL", null);
+                Dividend.DEFAULT_WITHHOLDING, fxRate, krw, "CONFIRMED", "MANUAL", null);
         try {
             dividendMapper.insert(row);
         } catch (DuplicateKeyException e) {
