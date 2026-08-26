@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.admin.mapper.AdminUserMapper">
+
+    <sql id="userWhere">
+        <where>
+            <if test="status != null">u.status = #{status}</if>
+            <if test="q != null">
+                AND (LOWER(u.nickname) LIKE CONCAT('%', LOWER(#{q}), '%')
+                     OR LOWER(u.email) LIKE CONCAT('%', LOWER(#{q}), '%'))
+            </if>
+        </where>
+    </sql>
+
+    <select id="findUsers" resultType="com.example.mijang.admin.dto.AdminUserResponse">
+        SELECT u.id AS user_id,
+               u.nickname,
+               u.email,
+               u.created_at,
+               (SELECT COUNT(*) FROM transactions t WHERE t.user_id = u.id) AS transaction_count,
+               (SELECT COUNT(*) FROM posts p WHERE p.user_id = u.id) AS post_count,
+               u.role,
+               u.status,
+               CASE
+                 WHEN u.id = #{adminId} OR u.status = 'WITHDRAWN' THEN FALSE
+                 WHEN u.role = 'ADMIN' AND u.status = 'ACTIVE'
+                      AND (SELECT COUNT(*) FROM users
+                            WHERE role = 'ADMIN' AND status = 'ACTIVE') &lt;= 1 THEN FALSE
+                 ELSE TRUE
+               END AS manageable
+          FROM users u
+          <include refid="userWhere"/>
+         ORDER BY (u.role = 'ADMIN') DESC, u.created_at DESC, u.id DESC
+         LIMIT #{limit}
+    </select>
+
+    <select id="countUsers" resultType="int">
+        SELECT COUNT(*)
+          FROM users u
+          <include refid="userWhere"/>
+    </select>
+
+    <select id="findAccount" resultType="com.example.mijang.admin.domain.AdminUserAccount">
+        SELECT id, email, nickname, role, status, password_version
+          FROM users
+         WHERE id = #{id}
+    </select>
+
+    <select id="lockActiveAdminIds" resultType="long">
+        SELECT id
+          FROM users
+         WHERE role = 'ADMIN'
+           AND status = 'ACTIVE'
+         ORDER BY id
+         FOR UPDATE
+    </select>
+
+    <update id="updateStatus">
+        UPDATE users
+           SET status = #{status},
+               password_version = password_version + 1
+         WHERE id = #{id}
+           AND status = #{expectedStatus}
+           AND status IN ('ACTIVE', 'SUSPENDED')
+    </update>
+
+</mapper>

@@ -44,9 +44,7 @@
     <div class="page-head"><div><h1>운영 현황</h1><p>ROLE_ADMIN 전용 화면입니다</p></div></div>
 
     <div class="summary-strip">
-      <!-- 사용자·신고·매매 집계는 해당 범위(ADMIN-03~05)가 선행이라 아직 셀 수 없다.
-           0 으로 두면 "아무도 없다" 로 읽히므로 — 로 비운다 -->
-      <div><span class="k">가입 사용자</span><b class="num">—</b><span class="s">ADMIN-03 대기</span></div>
+      <div><span class="k">가입 사용자</span><b class="num" id="ad-user-total">—</b><span class="s">탈퇴 계정 포함</span></div>
       <div><span class="k">활성 종목</span><b class="num" id="ad-active">—</b><span class="s" id="ad-inactive">&nbsp;</span></div>
       <div><span class="k">미처리 신고</span><b class="num" id="ov-report-count">—</b><span class="s">신고 탭에서 처리</span></div>
       <div><span class="k">오늘 매매 기록</span><b class="num">—</b><span class="s">&nbsp;</span></div>
@@ -127,18 +125,27 @@
     <div class="page-head"><div><h1>사용자 관리</h1>
       <p>본인 계정과 마지막 활성 관리자는 상태를 변경할 수 없습니다</p></div></div>
 
+    <div class="card card-pad" style="margin-bottom:14px">
+      <div class="row-between">
+        <div class="field" style="flex:1;margin:0">
+          <label for="us-q" class="sr-only">닉네임 또는 이메일</label>
+          <input id="us-q" type="search" placeholder="닉네임 또는 이메일">
+        </div>
+        <div class="pills" data-toggle-group data-user-filter>
+          <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+          <button type="button" data-value="ACTIVE" aria-pressed="false">활성</button>
+          <button type="button" data-value="SUSPENDED" aria-pressed="false">정지</button>
+          <button type="button" data-value="WITHDRAWN" aria-pressed="false">탈퇴</button>
+        </div>
+      </div>
+    </div>
+
     <section class="card">
-      <h2 class="card-head">사용자 목록 <span class="sub num">1,284명 · 어제 +32</span></h2>
+      <h2 class="card-head">사용자 목록 <span class="sub num" id="admin-user-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
             <thead><tr><th class="" scope="col">닉네임</th><th class="txt" scope="col">이메일</th><th class="" scope="col">가입일</th><th class="r" scope="col">매매 기록</th><th class="r" scope="col">작성 글</th><th class="" scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
-            <tbody>
-              <tr><td class="txt">정하</td><td class="txt">dlwjdgkw@gmail.com</td><td class="">2025-01-12</td><td class="r">38</td><td class="r">12</td><td class="txt"><span class="badge badge-ok">활성</span></td><td class="r"><span class="badge badge-accent">관리자</span></td></tr>
-              <tr><td class="txt">김선호</td><td class="txt">sunho@example.com</td><td class="">2025-03-04</td><td class="r">126</td><td class="r">61</td><td class="txt"><span class="badge badge-ok">활성</span></td><td class="r"><button class="btn btn-sm" type="button">정지</button></td></tr>
-              <tr><td class="txt">이한결</td><td class="txt">hangyul@example.com</td><td class="">2025-04-19</td><td class="r">84</td><td class="r">37</td><td class="txt"><span class="badge badge-ok">활성</span></td><td class="r"><button class="btn btn-sm" type="button">정지</button></td></tr>
-              <tr><td class="txt">박도윤</td><td class="txt">doyun@example.com</td><td class="">2025-06-02</td><td class="r">12</td><td class="r">6</td><td class="txt"><span class="badge badge-err">정지</span></td><td class="r"><button class="btn btn-sm" type="button">해제</button></td></tr>
-              <tr><td class="txt">최유진</td><td class="txt">yujin@example.com</td><td class="">2025-07-21</td><td class="r">3</td><td class="r">0</td><td class="txt"><span class="badge badge-warn">탈퇴 대기</span></td><td class="r">—</td></tr>
-            </tbody>
+            <tbody id="admin-user-list"><tr><td colspan="7" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
           </table>
         </div>
       <p class="note" style="padding:12px 18px 16px">탈퇴 계정은 30일 후 물리 삭제됩니다. 그 전까지 작성 글의 작성자 참조가 유지됩니다.</p>
@@ -645,6 +652,8 @@
 
   async function loadBatches() { drawBatches(await api("/api/admin/batches")); }
 
+  window.addEventListener("admin:logs-changed", loadLogs);
+
   loadBatches();
   loadStocks();
   loadDashStocks();
@@ -654,5 +663,6 @@
 </script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-notices.js}" defer></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-community.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-users.js}" defer></script>
 </body>
 </html>

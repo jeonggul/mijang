@@ -65,6 +65,16 @@ public enum ErrorCode {
     USER_NOT_FOUND("USER_NOT_FOUND", HttpStatus.NOT_FOUND,
             "존재하지 않는 사용자입니다"),
 
+    // ===== 관리자 사용자 관리 (ADMIN-03) =====
+    ADMIN_SELF_STATUS_CHANGE("ADMIN_SELF_STATUS_CHANGE", HttpStatus.UNPROCESSABLE_CONTENT,
+            "본인 계정 상태는 변경할 수 없습니다"),
+    ADMIN_LAST_ACTIVE("ADMIN_LAST_ACTIVE", HttpStatus.UNPROCESSABLE_CONTENT,
+            "마지막 활성 관리자는 정지할 수 없습니다"),
+    ADMIN_WITHDRAWN_USER("ADMIN_WITHDRAWN_USER", HttpStatus.UNPROCESSABLE_CONTENT,
+            "탈퇴 계정의 상태는 변경할 수 없습니다"),
+    ADMIN_USER_STATUS_CONFLICT("ADMIN_USER_STATUS_CONFLICT", HttpStatus.CONFLICT,
+            "사용자 상태가 이미 변경되었습니다. 목록을 새로고침해 주세요"),
+
     // ===== 종목 (STOCK-001~003) =====
     STOCK_NOT_FOUND("STOCK_NOT_FOUND", HttpStatus.NOT_FOUND,
             "존재하지 않는 종목입니다"),
