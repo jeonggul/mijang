@@ -18,20 +18,8 @@
 <div class="layout no-panel">
 
   <aside class="card sidebar">
-    <div class="menu-anchor">
-      <button class="switcher" type="button" data-open="pf-menu">
-        전체 포트폴리오<span class="spacer"></span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <div class="dropdown pf-menu" id="pf-menu" hidden>
-        <button class="row" type="button"><span class="ttl">전체 포트폴리오</span><span class="meta">5종목 · 12,847,300원</span></button>
-        <button class="row" type="button"><span class="ttl">연금계좌용</span><span class="meta">3종목 · 8,240,100원</span></button>
-        <button class="row" type="button"><span class="ttl">단기매매용</span><span class="meta">2종목 · 4,607,200원</span></button>
-        <button class="row add" type="button" data-open="new-pf">+ 포트폴리오 추가</button>
-      </div>
-    </div>
+    <!-- 포트폴리오 화면과 같은 제목이다. 드롭다운 목업은 화면 설계서 지시대로 걷어냈다 -->
+    <h2 class="sidebar-title">포트폴리오 요약</h2>
 
     <ul class="stat-list">
       <li><span class="k">종목 수</span><span class="v num">5</span></li>
@@ -54,6 +42,13 @@
       </svg>
       매매 기록 추가
     </a>
+    <p class="nav-label">포트폴리오 화면</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/portfolio}"><span class="tk">보유 현황</span></a></li>
+      <li><a th:href="@{/report}"><span class="tk">리포트</span></a></li>
+      <li><a th:href="@{/dividend}" aria-current="page"><span class="tk">배당</span></a></li>
+      <li><a th:href="@{/tax}"><span class="tk">양도세</span></a></li>
+    </ul>
   </aside>
 
   <main>
