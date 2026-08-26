@@ -47,7 +47,7 @@
       <div><span class="k">가입 사용자</span><b class="num" id="ad-user-total">—</b><span class="s">탈퇴 계정 포함</span></div>
       <div><span class="k">활성 종목</span><b class="num" id="ad-active">—</b><span class="s" id="ad-inactive">&nbsp;</span></div>
       <div><span class="k">미처리 신고</span><b class="num" id="ov-report-count">—</b><span class="s">신고 탭에서 처리</span></div>
-      <div><span class="k">오늘 매매 기록</span><b class="num">—</b><span class="s">&nbsp;</span></div>
+      <div><span class="k">오늘 매매 기록</span><b class="num" id="ad-today-transactions">—</b><span class="s">작성 시각 기준</span></div>
     </div>
 
     <section class="card" style="margin-bottom:14px">
@@ -286,9 +286,9 @@
   </section>
   <section role="tabpanel" id="a-stats" aria-labelledby="m-stats" hidden>
     <div class="page-head">
-      <div><h1>통계</h1><p>2025년 7월 기준</p></div>
+      <div><h1>통계</h1><p id="admin-stats-period">불러오는 중입니다</p></div>
       <span class="grow"></span>
-      <div class="pills" data-toggle-group>
+      <div class="pills" data-toggle-group data-stats-period>
         <button type="button" data-value="1M" aria-pressed="true">월간</button>
         <button type="button" data-value="1W" aria-pressed="false">주간</button>
         <button type="button" data-value="1D" aria-pressed="false">일간</button>
@@ -296,41 +296,37 @@
     </div>
 
     <section class="card stat-strip" style="margin-bottom:16px">
-      <div><span class="k">신규 가입</span><span class="v">184</span><span class="s">전월 대비 +23%</span></div>
-      <div><span class="k">재방문율</span><span class="v">61%</span><span class="s">7일 기준</span></div>
-      <div><span class="k">기록 작성률</span><span class="v">73%</span><span class="s">매매 중 이유 남긴 비율</span></div>
-      <div><span class="k">회고 작성</span><span class="v">1,042</span><span class="s">전월 대비 +8%</span></div>
+      <div><span class="k">신규 가입</span><span class="v" id="stats-new-users">—</span><span class="s" id="stats-new-users-note">&nbsp;</span></div>
+      <div><span class="k">활동 사용자</span><span class="v" id="stats-active-users">—</span><span class="s">기록·글·댓글 작성 기준</span></div>
+      <div><span class="k">매매 기록</span><span class="v" id="stats-transactions">—</span><span class="s">기간 내 새로 작성</span></div>
+      <div><span class="k">판단 기록률</span><span class="v" id="stats-judgment-rate">—</span><span class="s" id="stats-judgment-note">매수 사유·목표가·심리</span></div>
     </section>
 
     <div class="grid-2">
       <section class="card">
-        <h2 class="card-head">인기 종목 <span class="sub">관심 등록 기준</span></h2>
+        <h2 class="card-head">인기 종목 <span class="sub">현재 관심·보유 사용자 기준</span></h2>
         <div class="table-wrap">
           <table class="tbl">
             <thead><tr><th scope="col">순위</th><th scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="r" scope="col">관심</th><th class="r" scope="col">보유 회원</th></tr></thead>
-            <tbody>
-              <tr><td>1</td><td>NVDA</td><td class="txt">NVIDIA Corp.</td><td class="r">638</td><td class="r">412</td></tr>
-              <tr><td>2</td><td>AAPL</td><td class="txt">Apple Inc.</td><td class="r">412</td><td class="r">388</td></tr>
-              <tr><td>3</td><td>SCHD</td><td class="txt">Schwab US Dividend ETF</td><td class="r">294</td><td class="r">261</td></tr>
-              <tr><td>4</td><td>TSLA</td><td class="txt">Tesla Inc.</td><td class="r">277</td><td class="r">198</td></tr>
-              <tr><td>5</td><td>MSFT</td><td class="txt">Microsoft Corp.</td><td class="r">241</td><td class="r">224</td></tr>
-            </tbody>
+            <tbody id="admin-popular-stocks"><tr><td colspan="5" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
           </table>
         </div>
       </section>
 
-      <section class="card card-pad">
-        <h2 style="margin:0 0 14px;font-size:var(--fs-section)">화면별 방문 비중</h2>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">대시보드</span><span class="num">38%</span></p>
-        <div class="progress" style="margin-bottom:14px"><i style="width:38%"></i></div>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">종목 상세</span><span class="num">24%</span></p>
-        <div class="progress" style="margin-bottom:14px"><i style="width:24%"></i></div>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">커뮤니티</span><span class="num">18%</span></p>
-        <div class="progress" style="margin-bottom:14px"><i style="width:18%"></i></div>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">매매 기록</span><span class="num">12%</span></p>
-        <div class="progress" style="margin-bottom:14px"><i style="width:12%"></i></div>
-        <p class="row-between" style="margin:0 0 6px"><span style="flex:1">기타</span><span class="num">8%</span></p>
-        <div class="progress"><i style="width:8%"></i></div>
+      <section class="card">
+        <h2 class="card-head">기간 활동 <span class="sub">작성 시각 기준</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th scope="col">활동</th><th class="r" scope="col">건수</th></tr></thead>
+            <tbody>
+              <tr><td>판단 기록</td><td class="r num" id="stats-judgments">—</td></tr>
+              <tr><td>게시글</td><td class="r num" id="stats-posts">—</td></tr>
+              <tr><td>댓글</td><td class="r num" id="stats-comments">—</td></tr>
+              <tr><td>관심 등록</td><td class="r num" id="stats-watches">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note" style="padding:12px 18px 16px">페이지 방문과 재방문은 추적 데이터를 수집하지 않아 표시하지 않습니다</p>
       </section>
     </div>
   </section>
@@ -664,5 +660,6 @@
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-notices.js}" defer></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-community.js}" defer></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-users.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-stats.js}" defer></script>
 </body>
 </html>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.admin.mapper.AdminStatsMapper">
+
+    <select id="countActivities" resultType="com.example.mijang.admin.dto.AdminStatsCounts">
+        SELECT (SELECT COUNT(*)
+                  FROM users
+                 WHERE created_at &gt;= #{from} AND created_at &lt; #{to}) AS new_user_count,
+               (SELECT COUNT(DISTINCT activity.user_id)
+                  FROM (
+                        SELECT user_id FROM transactions
+                         WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+                           AND deleted_at IS NULL
+                        UNION ALL
+                        SELECT user_id FROM posts
+                         WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+                        UNION ALL
+                        SELECT user_id FROM comments
+                         WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+                  ) activity) AS active_user_count,
+               (SELECT COUNT(*)
+                  FROM transactions
+                 WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+                   AND deleted_at IS NULL) AS transaction_count,
+               (SELECT COUNT(*)
+                  FROM transactions
+                 WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+                   AND deleted_at IS NULL
+                   AND (NULLIF(TRIM(buy_reason), '') IS NOT NULL
+                        OR target_price IS NOT NULL OR sentiment IS NOT NULL)) AS judgment_count,
+               (SELECT COUNT(*) FROM posts
+                 WHERE created_at &gt;= #{from} AND created_at &lt; #{to}) AS post_count,
+               (SELECT COUNT(*) FROM comments
+                 WHERE created_at &gt;= #{from} AND created_at &lt; #{to}) AS comment_count,
+               (SELECT COUNT(*) FROM watchlists
+                 WHERE created_at &gt;= #{from} AND created_at &lt; #{to}) AS watch_count
+    </select>
+
+    <select id="countNewUsers" resultType="int">
+        SELECT COUNT(*)
+          FROM users
+         WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+    </select>
+
+    <select id="countTransactions" resultType="int">
+        SELECT COUNT(*)
+          FROM transactions
+         WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+           AND deleted_at IS NULL
+    </select>
+
+    <select id="findPopularStocks" resultType="com.example.mijang.admin.dto.AdminPopularStockResponse">
+        SELECT s.symbol,
+               s.name,
+               s.name_ko,
+               COALESCE(w.watcher_count, 0) AS watcher_count,
+               COALESCE(h.holder_count, 0) AS holder_count
+          FROM stocks s
+          LEFT JOIN (
+              SELECT symbol, COUNT(DISTINCT user_id) AS watcher_count
+                FROM watchlists
+               GROUP BY symbol
+          ) w ON w.symbol = s.symbol
+          LEFT JOIN (
+              SELECT symbol, COUNT(DISTINCT user_id) AS holder_count
+                FROM holdings
+               WHERE quantity &gt; 0
+               GROUP BY symbol
+          ) h ON h.symbol = s.symbol
+         WHERE w.watcher_count IS NOT NULL OR h.holder_count IS NOT NULL
+         ORDER BY watcher_count DESC, holder_count DESC, s.symbol
+         LIMIT #{limit}
+    </select>
+
+</mapper>
