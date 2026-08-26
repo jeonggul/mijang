@@ -252,27 +252,14 @@
   <!-- 공시 (SEC EDGAR) -->
   <section role="tabpanel" id="p6" aria-labelledby="t6" hidden>
     <div class="card">
-      <h2 class="card-head">SEC 공시 <span class="sub">최근 12개월</span></h2>
+      <h2 class="card-head">SEC 공시 <span class="sub" id="filings-count">—</span></h2>
       <div class="table-wrap">
         <table class="tbl tbl-band">
           <thead><tr>
             <th scope="col">양식</th><th scope="col">제출일</th>
             <th class="txt" scope="col">내용</th><th scope="col">원문</th>
           </tr></thead>
-          <tbody>
-              <tr><td>10-Q</td><td>2025-08-01</td><td class="txt">2025 회계연도 3분기 분기보고서</td>
-                <td><a href="https://www.sec.gov/edgar" rel="noreferrer noopener" target="_blank">EDGAR</a></td></tr>
-              <tr><td>8-K</td><td>2025-07-31</td><td class="txt">실적 발표 및 배당 선언</td>
-                <td><a href="https://www.sec.gov/edgar" rel="noreferrer noopener" target="_blank">EDGAR</a></td></tr>
-              <tr><td>4</td><td>2025-07-24</td><td class="txt">임원 주식 처분 신고</td>
-                <td><a href="https://www.sec.gov/edgar" rel="noreferrer noopener" target="_blank">EDGAR</a></td></tr>
-              <tr><td>10-Q</td><td>2025-05-02</td><td class="txt">2025 회계연도 2분기 분기보고서</td>
-                <td><a href="https://www.sec.gov/edgar" rel="noreferrer noopener" target="_blank">EDGAR</a></td></tr>
-              <tr><td>DEF 14A</td><td>2025-01-10</td><td class="txt">주주총회 위임장 권유 신고서</td>
-                <td><a href="https://www.sec.gov/edgar" rel="noreferrer noopener" target="_blank">EDGAR</a></td></tr>
-              <tr><td>10-K</td><td>2024-11-01</td><td class="txt">2024 회계연도 연차보고서</td>
-                <td><a href="https://www.sec.gov/edgar" rel="noreferrer noopener" target="_blank">EDGAR</a></td></tr>
-          </tbody>
+          <tbody id="filings-rows"><!-- 스크립트가 채운다 --></tbody>
         </table>
       </div>
       <p class="note" style="padding:12px 18px 16px">
@@ -1517,6 +1504,85 @@
   }, { once: true });
 })();
 
+/* SEC 공시 (INFO-02)
+   백엔드(/api/stocks/{symbol}/filings)는 이미 있었고 화면만 목업이었다(4.5 점검 3.4).
+   EDGAR 링크 여섯 개가 전부 같은 주소를 가리키던 자리다. */
+(function () {
+  var rows = document.getElementById("filings-rows");
+  if (!rows) return;
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "AAPL").toUpperCase();
+
+  /* SEC 양식 번호는 아는 사람만 안다. 자주 나오는 것만 한국어로 풀고 나머지는 그대로 둔다 —
+     모르는 양식을 어설프게 번역하면 틀린 설명이 붙는다 */
+  var FORM_LABEL = {
+    "10-K": "연차보고서", "10-Q": "분기보고서", "8-K": "주요 사건 보고",
+    "DEF 14A": "주주총회 위임장 권유", "4": "임원·주요주주 지분 변동", "3": "임원·주요주주 최초 지분 신고",
+    "5": "임원·주요주주 연간 지분 보고", "S-8": "임직원 보상용 증권 등록",
+    "SC 13G": "대량보유 보고(수동)", "SC 13D": "대량보유 보고", "144": "제한 증권 매도 예고",
+    "N-CSR": "펀드 연차·반기 보고서", "N-Q": "펀드 분기 보유 보고", "485BPOS": "펀드 설명서 갱신"
+  };
+  function label(form) {
+    if (!form) return "—";
+    var base = FORM_LABEL[form] || FORM_LABEL[form.replace(/\/A$/, "")];
+    /* /A 가 붙으면 정정 공시다. 원 양식 설명에 그 사실을 붙인다 */
+    if (/\/A$/.test(form)) return (base ? base + " " : "") + "정정";
+    return base || form;
+  }
+  /* 서버가 CIK·접수번호로 조립한 주소지만, href 에 넣는 값은 전부 같은 문으로 거른다(2.11) */
+  function safeUrl(url) {
+    if (!url) return null;
+    try {
+      var u = new URL(url, location.origin);
+      return (u.protocol === "http:" || u.protocol === "https:") ? u.href : null;
+    } catch (e) { return null; }
+  }
+  function notice(message) {
+    rows.replaceChildren();
+    var td = rows.insertRow().insertCell();
+    td.colSpan = 4; td.className = "sub";
+    td.style.cssText = "padding:24px;text-align:center";
+    td.textContent = message;
+  }
+
+  fetch("/api/stocks/" + encodeURIComponent(symbol) + "/filings?limit=20")
+    .then(function (res) { return res.ok ? res.json() : null; })
+    .then(function (body) {
+      var list = body && body.success ? body.data : null;
+      var count = document.getElementById("filings-count");
+      if (!list) { notice("공시를 불러오지 못했습니다"); return; }
+      if (list.length === 0) {
+        if (count) count.textContent = "0건";
+        notice("최근 공시가 없습니다");
+        return;
+      }
+      if (count) count.textContent = "최근 " + list.length + "건";
+      rows.replaceChildren();
+      list.forEach(function (f) {
+        var tr = rows.insertRow();
+        tr.insertCell().textContent = f.form || "—";
+        tr.insertCell().textContent = f.filingDate || "—";
+        var txt = tr.insertCell();
+        txt.className = "txt";
+        /* 보고 대상 기간이 제출일과 따로 있는 양식(10-K·10-Q)은 그 기간을 함께 적는다 */
+        txt.textContent = label(f.form)
+          + (f.reportDate && f.reportDate !== f.filingDate ? " · 대상 " + f.reportDate : "");
+        var linkCell = tr.insertCell();
+        var url = safeUrl(f.documentUrl);
+        if (url) {
+          var a = document.createElement("a");
+          a.href = url; a.target = "_blank"; a.rel = "noreferrer noopener";
+          a.textContent = "EDGAR";
+          linkCell.appendChild(a);
+        } else {
+          linkCell.textContent = "—";
+        }
+      });
+    })
+    .catch(function () { notice("공시를 불러오지 못했습니다"); });
+})();
+
+</script>
+<script th:attr="nonce=${cspNonce}">
 /* 이 종목의 내 보유 현황 (PROFIT-07 종목별 손익)
    손익 분해는 종목별로도 같은 코드로 나온다(dashboard 2.4). 전체를 부르고 걸러 쓰지 않고
    symbol 을 줘서 그 종목만 계산시킨다 — 보유가 많아도 계산이 한 종목으로 끝난다. */
