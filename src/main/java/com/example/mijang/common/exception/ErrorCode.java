@@ -96,6 +96,11 @@ public enum ErrorCode {
     /** 명세서 1.6. */
     DIVIDEND_ALREADY_CONFIRMED("DIVIDEND_ALREADY_CONFIRMED", HttpStatus.CONFLICT,
             "이미 확정된 배당입니다"),
+    DIVIDEND_NOT_FOUND("DIVIDEND_NOT_FOUND", HttpStatus.NOT_FOUND,
+            "존재하지 않는 배당 기록입니다"),
+    /** uk(portfolio_id, symbol, pay_date). 같은 지급일 배당은 한 건으로 합쳐 적는다. */
+    DIVIDEND_DUPLICATED("DIVIDEND_DUPLICATED", HttpStatus.CONFLICT,
+            "같은 종목·지급일의 배당이 이미 있습니다"),
 
     // ===== 커뮤니티 (COM-001~005) =====
     COMMUNITY_POST_NOT_FOUND("COMMUNITY_POST_NOT_FOUND", HttpStatus.NOT_FOUND,

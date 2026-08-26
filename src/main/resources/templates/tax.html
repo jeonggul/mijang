@@ -18,23 +18,17 @@
 <div class="layout no-panel">
 
   <aside class="card sidebar">
-    <!-- 포트폴리오 화면과 같은 제목이다. 드롭다운 목업은 화면 설계서 지시대로 걷어냈다 -->
+    <!-- 포트폴리오 화면과 같은 제목이다. 값은 리포트 사이드바와 같은 출처에서 읽는다 -->
     <h2 class="sidebar-title">포트폴리오 요약</h2>
 
     <ul class="stat-list">
-      <li><span class="k">종목 수</span><span class="v num">5</span></li>
-      <li><span class="k">주가손익</span><span class="v num rise">+822,400</span></li>
-      <li><span class="k">환차손익</span><span class="v num fall">−318,900</span></li>
+      <li><span class="k">종목 수</span><span class="v num" id="tx-count2">—</span></li>
+      <li><span class="k">주가손익</span><span class="v num" id="tx-price2">—</span></li>
+      <li><span class="k">환차손익</span><span class="v num" id="tx-fx2">—</span></li>
     </ul>
 
     <p class="nav-label">보유 종목</p>
-    <ul class="holdings-nav">
-      <li><a th:href="@{/stock}"><span class="tk">AAPL</span><span class="pc rise">+6.7%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">NVDA</span><span class="pc rise">+17.4%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">MSFT</span><span class="pc rise">+2.1%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">TSLA</span><span class="pc fall">−11.3%</span></a></li>
-      <li><a th:href="@{/stock}"><span class="tk">SCHD</span><span class="pc fall">−0.8%</span></a></li>
-    </ul>
+    <ul class="holdings-nav" id="tx-nav"><!-- 스크립트가 채운다 --></ul>
 
     <a class="btn-record" th:href="@{/record-new}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -55,35 +49,30 @@
     <div class="page-head">
       <div><h1>양도소득세 참고 계산</h1><p>입력된 매매 기록만으로 계산한 참고값입니다</p></div>
       <span class="grow"></span>
-      <div class="pills" data-toggle-group>
-        <button type="button" data-value="1M" aria-pressed="false">1개월</button>
-        <button type="button" data-value="3M" aria-pressed="false">3개월</button>
-        <button type="button" data-value="6M" aria-pressed="false">6개월</button>
-        <button type="button" data-value="1Y" aria-pressed="true">1년</button>
-        <button type="button" data-value="ALL" aria-pressed="false">전체</button>
-      </div>
+      <!-- 기본공제가 연 단위라 기간이 아니라 연도로 고른다. 매도가 있는 해만 나온다 -->
+      <div class="pills" data-toggle-group id="tx-years"></div>
     </div>
 
     <p class="info info-warn">이 계산은 세무 자문이 아닙니다. 실제 신고 자료로 사용할 수 없습니다.
        증권사에서 발급하는 자료를 기준으로 신고하세요.</p>
 
     <section class="card" style="margin-bottom:14px">
-      <h2 class="card-head">2025년 실현손익</h2>
+      <h2 class="card-head" id="tx-year-head">실현손익</h2>
       <ul class="calc-list">
-        <li><span class="k">매도 건수</span><span class="v num">4건</span></li>
-        <li><span class="k">실현 이익</span><span class="v num rise">+1,842,000원</span></li>
-        <li><span class="k">실현 손실</span><span class="v num fall">−318,400원</span></li>
-        <li class="sum"><span class="k">통산 실현손익</span><span class="v num rise">+1,523,600원</span></li>
+        <li><span class="k">매도 건수</span><span class="v num" id="tx-sell-count">—</span></li>
+        <li><span class="k">실현 이익</span><span class="v num" id="tx-gain">—</span></li>
+        <li><span class="k">실현 손실</span><span class="v num" id="tx-loss">—</span></li>
+        <li class="sum"><span class="k">통산 실현손익</span><span class="v num" id="tx-net">—</span></li>
       </ul>
     </section>
 
     <section class="card">
       <h2 class="card-head">과세 추정</h2>
       <ul class="calc-list">
-        <li><span class="k">기본공제</span><span class="v num">−2,500,000원</span></li>
-        <li><span class="k">과세표준</span><span class="v num">0원</span></li>
+        <li><span class="k">기본공제</span><span class="v num" id="tx-deduction">—</span></li>
+        <li><span class="k">과세표준</span><span class="v num" id="tx-taxable">—</span></li>
         <li><span class="k">세율</span><span class="v num">22% (지방소득세 포함)</span></li>
-        <li class="sum big"><span class="k">예상 세액</span><span class="v num">0원</span></li>
+        <li class="sum big"><span class="k">예상 세액</span><span class="v num" id="tx-tax">—</span></li>
       </ul>
     </section>
 
@@ -92,6 +81,7 @@
       <li>해외주식 양도소득 기본공제는 연 250만원입니다.</li>
       <li>수수료를 입력하지 않은 기록은 0원으로 계산됩니다.</li>
       <li>배당소득은 양도소득과 별개이며 이 계산에 포함되지 않습니다.</li>
+      <li>실제 신고는 결제일 기준입니다. 이 계산은 거래일 기준이라 연말 매도는 해가 다를 수 있습니다.</li>
     </ul>
   </main>
 </div>
@@ -99,5 +89,130 @@
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* SR-009-1 양도소득세 참고 계산. 값은 전부 서버가 준다 — 화면은 계산하지 않는다 */
+(function () {
+  "use strict";
+
+  var DASH = "—";
+
+  function krw(v) { return v == null ? DASH : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function signed(v) {
+    if (v == null) return DASH;
+    return (Number(v) >= 0 ? "+" : "−") + Math.abs(Math.round(Number(v))).toLocaleString("ko-KR");
+  }
+  function pct(v) {
+    if (v == null) return DASH;
+    return (Number(v) >= 0 ? "+" : "−") + Math.abs(Number(v) * 100).toFixed(2) + "%";
+  }
+  function tone(el, v) {
+    el.classList.remove("rise", "fall");
+    if (v != null) el.classList.add(Number(v) >= 0 ? "rise" : "fall");
+  }
+  function text(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (res.status === 401) { location.href = "/login"; return undefined; }
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  /* ── 사이드바 — 리포트와 같은 값을 같은 출처에서 읽는다 ── */
+  function drawSidebar(pnl, holdings) {
+    var held = (holdings || []).filter(function (h) { return Number(h.quantity) > 0; });
+    text("tx-count2", String(held.length));
+
+    var price = document.getElementById("tx-price2");
+    var fx = document.getElementById("tx-fx2");
+    if (price) { price.textContent = pnl ? signed(pnl.pricePnlKrw) : DASH; tone(price, pnl && pnl.pricePnlKrw); }
+    if (fx) { fx.textContent = pnl ? signed(pnl.fxPnlKrw) : DASH; tone(fx, pnl && pnl.fxPnlKrw); }
+
+    var nav = document.getElementById("tx-nav");
+    if (!nav) return;
+    nav.replaceChildren();
+    held.forEach(function (h) {
+      var cost = (h.avgPrice == null || h.avgFxRate == null) ? null
+        : Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+      var r = (h.evalPnlKrw == null || !cost) ? null : Number(h.evalPnlKrw) / cost;
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+      var tk = document.createElement("span");
+      tk.className = "tk"; tk.textContent = h.symbol;
+      var pc = document.createElement("span");
+      pc.className = "pc"; pc.textContent = pct(r); tone(pc, r);
+      a.appendChild(tk); a.appendChild(pc);
+      li.appendChild(a); nav.appendChild(li);
+    });
+  }
+
+  /* ── 연도 알약 — 매도가 있는 해만 나온다 ── */
+  function drawYears(availableYears, selected) {
+    var group = document.getElementById("tx-years");
+    group.replaceChildren();
+    var years = availableYears && availableYears.length ? availableYears : [selected];
+    years.forEach(function (y) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.value = String(y);
+      btn.textContent = y + "년";
+      btn.setAttribute("aria-pressed", String(y === selected));
+      group.appendChild(btn);
+    });
+  }
+
+  /* 0 은 부호도 색도 없이 그대로 쓴다 — +0 은 오해를 부른다 */
+  function drawAmount(id, v) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (v != null && Number(v) === 0) {
+      el.textContent = "0원";
+      el.classList.remove("rise", "fall");
+      return;
+    }
+    el.textContent = signed(v) + "원";
+    tone(el, v);
+  }
+
+  /* ── 두 카드 ── */
+  function draw(d) {
+    if (!d) return;
+    text("tx-year-head", d.year + "년 실현손익");
+    text("tx-sell-count", d.sellCount + "건");
+
+    drawAmount("tx-gain", d.gainKrw);
+    drawAmount("tx-loss", d.lossKrw);
+    drawAmount("tx-net", d.netKrw);
+
+    text("tx-deduction", "−" + krw(d.basicDeductionKrw));
+    text("tx-taxable", krw(d.taxableKrw));
+    text("tx-tax", krw(d.estimatedTaxKrw));
+  }
+
+  async function load(year) {
+    var url = "/api/tax/capital-gains" + (year ? "?year=" + year : "");
+    var d = await api(url);
+    if (d === undefined || d === null) return;
+    draw(d);
+    drawYears(d.availableYears, d.year);
+  }
+
+  document.getElementById("tx-years").addEventListener("mj:change", function (e) {
+    load(e.detail);
+  });
+
+  /* ── 처음 그리기 ── */
+  (async function () {
+    load(null);
+    var pnl = await api("/api/portfolio/pnl");
+    if (pnl === undefined) return;
+    drawSidebar(pnl, await api("/api/portfolio/holdings"));
+  })();
+})();
+</script>
 </body>
 </html>
