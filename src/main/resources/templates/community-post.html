@@ -45,10 +45,11 @@
       <p class="post-body" id="post-body"></p>
 
       <div class="post-actions">
-        <button class="btn btn-sm" type="button" id="like-btn">좋아요</button>
-        <button class="btn btn-sm" type="button">스크랩</button>
+        <button class="btn btn-sm" type="button" id="like-btn" aria-pressed="false">좋아요</button>
+        <button class="btn btn-sm" type="button" id="scrap-btn" aria-pressed="false">스크랩</button>
         <span class="spacer" style="flex:1"></span>
-        <button class="btn btn-sm" type="button" id="owner-actions" hidden>수정 · 삭제</button>
+        <button class="btn btn-sm" type="button" id="edit-btn" hidden>수정</button>
+        <button class="btn btn-sm" type="button" id="delete-btn" hidden>삭제</button>
         <button class="btn btn-sm" type="button" data-open="report-modal">신고</button>
       </div>
     </article>
@@ -80,15 +81,16 @@
     <p>신고 내용은 관리자만 확인합니다.</p>
     <fieldset class="reason-set">
       <legend>신고 사유</legend>
-      <label><input type="radio" name="reason" checked>스팸 · 홍보</label>
-      <label><input type="radio" name="reason">욕설 · 비방</label>
-      <label><input type="radio" name="reason">허위 정보</label>
-      <label><input type="radio" name="reason">기타</label>
+      <label><input type="radio" name="reason" value="SPAM" checked>스팸 · 홍보</label>
+      <label><input type="radio" name="reason" value="ABUSE">욕설 · 비방</label>
+      <label><input type="radio" name="reason" value="MISINFO">허위 정보</label>
+      <label><input type="radio" name="reason" value="ETC">기타</label>
     </fieldset>
     <p class="note">같은 게시글을 중복 신고할 수 없습니다.</p>
+    <p class="msg err" id="report-msg" hidden></p>
     <div class="modal-actions">
       <button class="btn" type="button" data-close>취소</button>
-      <button class="btn btn-danger" type="button" data-close>신고</button>
+      <button class="btn btn-danger" type="button" id="report-submit">신고</button>
     </div>
   </div>
 </div>

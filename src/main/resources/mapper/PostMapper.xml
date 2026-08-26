@@ -99,6 +99,21 @@
            AND p.status = 'PUBLISHED'
     </select>
 
+    <update id="updateContent">
+        UPDATE posts
+           SET title = #{title}, content = #{content}
+         WHERE id = #{postId}
+    </update>
+
+    <!-- 삭제도 숨김도 지우지 않는다. deleted_at 은 DELETED 로 갈 때만 찍는다 -->
+    <update id="updateStatus">
+        UPDATE posts
+           SET status = #{status},
+               deleted_at = CASE WHEN #{status} = 'DELETED'
+                                 THEN CURRENT_TIMESTAMP(3) ELSE deleted_at END
+         WHERE id = #{postId}
+    </update>
+
     <update id="increaseViewCount">
         UPDATE posts SET view_count = view_count + 1 WHERE id = #{postId}
     </update>

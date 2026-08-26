@@ -26,6 +26,7 @@ import com.example.mijang.community.dto.PostForm;
 import com.example.mijang.community.dto.PostSummary;
 import com.example.mijang.community.dto.TradeCard;
 import com.example.mijang.community.mapper.CommentMapper;
+import com.example.mijang.community.mapper.ReactionMapper;
 import com.example.mijang.community.mapper.PostMapper;
 import com.example.mijang.fx.service.FxRateService;
 import com.example.mijang.market.service.QuoteService;
@@ -61,6 +62,7 @@ public class PostService {
 
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
+    private final ReactionMapper reactionMapper;
     private final StockMapper stockMapper;
     private final TransactionMapper transactionMapper;
     private final HoldingMapper holdingMapper;
@@ -158,10 +160,89 @@ public class PostService {
             throw new BusinessException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
         }
         List<CommentResponse> comments = commentMapper.findByPost(postId);
+        /* 버튼 상태(눌려 있음)를 그리려면 내 반응이 필요하다. 비로그인은 조회하지 않는다 */
+        List<String> myTypes = viewerId == null
+                ? List.of() : reactionMapper.findTypes(postId, viewerId);
         return new PostDetail(row.id(), row.board(), row.symbol(), row.title(), row.content(),
                 row.authorName(), row.shareholder(), row.priceAtWrite(), toTradeCard(row),
                 row.likeCount(), row.commentCount(), row.viewCount(), row.createdAt(),
-                viewerId != null && viewerId.equals(row.authorId()), comments);
+                viewerId != null && viewerId.equals(row.authorId()),
+                myTypes.contains("LIKE"), myTypes.contains("SCRAP"), comments);
+    }
+
+    /**
+     * 좋아요·스크랩 토글. 4.5 점검 4.2 — 표는 있고 API 가 없어 목록의 좋아요가 항상 0 이었다.
+     *
+     * <p>상태를 먼저 읽지 않는다. "지워 보고, 지워진 게 없으면 넣는다" — 읽고 나서 쓰면
+     * 그 사이에 다른 요청이 끼어들어 두 번 눌렀는데 두 개가 쌓이는 일이 생긴다.
+     *
+     * @return 토글 후 상태. active 와, LIKE 면 새 좋아요 수
+     */
+    @Transactional
+    public ReactionState toggleReaction(Long userId, Long postId, String type) {
+        PostRow row = postMapper.findById(postId);
+        if (row == null) {
+            throw new BusinessException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
+        boolean active;
+        if (reactionMapper.delete(postId, userId, type) > 0) {
+            active = false;
+        } else {
+            try {
+                reactionMapper.insert(postId, userId, type);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                // 지우기와 넣기 사이에 같은 요청이 먼저 넣었다. 이미 켜져 있으니 그대로 둔다
+            }
+            active = true;
+        }
+        /* 목록 정렬(HOT)이 posts.like_count 를 읽으므로 반응과 함께 맞춰 둔다.
+           증감이 아니라 재집계라 언제 어긋났든 여기서 맞는 값으로 돌아온다 */
+        if ("LIKE".equals(type)) {
+            reactionMapper.syncLikeCount(postId);
+        }
+        PostRow after = postMapper.findById(postId);
+        return new ReactionState(active, after == null ? 0 : after.likeCount());
+    }
+
+    /** 토글 결과. 화면이 버튼과 숫자를 다시 그리는 데 필요한 전부다. */
+    public record ReactionState(boolean active, long likeCount) {
+    }
+
+    /**
+     * 글 수정. 제목·본문만 바뀐다.
+     *
+     * <p>작성 시점 주가·환율·매매 카드는 그대로 둔다 — 등록 시 1회만 기록한다는
+     * 원칙(2.3)이 수정에서 깨지면 "그때 얼마였다" 를 믿을 수 없게 된다.
+     *
+     * @throws BusinessException 없는 글(404), 남의 글(403)
+     */
+    @Transactional
+    public void update(Long userId, Long postId, String title, String content) {
+        PostRow row = postMapper.findById(postId);
+        if (row == null) {
+            throw new BusinessException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
+        if (!userId.equals(row.authorId())) {
+            throw new BusinessException(ErrorCode.COMMUNITY_FORBIDDEN);
+        }
+        postMapper.updateContent(postId, title, content);
+    }
+
+    /**
+     * 글 삭제. 지우지 않고 status 만 바꾼다(2.6) — 댓글과 신고가 이 글을 참조한다.
+     *
+     * @throws BusinessException 없는 글(404), 남의 글(403)
+     */
+    @Transactional
+    public void delete(Long userId, Long postId) {
+        PostRow row = postMapper.findById(postId);
+        if (row == null) {
+            throw new BusinessException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
+        if (!userId.equals(row.authorId())) {
+            throw new BusinessException(ErrorCode.COMMUNITY_FORBIDDEN);
+        }
+        postMapper.updateStatus(postId, "DELETED");
     }
 
     /**

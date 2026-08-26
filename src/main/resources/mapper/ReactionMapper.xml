@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 좋아요·스크랩 (4.5 점검 4.2). 토글은 지우기→없으면 넣기 두 문장으로 푼다 -->
+<mapper namespace="com.example.mijang.community.mapper.ReactionMapper">
+
+    <delete id="delete">
+        DELETE FROM post_reactions
+         WHERE post_id = #{postId}
+           AND user_id = #{userId}
+           AND type    = #{type}
+    </delete>
+
+    <insert id="insert">
+        INSERT INTO post_reactions (post_id, user_id, type)
+        VALUES (#{postId}, #{userId}, #{type})
+    </insert>
+
+    <!-- 증감(±1)이 아니라 재집계다. 언제 어긋났든 다음 토글에서 맞는 값으로 돌아온다 -->
+    <update id="syncLikeCount">
+        UPDATE posts
+           SET like_count = (SELECT COUNT(*)
+                               FROM post_reactions
+                              WHERE post_id = #{postId}
+                                AND type    = 'LIKE')
+         WHERE id = #{postId}
+    </update>
+
+    <select id="findTypes" resultType="string">
+        SELECT type
+          FROM post_reactions
+         WHERE post_id = #{postId}
+           AND user_id = #{userId}
+    </select>
+</mapper>

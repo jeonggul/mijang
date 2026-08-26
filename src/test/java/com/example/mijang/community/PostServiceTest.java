@@ -82,6 +82,8 @@ class PostServiceTest {
         }
 
         @Override public Long findLastInsertedId() { return 7L; }
+        @Override public int updateContent(Long postId, String title, String content) { return 1; }
+        @Override public int updateStatus(Long postId, String status) { return 1; }
         @Override public List<PostRow> findByBoard(String b, String s, int l, int o) { return List.of(); }
         @Override public long countByBoard(String board) { return 0; }
         @Override public List<PostRow> findBySymbol(String s, String so, int l, int o) { return List.of(); }
@@ -179,8 +181,18 @@ class PostServiceTest {
         @Override public Optional<FxRateResponse> latest() { return Optional.empty(); }
     };
 
-    private final PostService service = new PostService(posts, new Comments(), stocks,
-            transactions, holdings, quotes, fx, new TradingClock());
+    /* 반응은 이 테스트의 관심사가 아니라 빈 가짜를 준다 */
+    private static class Reactions implements com.example.mijang.community.mapper.ReactionMapper {
+        @Override public int delete(Long postId, Long userId, String type) { return 0; }
+        @Override public int insert(Long postId, Long userId, String type) { return 1; }
+        @Override public int syncLikeCount(Long postId) { return 1; }
+        @Override public java.util.List<String> findTypes(Long postId, Long userId) {
+            return java.util.List.of();
+        }
+    }
+
+    private final PostService service = new PostService(posts, new Comments(), new Reactions(),
+            stocks, transactions, holdings, quotes, fx, new TradingClock());
 
     private static PostForm form() {
         PostForm form = new PostForm();

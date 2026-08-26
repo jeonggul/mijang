@@ -11,4 +11,13 @@
            AND target_type = #{targetType}
            AND target_id   = #{targetId}
     </select>
+
+    <insert id="insert">
+        INSERT INTO reports (reporter_id, target_type, target_id, reason, detail)
+        VALUES (#{userId}, #{targetType}, #{targetId}, #{reason}, #{detail})
+    </insert>
+
+    <select id="findLastInsertedId" resultType="long">
+        SELECT LAST_INSERT_ID()
+    </select>
 </mapper>

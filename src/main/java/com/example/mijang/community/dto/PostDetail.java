@@ -32,5 +32,7 @@ public record PostDetail(
         long viewCount,
         LocalDateTime createdAt,
         boolean mine,
+        boolean myLike,
+        boolean myScrap,
         List<CommentResponse> comments) {
 }

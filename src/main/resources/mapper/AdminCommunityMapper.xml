@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 관리자용 커뮤니티 조회 (4.5 점검 3.1). 일반 화면과 달리 숨김·삭제 상태까지 본다.
+     record 는 자리(순서)로 매핑되므로 SELECT 열 순서가 곧 계약이다 -->
+<mapper namespace="com.example.mijang.admin.mapper.AdminCommunityMapper">
+
+    <sql id="postCols">
+        SELECT p.id, p.board, p.symbol, p.title,
+               u.nickname       AS author_name,
+               p.status, p.like_count, p.comment_count, p.view_count, p.created_at
+          FROM posts p
+          JOIN users u ON u.id = p.user_id
+    </sql>
+
+    <select id="findPosts" resultType="com.example.mijang.admin.dto.AdminPostResponse">
+        <include refid="postCols"/>
+        <where>
+            <if test="status != null"> p.status = #{status} </if>
+            <if test="q != null">
+                AND (p.title LIKE CONCAT('%', #{q}, '%')
+                     OR u.nickname LIKE CONCAT('%', #{q}, '%'))
+            </if>
+        </where>
+         ORDER BY p.created_at DESC, p.id DESC
+         LIMIT #{limit}
+    </select>
+
+    <select id="findPostById" resultType="com.example.mijang.admin.dto.AdminPostResponse">
+        <include refid="postCols"/>
+         WHERE p.id = #{postId}
+    </select>
+
+    <update id="updatePostStatus">
+        UPDATE posts
+           SET status = #{status},
+               deleted_at = CASE WHEN #{status} = 'DELETED'
+                                 THEN CURRENT_TIMESTAMP(3) ELSE deleted_at END
+         WHERE id = #{postId}
+    </update>
+
+    <sql id="commentCols">
+        SELECT c.id, c.post_id,
+               p.title          AS post_title,
+               u.nickname       AS author_name,
+               c.content, c.status, c.created_at
+          FROM comments c
+          JOIN posts p ON p.id = c.post_id
+          JOIN users u ON u.id = c.user_id
+    </sql>
+
+    <select id="findComments" resultType="com.example.mijang.admin.dto.AdminCommentResponse">
+        <include refid="commentCols"/>
+        <where>
+            <if test="status != null"> c.status = #{status} </if>
+            <if test="q != null">
+                AND (c.content LIKE CONCAT('%', #{q}, '%')
+                     OR u.nickname LIKE CONCAT('%', #{q}, '%'))
+            </if>
+        </where>
+         ORDER BY c.created_at DESC, c.id DESC
+         LIMIT #{limit}
+    </select>
+
+    <select id="findCommentById" resultType="com.example.mijang.admin.dto.AdminCommentResponse">
+        <include refid="commentCols"/>
+         WHERE c.id = #{commentId}
+    </select>
+
+    <update id="updateCommentStatus">
+        UPDATE comments
+           SET status = #{status}
+         WHERE id = #{commentId}
+    </update>
+
+    <!-- 대상 요약: 글이면 제목, 댓글이면 본문. 목록만 보고 무엇이 신고됐는지 알아야 한다 -->
+    <sql id="reportCols">
+        SELECT r.id, r.target_type, r.target_id,
+               CASE r.target_type
+                    WHEN 'POST'    THEN (SELECT p.title   FROM posts p    WHERE p.id = r.target_id)
+                    WHEN 'COMMENT' THEN (SELECT c.content FROM comments c WHERE c.id = r.target_id)
+               END              AS target_summary,
+               r.reason, r.detail, r.status,
+               u.nickname       AS reporter_name,
+               r.created_at
+          FROM reports r
+          JOIN users u ON u.id = r.reporter_id
+    </sql>
+
+    <select id="findReports" resultType="com.example.mijang.admin.dto.AdminReportResponse">
+        <include refid="reportCols"/>
+        <where>
+            <if test="status != null"> r.status = #{status} </if>
+        </where>
+         ORDER BY r.created_at ASC, r.id ASC
+         LIMIT #{limit}
+    </select>
+
+    <select id="findReportById" resultType="com.example.mijang.admin.dto.AdminReportResponse">
+        <include refid="reportCols"/>
+         WHERE r.id = #{reportId}
+    </select>
+
+    <!-- PENDING 조건이 곧 잠금이다. 두 관리자가 동시에 눌러도 한쪽만 1 을 받는다 -->
+    <update id="handleReport">
+        UPDATE reports
+           SET status = #{status},
+               handled_by = #{adminId},
+               handled_at = CURRENT_TIMESTAMP(3)
+         WHERE id = #{reportId}
+           AND status = 'PENDING'
+    </update>
+</mapper>

@@ -79,6 +79,14 @@ public interface PostMapper {
     /** 조회수 +1. 상세를 열 때마다 부른다. */
     int increaseViewCount(@Param("postId") Long postId);
 
+    /** 제목·본문 수정. 작성 시점 값(주가·환율·매매 카드)은 건드리지 않는다(2.3). */
+    int updateContent(@Param("postId") Long postId,
+                      @Param("title") String title,
+                      @Param("content") String content);
+
+    /** 상태 전환. 삭제·숨김·복원이 전부 이 문 하나다 — 지우는 경로는 없다(2.6). */
+    int updateStatus(@Param("postId") Long postId, @Param("status") String status);
+
     /** 댓글 수 +1. 댓글을 달 때마다 부른다 — 목록에서 매번 세면 글 수만큼 COUNT 가 나간다. */
     int increaseCommentCount(@Param("postId") Long postId);
 }

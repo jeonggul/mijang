@@ -214,7 +214,17 @@ function commentRow(comment) {
 
 async function loadDetail(postId) {
   const post = await api("/api/posts/" + postId);
-  if (!post) return;
+  if (!post) {
+    /* 숨김·삭제·없는 글. 조용히 돌아가면 제목 없는 껍데기 화면이 남는다 —
+       실제로 브라우저 검증에서 그렇게 떴다. 무슨 일인지 말하고 액션은 감춘다 */
+    document.getElementById("post-title").textContent = "게시글을 찾을 수 없습니다";
+    document.getElementById("post-body").textContent =
+      "삭제되었거나 숨김 처리된 글입니다. 목록에서 다른 글을 봐주세요.";
+    document.querySelector(".post-actions").hidden = true;
+    const commentCard = document.getElementById("comment-list");
+    if (commentCard) commentCard.closest("section").hidden = true;
+    return;
+  }
 
   document.title = "미장 — " + post.title;
   document.getElementById("post-title").textContent = post.title;
@@ -247,8 +257,10 @@ async function loadDetail(postId) {
   const card = tradeCard(post.trade);
   if (card) slot.appendChild(card);
 
-  document.getElementById("like-btn").textContent = "좋아요 " + post.likeCount;
-  document.getElementById("owner-actions").hidden = !post.mine;
+  paintReaction("like-btn", "좋아요 " + post.likeCount, post.myLike);
+  paintReaction("scrap-btn", "스크랩", post.myScrap);
+  document.getElementById("edit-btn").hidden = !post.mine;
+  document.getElementById("delete-btn").hidden = !post.mine;
   document.getElementById("price-note").hidden = post.symbol === null;
 
   document.getElementById("comment-count").textContent = post.comments.length + "개";
@@ -274,7 +286,74 @@ function setupDetail() {
     });
     if (saved !== null) { box.value = ""; loadDetail(postId); }
   });
+
+  /* 좋아요·스크랩. 화면은 지금 상태를 판단하지 않는다 — 누른 사실만 보내고
+     서버가 토글한 결과(active·likeCount)로 다시 그린다. 상태 판단은 서버 한 곳이다 */
+  [["like-btn", "LIKE"], ["scrap-btn", "SCRAP"]].forEach(pair => {
+    const btn = document.getElementById(pair[0]);
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      const state = await api("/api/posts/" + postId + "/reactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: pair[1] }),
+      });
+      btn.disabled = false;
+      if (state === null) return;
+      if (pair[1] === "LIKE") paintReaction("like-btn", "좋아요 " + state.likeCount, state.active);
+      else paintReaction("scrap-btn", "스크랩", state.active);
+    });
+  });
+
+  /* 신고. 409(중복)는 api() 가 null 로 접어 버리므로 여기서만 fetch 를 직접 쓴다 —
+     "이미 신고했다" 와 "실패했다" 는 다른 안내가 필요하다 */
+  const reportSubmit = document.getElementById("report-submit");
+  if (reportSubmit) reportSubmit.addEventListener("click", async () => {
+    const reason = document.querySelector('input[name="reason"]:checked');
+    const msg = document.getElementById("report-msg");
+    reportSubmit.disabled = true;
+    const res = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetType: "POST", targetId: postId, reason: reason.value }),
+    });
+    reportSubmit.disabled = false;
+    if (res.ok) {
+      document.querySelector("#report-modal [data-close]").click();
+      msg.hidden = true;
+      return;
+    }
+    msg.textContent = res.status === 409
+      ? "이미 신고한 게시글입니다"
+      : "신고를 접수하지 못했습니다. 잠시 후 다시 시도해주세요";
+    msg.hidden = false;
+  });
+
+  /* 수정 — 글쓰기 화면을 수정 모드로 연다. 어느 화면인지는 글이 속한 게시판이 정한다 */
+  document.getElementById("edit-btn").addEventListener("click", async () => {
+    const post = await api("/api/posts/" + postId);
+    if (!post) return;
+    const base = post.symbol
+      ? "/community-write/" + encodeURIComponent(post.symbol) : "/community-write";
+    location.href = base + "?edit=" + postId;
+  });
+
+  /* 삭제 — 지워진 글의 주소로 돌아오면 404 라 목록으로 보낸다 */
+  document.getElementById("delete-btn").addEventListener("click", async () => {
+    if (!confirm("이 글을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    const res = await fetch("/api/posts/" + postId, { method: "DELETE" });
+    if (res.ok) location.href = document.getElementById("board-link").href;
+  });
   return true;
+}
+
+/** 반응 버튼 한 개를 그린다. 눌린 상태는 aria-pressed 로 남겨 CSS 와 보조기기가 같이 본다. */
+function paintReaction(id, label, active) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.textContent = label;
+  btn.setAttribute("aria-pressed", String(!!active));
+  btn.classList.toggle("btn-primary", !!active);
 }
 
 /* ── 글쓰기 화면 ────────────────────────────────────────────── */
@@ -334,6 +413,15 @@ function setupWrite() {
   if (!form) return false;
 
   setupCounters();
+
+  /* ?edit={id} 면 수정 모드다. 제목·본문만 바꾼다 — 게시판·매매 카드·배지는
+     등록 때 정해진 값이라 수정 화면에서 통째로 감춘다(2.3) */
+  const editId = new URLSearchParams(location.search).get("edit");
+  if (editId) {
+    setupEdit(form, editId);
+    return true;
+  }
+
   loadTradeOptions();
 
   form.addEventListener("submit", async event => {
@@ -359,6 +447,43 @@ function setupWrite() {
     if (saved !== null) location.href = "/community-post/" + saved;
   });
   return true;
+}
+
+/** 수정 모드. 기존 값을 채우고, 저장은 PATCH 로 보낸다. */
+async function setupEdit(form, editId) {
+  const post = await api("/api/posts/" + editId);
+  if (!post) { location.href = "/community"; return; }
+  if (!post.mine) { location.href = "/community-post/" + editId; return; }
+
+  document.querySelector("h1").textContent = "글 수정";
+  document.getElementById("ttl").value = post.title;
+  document.getElementById("bd").value = post.content;
+  /* 글자 수 카운터가 초기값을 다시 세도록 */
+  document.getElementById("ttl").dispatchEvent(new Event("input"));
+  document.getElementById("bd").dispatchEvent(new Event("input"));
+
+  ["board", "trade", "badge"].forEach(id => {
+    const control = document.getElementById(id);
+    const field = control && control.closest(".field, .switch-row");
+    if (field) field.hidden = true;
+    else if (control) control.hidden = true;
+  });
+  const preview = document.getElementById("trade-preview");
+  if (preview) preview.hidden = true;
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    /* 수정 성공의 data 는 null 이라 api() 로는 성공·실패가 안 갈린다. 상태 코드로 본다 */
+    const res = await fetch("/api/posts/" + editId, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: document.getElementById("ttl").value.trim(),
+        content: document.getElementById("bd").value.trim(),
+      }),
+    });
+    if (res.ok) location.href = "/community-post/" + editId;
+  });
 }
 
 /* ── 시작 ────────────────────────────────────────────────────

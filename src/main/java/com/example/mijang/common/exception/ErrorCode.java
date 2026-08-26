@@ -102,6 +102,9 @@ public enum ErrorCode {
             "삭제되었거나 존재하지 않는 글입니다"),
     COMMUNITY_REPORT_DUPLICATED("COMMUNITY_REPORT_DUPLICATED", HttpStatus.CONFLICT,
             "이미 신고한 대상입니다"),
+    /** 두 관리자가 같은 신고를 동시에 처리한 경우. 진 쪽이 받는다. */
+    COMMUNITY_REPORT_ALREADY_HANDLED("COMMUNITY_REPORT_ALREADY_HANDLED", HttpStatus.CONFLICT,
+            "이미 처리된 신고입니다"),
     COMMUNITY_FORBIDDEN("COMMUNITY_FORBIDDEN", HttpStatus.FORBIDDEN,
             "본인이 작성한 글만 다룰 수 있습니다"),
 
