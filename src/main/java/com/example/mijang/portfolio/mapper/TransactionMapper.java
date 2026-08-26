@@ -58,6 +58,13 @@ public interface TransactionMapper {
                                          @Param("limit") int limit,
                                          @Param("offset") int offset);
 
+    /** CSV 내보내기용 전체 기록. 화면의 종목·매수/매도·연도 필터를 서버에서 적용한다. */
+    List<TransactionResponse> findForExport(@Param("userId") Long userId,
+                                            @Param("symbol") String symbol,
+                                            @Param("side") String side,
+                                            @Param("from") LocalDate from,
+                                            @Param("toExclusive") LocalDate toExclusive);
+
     /** 사용자의 매매 기록 수. 페이징에 쓴다. */
     long countByUser(@Param("userId") Long userId, @Param("symbol") String symbol);
 

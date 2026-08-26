@@ -138,6 +138,29 @@ public class TransactionService {
         String filter = (symbol == null || symbol.isBlank()) ? null : normalize(symbol);
         List<TransactionResponse> rows = transactionMapper.findByUser(userId, filter, size, page * size);
 
+        return withRealizedPnl(userId, rows);
+    }
+
+    /** 현재 화면 필터에 맞는 전체 원장. CSV 내보내기가 페이지에 잘리지 않도록 따로 읽는다. */
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> exportRows(Long userId, String symbol, String side, Integer year) {
+        String symbolFilter = (symbol == null || symbol.isBlank()) ? null : normalize(symbol);
+        String sideFilter = normalizeSide(side);
+        LocalDate from = null;
+        LocalDate toExclusive = null;
+        if (year != null) {
+            if (year < 1900 || year > 9998) {
+                throw new BusinessException(ErrorCode.COMMON_INVALID_REQUEST, "year");
+            }
+            from = LocalDate.of(year, 1, 1);
+            toExclusive = from.plusYears(1);
+        }
+        return withRealizedPnl(userId, transactionMapper.findForExport(
+                userId, symbolFilter, sideFilter, from, toExclusive));
+    }
+
+    /** 매도 행에 해당 시점 실현손익을 채운다. 목록과 CSV가 같은 숫자를 써야 한다. */
+    private List<TransactionResponse> withRealizedPnl(Long userId, List<TransactionResponse> rows) {
         Set<String> soldSymbols = rows.stream()
                 .filter(r -> "SELL".equals(r.side()))
                 .map(TransactionResponse::symbol)
@@ -157,6 +180,17 @@ public class TransactionService {
                         ? r.withRealizedPnlKrw(realized.get(r.id()))
                         : r)
                 .toList();
+    }
+
+    private String normalizeSide(String side) {
+        if (side == null || side.isBlank() || "ALL".equalsIgnoreCase(side)) {
+            return null;
+        }
+        String normalized = side.trim().toUpperCase(Locale.ROOT);
+        if (!"BUY".equals(normalized) && !"SELL".equals(normalized)) {
+            throw new BusinessException(ErrorCode.COMMON_INVALID_REQUEST, "side");
+        }
+        return normalized;
     }
 
     /**

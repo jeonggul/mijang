@@ -46,6 +46,8 @@ class TaxServiceTest {
                 String k, BigDecimal l, String m) { return 0; }
         @Override public Long findLastInsertedId() { return null; }
         @Override public List<TransactionResponse> findByUser(Long u, String s, int l, int o) { return List.of(); }
+        @Override public List<TransactionResponse> findForExport(
+                Long u, String s, String side, LocalDate from, LocalDate to) { return List.of(); }
         @Override public long countByUser(Long u, String s) { return 0; }
         @Override public Transaction findById(Long id, Long u) { return null; }
         @Override public int softDelete(Long id, Long u) { return 0; }
