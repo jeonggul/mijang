@@ -46,4 +46,21 @@ public interface NotificationMapper {
      */
     java.util.List<com.example.mijang.user.dto.VolatilityHit> findVolatilityHits(
             @Param("tradeDate") java.time.LocalDate tradeDate);
+
+    /**
+     * 배당락일이 이틀 안으로 다가온 보유 종목. NOTI-04 첫 갈래.
+     *
+     * <p>락일 전일까지 보유해야 배당이 나온다 — 지나서 알리면 안내가 아니라 통보다.
+     * 같은 락일에 대해서는 한 번만 알린다(락일 7일 전부터의 발송 이력으로 거른다).
+     */
+    java.util.List<com.example.mijang.user.dto.DividendExDateHit> findDividendExDateHits(
+            @Param("today") java.time.LocalDate today);
+
+    /**
+     * 아직 알리지 않은 예상 배당(ESTIMATED). NOTI-04 둘째 갈래.
+     *
+     * <p>예상 행 하나에 알림 하나다 — 알림이 예상 생성 이후에 발송됐으면 다시
+     * 걸리지 않고, 확정하면 상태가 바뀌어 자연히 빠진다.
+     */
+    java.util.List<com.example.mijang.user.dto.DividendPayHit> findDividendPayHits();
 }

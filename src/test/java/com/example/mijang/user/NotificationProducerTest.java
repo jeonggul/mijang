@@ -3,6 +3,8 @@ package com.example.mijang.user;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.mijang.common.time.MarketCalendar;
+import com.example.mijang.user.dto.DividendExDateHit;
+import com.example.mijang.user.dto.DividendPayHit;
 import com.example.mijang.user.dto.NotificationResponse;
 import com.example.mijang.user.dto.NotificationSettingsForm;
 import com.example.mijang.user.dto.NotificationSettingsResponse;
@@ -29,6 +31,8 @@ class NotificationProducerTest {
     private static class Notifications implements NotificationMapper {
         List<TargetPriceHit> targetHits = List.of();
         List<VolatilityHit> volatilityHits = List.of();
+        List<DividendExDateHit> dividendExDateHits = List.of();
+        List<DividendPayHit> dividendPayHits = List.of();
         final List<String> inserted = new ArrayList<>();
 
         @Override public int insert(Long userId, String type, String symbol,
@@ -38,6 +42,10 @@ class NotificationProducerTest {
         }
         @Override public List<TargetPriceHit> findTargetPriceHits(LocalDate d) { return targetHits; }
         @Override public List<VolatilityHit> findVolatilityHits(LocalDate d) { return volatilityHits; }
+        @Override public List<DividendExDateHit> findDividendExDateHits(LocalDate d) {
+            return dividendExDateHits;
+        }
+        @Override public List<DividendPayHit> findDividendPayHits() { return dividendPayHits; }
         @Override public List<NotificationResponse> findRecent(Long u, int l) { return List.of(); }
         @Override public int markAllRead(Long userId) { return 0; }
         @Override public NotificationSettingsResponse findSettings(Long userId) { return null; }
@@ -90,5 +98,40 @@ class NotificationProducerTest {
 
         assertThat(count).isZero();
         assertThat(mapper.inserted).isEmpty();
+    }
+
+    @Test
+    @DisplayName("배당락일 알림은 날짜·주당 배당·지급일을 보여 주고 종목으로 보낸다")
+    void 배당락일() {
+        Notifications mapper = new Notifications();
+        mapper.dividendExDateHits = List.of(new DividendExDateHit(
+                1L, "AAPL", LocalDate.of(2026, 8, 23), LocalDate.of(2026, 8, 28),
+                new BigDecimal("0.27")));
+
+        int count = new NotificationProducerService(mapper, new MarketCalendar())
+                .produceDividend(date);
+
+        assertThat(count).isEqualTo(1);
+        assertThat(mapper.inserted.get(0))
+                .startsWith("DIVIDEND|AAPL 배당락일 안내|")
+                .contains("8월 23일").contains("주당 $0.27").contains("8월 28일")
+                .endsWith("|/stock?symbol=AAPL");
+    }
+
+    @Test
+    @DisplayName("예상 배당 알림은 세후 금액을 보여 주고 배당 관리로 보낸다")
+    void 배당지급() {
+        Notifications mapper = new Notifications();
+        mapper.dividendPayHits = List.of(new DividendPayHit(
+                1L, "AAPL", LocalDate.of(2026, 8, 28), new BigDecimal("2.2950")));
+
+        int count = new NotificationProducerService(mapper, new MarketCalendar())
+                .produceDividend(date);
+
+        assertThat(count).isEqualTo(1);
+        assertThat(mapper.inserted.get(0))
+                .startsWith("DIVIDEND|AAPL 배당 지급 예정|")
+                .contains("8월 28일").contains("예상 세후 $2.30")
+                .endsWith("|/dividend");
     }
 }
