@@ -29,6 +29,17 @@
     <p class="nav-label">보유 종목</p>
     <ul class="holdings-nav" id="pf-nav"><!-- 스크립트가 채운다 --></ul>
 
+    <!-- 화면 설계서가 리포트·배당·양도세를 포트폴리오 영역으로 묶는다.
+         이 링크들이 원래 알림·포트폴리오 드롭다운 목업 안에 있다가 목업을
+         걷어낼 때 같이 사라졌다 — 완성된 화면이 주소로만 닿는 상태였다 -->
+    <p class="nav-label">포트폴리오 화면</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/portfolio}" aria-current="page"><span class="tk">보유 현황</span></a></li>
+      <li><a th:href="@{/report}"><span class="tk">리포트</span></a></li>
+      <li><a th:href="@{/dividend}"><span class="tk">배당</span></a></li>
+      <li><a th:href="@{/tax}"><span class="tk">양도세</span></a></li>
+    </ul>
+
     <a class="btn-record" th:href="@{/record-new}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
