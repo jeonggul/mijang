@@ -264,8 +264,25 @@ function renderBreakdown() {
 
   const amt = document.getElementById("total-pnl");
   const totalValuePnl = displayCurrency === "USD" ? totalPnl.usd : totalPnl.krw;
-  amt.innerHTML = `<b class="${dir(totalValuePnl)}">${signedMoney(totalValuePnl)}</b>` +
-                  `<i class="${dir(totalValuePnl)}">${pct2(totalPnl.returnRate)}</i>`;
+  amt.replaceChildren(
+    cell("b", dir(totalValuePnl), signedMoney(totalValuePnl)),
+    cell("i", dir(totalValuePnl), pct2(totalPnl.returnRate)));
+}
+
+/* ── DOM 조립 ──────────────────────────────────────────────
+   벤더 문자열(종목명·티커)을 innerHTML 에 끼워 넣지 않는다. CSP 가 인라인 스크립트를
+   막고 있어 실행까지는 못 가지만, 태그가 섞이면 표가 깨지고 가짜 문구를 심을 수 있다. */
+function cell(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (text !== undefined && text !== null) el.textContent = text;
+  return el;
+}
+
+function stack(top, bottom, bottomClass) {
+  const box = cell("div", "stack");
+  box.append(cell("span", null, top), cell("span", bottomClass || "name", bottom));
+  return box;
 }
 
 /* ── 사이드바 · 표 ─────────────────────────────────────────── */
@@ -282,37 +299,46 @@ function renderHoldings() {
   const sf = document.getElementById("stat-fx");
   sf.textContent = signedMoney(fxSum); sf.className = ("v " + dir(fxSum)).trim();
 
-  document.getElementById("holdings-nav").innerHTML = holdings.map(h => `
-    <li><button type="button">
-      <span class="tk">${h.symbol}</span>
-      <span class="pc ${dir(h.returnRate)}">${pct(h.returnRate)}</span>
-    </button></li>`).join("");
+  const nav = document.getElementById("holdings-nav");
+  nav.replaceChildren(...holdings.map(h => {
+    const li = document.createElement("li");
+    const btn = cell("button", null);
+    btn.type = "button";
+    btn.append(cell("span", "tk", h.symbol),
+               cell("span", ("pc " + dir(h.returnRate)).trim(), pct(h.returnRate)));
+    li.appendChild(btn);
+    return li;
+  }));
 
-  document.getElementById("holdings-body").innerHTML = holdings.map(h => `
-    <tr>
-      <td><div class="stack"><span>${h.symbol}</span><span class="name">${h.name}</span></div></td>
-      <td><div class="stack"><span>${h.quantity.toLocaleString("ko-KR", { maximumFractionDigits: 6 })}</span><span class="name">${usd(h.avgPrice)}</span></div></td>
-      <td><div class="stack"><span>${usd(h.currentPrice)}</span>
-          <span class="name ${dir(h.dayChangeRate)}">${pct2(h.dayChangeRate)}</span></div></td>
-      <td><div class="stack"><span>${displayCurrency === "USD"
-        ? usd(h.currentPrice == null ? null : h.quantity * h.currentPrice)
-        : krw(h.marketValueKrw)}</span>
-          <span class="name ${dir(h.returnRate)}">${pct(h.returnRate)}</span></div></td>
-      <td class="${dir(h.pricePnlKrw)}">${sKrw(h.pricePnlKrw)}</td>
-      <td class="${dir(h.fxPnlKrw)}">${sKrw(h.fxPnlKrw)}</td>
-    </tr>`).join("");
+  document.getElementById("holdings-body").replaceChildren(...holdings.map(h => {
+    const tr = document.createElement("tr");
+    const value = displayCurrency === "USD"
+      ? usd(h.currentPrice == null ? null : h.quantity * h.currentPrice)
+      : krw(h.marketValueKrw);
+
+    const td = (child) => { const c = document.createElement("td"); c.appendChild(child); return c; };
+    tr.append(
+      td(stack(h.symbol, h.name)),
+      td(stack(h.quantity.toLocaleString("ko-KR", { maximumFractionDigits: 6 }), usd(h.avgPrice))),
+      td(stack(usd(h.currentPrice), pct2(h.dayChangeRate), ("name " + dir(h.dayChangeRate)).trim())),
+      td(stack(value, pct(h.returnRate), ("name " + dir(h.returnRate)).trim())),
+      cell("td", dir(h.pricePnlKrw), sKrw(h.pricePnlKrw)),
+      cell("td", dir(h.fxPnlKrw), sKrw(h.fxPnlKrw)));
+    return tr;
+  }));
 
   document.getElementById("holdings-count").textContent = holdings.length;
 }
 
 function renderWatchlist() {
   document.getElementById("watch-count").textContent = watchlist.length;
-  document.getElementById("watchlist").innerHTML = watchlist.map(w => `
-    <li>
-      <span class="tk">${w.symbol}</span>
-      <span class="px">${usd(w.price)}</span>
-      <span class="pc ${dir(w.changeRate)}">${pct2(w.changeRate)}</span>
-    </li>`).join("");
+  document.getElementById("watchlist").replaceChildren(...watchlist.map(w => {
+    const li = document.createElement("li");
+    li.append(cell("span", "tk", w.symbol),
+              cell("span", "px", usd(w.price)),
+              cell("span", ("pc " + dir(w.changeRate)).trim(), pct2(w.changeRate)));
+    return li;
+  }));
 }
 
 /* 보유 종목 가운데 최대 다섯 종목의 뉴스를 모아 최신 세 건만 보여준다.

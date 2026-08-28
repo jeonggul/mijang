@@ -1,6 +1,7 @@
 package com.example.mijang.user;
 
 import com.example.mijang.support.FixedSettings;
+import com.example.mijang.user.service.LoginAttemptService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -42,7 +43,8 @@ class AuthServiceTest {
         var props = new JwtProperties();
         props.setSecret("test-secret-key-for-mijang-authentication-32+");
         mapper = new StubUserMapper();
-        authService = new AuthService(mapper, encoder, new JwtProvider(props), new FixedSettings());
+        authService = new AuthService(mapper, encoder, new JwtProvider(props), new FixedSettings(),
+                new LoginAttemptService());
     }
 
     @Test
@@ -53,12 +55,12 @@ class AuthServiceTest {
         var unknownEmail = login("unknown@mijang.app", "correct-password");
         var wrongPassword = login("known@mijang.app", "wrong-password");
 
-        assertThatThrownBy(() -> authService.login(unknownEmail))
+        assertThatThrownBy(() -> authService.login(unknownEmail, "127.0.0.1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).errorCode())
                 .isEqualTo(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-        assertThatThrownBy(() -> authService.login(wrongPassword))
+        assertThatThrownBy(() -> authService.login(wrongPassword, "127.0.0.1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).errorCode())
                 .isEqualTo(ErrorCode.AUTH_INVALID_CREDENTIALS);
@@ -70,7 +72,7 @@ class AuthServiceTest {
         mapper.stored = new User(1L, "sus@mijang.app", encoder.encode("pw12345678"), 0,
                 "정지", null, "USER", "KRW", "SYSTEM", "SUSPENDED", LocalDateTime.now());
 
-        assertThatThrownBy(() -> authService.login(login("sus@mijang.app", "pw12345678")))
+        assertThatThrownBy(() -> authService.login(login("sus@mijang.app", "pw12345678"), "127.0.0.1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).errorCode())
                 .isEqualTo(ErrorCode.AUTH_INVALID_CREDENTIALS);
@@ -81,7 +83,7 @@ class AuthServiceTest {
     void issuesBothTokens() {
         mapper.stored = user("known@mijang.app", encoder.encode("correct-password"));
 
-        var tokens = authService.login(login("known@mijang.app", "correct-password"));
+        var tokens = authService.login(login("known@mijang.app", "correct-password"), "127.0.0.1");
 
         assertThat(tokens.accessToken()).isNotBlank();
         assertThat(tokens.refreshToken()).isNotBlank();
@@ -95,7 +97,7 @@ class AuthServiceTest {
         mapper.stored = new User(1L, "social@mijang.app", null, 0, "소셜",
                 null, "USER", "KRW", "SYSTEM", "ACTIVE", LocalDateTime.now());
 
-        assertThatThrownBy(() -> authService.login(login("social@mijang.app", "anything")))
+        assertThatThrownBy(() -> authService.login(login("social@mijang.app", "anything"), "127.0.0.1"))
                 .isInstanceOf(BusinessException.class);
     }
 

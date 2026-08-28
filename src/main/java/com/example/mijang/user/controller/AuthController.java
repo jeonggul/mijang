@@ -76,8 +76,9 @@ public class AuthController {
      * Set-Cookie 는 브라우저 화면이 쓴다. 쿠키를 실어야 해서 ResponseEntity 로 받는다.
      */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginForm form) {
-        var tokens = authService.login(form);
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginForm form,
+                                                           HttpServletRequest request) {
+        var tokens = authService.login(form, clientIp(request));
         return ResponseEntity.ok()
                 .headers(cookies.issue(tokens.accessToken(), tokens.refreshToken(), tokens.remember()))
                 .body(ApiResponse.ok(tokens.toResponse()));
@@ -157,5 +158,20 @@ public class AuthController {
                                                            @Valid @RequestBody AccountDeleteForm form) {
         authService.withdraw(me.userId(), form.getPassword());
         return ResponseEntity.ok().headers(cookies.clear()).body(ApiResponse.ok(null));
+    }
+
+    /**
+     * 호출한 곳의 IP.
+     *
+     * <p>프록시 뒤라면 X-Forwarded-For 의 <b>맨 앞</b>이 원래 클라이언트다. 다만 이 값은
+     * 클라이언트가 꾸며 보낼 수 있으므로, 신뢰할 수 있는 프록시 뒤에 둘 때만 의미가 있다.
+     * 지금은 시도 제한의 보조 열쇠로만 쓰고 인가 판단에는 쓰지 않는다.
+     */
+    private static String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
