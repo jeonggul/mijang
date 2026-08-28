@@ -30,12 +30,14 @@
     <p class="nav-label">보유 종목</p>
     <ul class="holdings-nav" id="holdings-nav"></ul>
 
-    <button class="btn-record" type="button">
+    <!-- 링크다. button 으로 두면 누를 곳처럼 보이지만 아무 일도 일어나지 않는다 —
+         포트폴리오·기록 목록·회고 세 화면은 처음부터 a 였다 -->
+    <a class="btn-record" th:href="@{/record-new}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
       </svg>
       매매 기록 추가
-    </button>
+    </a>
   </aside>
 
   <!-- ── 중앙 ──────────────────────────────────────────────── -->
