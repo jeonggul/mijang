@@ -15,12 +15,15 @@ import com.example.mijang.admin.mapper.AdminLogMapper;
 import com.example.mijang.admin.mapper.BatchLogMapper;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
+import com.example.mijang.common.time.TradingClock;
 import com.example.mijang.stock.domain.Stock;
 import com.example.mijang.stock.dto.StockSearchResponse;
 import com.example.mijang.stock.mapper.StockMapper;
 import com.example.mijang.stock.service.StockSyncService;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -132,10 +135,35 @@ public class AdminService {
         return batchLogMapper.findLatestPerJob();
     }
 
-    /** 운영 로그. {@code ADMIN-07} */
+    /**
+     * 화면의 종류 필터 한 칸이 뜻하는 {@code target_type} 들.
+     *
+     * <p>"콘텐츠" 처럼 <b>한 버튼이 여러 값을 묶는</b> 경우가 있어 서버가 매핑을 갖는다.
+     * 화면이 ENUM 값을 직접 보내게 두면 스키마가 늘 때마다 화면도 같이 고쳐야 한다.
+     */
+    private static final Map<String, List<String>> LOG_TYPE_GROUPS = Map.of(
+            "CONTENT", List.of("POST", "COMMENT", "REPORT", "NOTICE"),
+            "USER", List.of("USER"),
+            "STOCK", List.of("STOCK"),
+            "BATCH", List.of("BATCH"));
+
+    /**
+     * 운영 로그. {@code ADMIN-07}
+     *
+     * <p>세 조건 전부 선택이다. 모르는 종류가 오면 <b>거르지 않고 전체를 준다</b> —
+     * 감사 기록은 조건을 잘못 줬을 때 빈 화면보다 전체가 안전하다.
+     *
+     * @param type 화면 버튼 값(`CONTENT`·`USER`·`STOCK`·`BATCH`). 그 외는 전체
+     * @param days 최근 며칠. 0 이하면 전 기간
+     */
     @Transactional(readOnly = true)
-    public List<AdminLogResponse> recentLogs(int limit) {
-        return adminLogMapper.findRecent(limit);
+    public List<AdminLogResponse> recentLogs(int limit, String q, String type, int days) {
+        List<String> types = type == null ? null
+                : LOG_TYPE_GROUPS.get(type.toUpperCase(Locale.ROOT));
+        LocalDateTime since = days > 0
+                ? LocalDateTime.now(TradingClock.SERVICE_ZONE).minusDays(days) : null;
+        String keyword = (q == null || q.isBlank()) ? null : q.trim();
+        return adminLogMapper.findRecent(limit, keyword, types, since);
     }
 
     /**

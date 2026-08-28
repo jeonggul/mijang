@@ -155,9 +155,11 @@
     <div class="page-head"><div><h1>게시글 · 댓글 관리</h1>
       <p>숨김 처리하면 사용자에게 상태 안내 문구로 치환됩니다</p></div></div>
 
-    <div class="pills" data-toggle-group style="margin-bottom:14px">
-      <button type="button" data-value="POST" aria-pressed="true">게시글</button>
-      <button type="button" data-value="CMT" aria-pressed="false">댓글</button>
+    <!-- 좌측 메뉴의 게시글·댓글 탭과 같은 일을 한다. 목록을 두 벌 관리하지 않으려고
+         여기서는 해당 탭 버튼을 눌러 주기만 한다 -->
+    <div class="pills" data-toggle-group data-tab-switch>
+      <button type="button" data-value="POST" data-tab="m-posts" aria-pressed="true">게시글</button>
+      <button type="button" data-value="CMT" data-tab="m-comments" aria-pressed="false">댓글</button>
     </div>
 
     <section class="card">
@@ -175,9 +177,9 @@
     <div class="page-head"><div><h1>게시글 · 댓글 관리</h1>
       <p>숨김 처리하면 사용자에게 상태 안내 문구로 치환됩니다</p></div></div>
 
-    <div class="pills" data-toggle-group style="margin-bottom:14px">
-      <button type="button" data-value="POST" aria-pressed="false">게시글</button>
-      <button type="button" data-value="CMT" aria-pressed="true">댓글</button>
+    <div class="pills" data-toggle-group data-tab-switch>
+      <button type="button" data-value="POST" data-tab="m-posts" aria-pressed="false">게시글</button>
+      <button type="button" data-value="CMT" data-tab="m-comments" aria-pressed="true">댓글</button>
     </div>
 
     <section class="card">
@@ -259,16 +261,18 @@
           <label for="lg-q" class="sr-only">관리자 · 대상 검색</label>
           <input id="lg-q" type="search" placeholder="관리자 · 대상 검색">
         </div>
-        <div class="pills" data-toggle-group>
-          <button type="button" aria-pressed="true">전체</button>
-          <button type="button" aria-pressed="false">콘텐츠</button>
-          <button type="button" aria-pressed="false">사용자</button>
-          <button type="button" aria-pressed="false">종목</button>
-          <button type="button" aria-pressed="false">배치</button>
+        <!-- data-value 가 서버로 그대로 간다. "콘텐츠" 한 칸이 POST·COMMENT·REPORT·NOTICE 를
+             묶는데, 그 매핑은 서버(AdminService.LOG_TYPE_GROUPS)가 갖는다 -->
+        <div class="pills" data-toggle-group data-log-type>
+          <button type="button" data-value="" aria-pressed="true">전체</button>
+          <button type="button" data-value="CONTENT" aria-pressed="false">콘텐츠</button>
+          <button type="button" data-value="USER" aria-pressed="false">사용자</button>
+          <button type="button" data-value="STOCK" aria-pressed="false">종목</button>
+          <button type="button" data-value="BATCH" aria-pressed="false">배치</button>
         </div>
-        <div class="pills" data-toggle-group>
-          <button type="button" aria-pressed="true">최근 7일</button>
-          <button type="button" aria-pressed="false">전체 기간</button>
+        <div class="pills" data-toggle-group data-log-range>
+          <button type="button" data-value="7" aria-pressed="true">최근 7일</button>
+          <button type="button" data-value="0" aria-pressed="false">전체 기간</button>
         </div>
       </div>
     </div>
@@ -573,18 +577,42 @@
   }
 
   /* ── 운영 로그 (ADMIN-07) ─────────────────────────────────── */
+
+  /* 화면의 현재 필터. 눌린 버튼의 data-value 를 그대로 읽는다 —
+     따로 변수에 담아 두면 버튼 상태와 어긋나는 날이 온다 */
+  function logFilter() {
+    function pressed(sel, fallback) {
+      var g = document.querySelector(sel);
+      if (!g) return fallback;
+      var on = g.querySelector('button[aria-pressed="true"]');
+      return on ? (on.dataset.value || "") : fallback;
+    }
+    var q = document.getElementById("lg-q");
+    return {
+      q: q ? q.value.trim() : "",
+      type: pressed("[data-log-type]", ""),
+      days: pressed("[data-log-range]", "7"),
+    };
+  }
+
   async function loadLogs() {
-    var list = await api("/api/admin/logs?limit=50");
+    var f = logFilter();
+    var query = "limit=50&days=" + encodeURIComponent(f.days);
+    if (f.q) query += "&q=" + encodeURIComponent(f.q);
+    if (f.type) query += "&type=" + encodeURIComponent(f.type);
+    var list = await api("/api/admin/logs?" + query);
     var body = document.getElementById("ad-logs");
     if (!body || !list || list.forbidden || list.error) return;
     body.replaceChildren();
-    put("ad-log-count", "최근 " + list.length + "건");
+    var filtered = !!(f.q || f.type) || f.days !== "0";
+    put("ad-log-count", (filtered ? "조건에 맞는 " : "최근 ") + list.length + "건");
     if (list.length === 0) {
       var tr = body.insertRow();
       var td = tr.insertCell();
       td.colSpan = 6; td.className = "sub";
       td.style.padding = "24px"; td.style.textAlign = "center";
-      td.textContent = "아직 기록이 없습니다";
+      /* 조건을 걸어 0건인 것과 애초에 기록이 없는 것은 다른 상황이다 */
+      td.textContent = filtered ? "조건에 맞는 기록이 없습니다" : "아직 기록이 없습니다";
       return;
     }
     list.forEach(function (g) {
@@ -644,6 +672,32 @@
   var group = document.querySelector("[data-stock-filter]");
   if (group) {
     group.addEventListener("mj:change", function (e) { filter = e.detail; loadStocks(); });
+  }
+
+  /* 운영 로그 검색·종류·기간. 셋 다 loadLogs 가 눌린 버튼에서 직접 읽으므로
+     여기서는 "다시 불러라" 만 알려 주면 된다 */
+  ["[data-log-type]", "[data-log-range]"].forEach(function (sel) {
+    var g = document.querySelector(sel);
+    if (g) g.addEventListener("mj:change", loadLogs);
+  });
+  /* 게시글·댓글 전환 알약. 좌측 메뉴 탭을 눌러 실제 화면을 바꾼다 —
+     누르면 눌린 표시만 바뀌고 아무 일도 안 일어나던 자리다 */
+  document.querySelectorAll("[data-tab-switch]").forEach(function (g) {
+    g.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-tab]");
+      if (!btn) return;
+      var tab = document.getElementById(btn.dataset.tab);
+      if (tab) tab.click();
+    });
+  });
+
+  var logQ = document.getElementById("lg-q");
+  if (logQ) {
+    var logTimer = null;
+    logQ.addEventListener("input", function () {
+      clearTimeout(logTimer);
+      logTimer = setTimeout(loadLogs, 250);
+    });
   }
 
   async function loadBatches() { drawBatches(await api("/api/admin/batches")); }

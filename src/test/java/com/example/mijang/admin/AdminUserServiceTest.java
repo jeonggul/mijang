@@ -179,6 +179,8 @@ class AdminUserServiceTest {
             return 1;
         }
 
-        @Override public List<AdminLogResponse> findRecent(int limit) { return List.of(); }
+        @Override public List<AdminLogResponse> findRecent(
+                int limit, String q, java.util.List<String> targetTypes,
+                java.time.LocalDateTime since) { return List.of(); }
     }
 }
