@@ -1,0 +1,31 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 점검 중입니다</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- 점검 중에는 헤더를 두지 않는다. 어차피 어느 메뉴로도 들어갈 수 없어
+     눌러도 같은 화면으로 되돌아오기만 한다. -->
+<div class="auth">
+  <div class="empty" style="max-width:680px">
+    <p class="num" style="font-size:72px;line-height:1;color:var(--text-sub)">점검</p>
+    <h2>지금은 이용할 수 없습니다</h2>
+    <p>서비스를 점검하고 있습니다. 잠시 후 다시 시도해 주세요.
+       기록해 두신 매매 내역은 그대로 남아 있습니다.</p>
+    <div class="cta" style="display:flex;gap:10px;margin-top:24px;justify-content:center">
+      <a class="btn btn-primary" th:href="@{/}">다시 시도</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
