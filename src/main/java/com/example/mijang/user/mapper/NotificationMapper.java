@@ -63,4 +63,15 @@ public interface NotificationMapper {
      * 걸리지 않고, 확정하면 상태가 바뀌어 자연히 빠진다.
      */
     java.util.List<com.example.mijang.user.dto.DividendPayHit> findDividendPayHits();
+
+    /**
+     * 이 종목에 새 기사가 났을 때 알릴 사람. NOTI-03.
+     *
+     * <p>보유 중이거나 관심에 담아 둔 사람 중 <b>뉴스 알림을 켠</b> 사람만이다.
+     * `news_enabled` 는 기본이 꺼짐(0)이라 켠 사람에게만 간다.
+     *
+     * <p>같은 종목으로 오늘 이미 보낸 사람은 뺀다. 수집이 한 시간마다 도는데 매번
+     * 보내면 하루 스물네 번이 쌓인다.
+     */
+    java.util.List<Long> findNewsRecipients(@Param("symbol") String symbol);
 }
