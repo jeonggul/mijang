@@ -9,6 +9,8 @@
 package com.example.mijang.market.service;
 
 import com.example.mijang.market.cache.QuoteCacheService;
+import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.admin.service.AdminSettingService;
 import com.example.mijang.market.dto.QuoteResponse;
 import com.example.mijang.market.domain.MarketSession;
 import com.example.mijang.market.pool.SubscriptionPoolManager;
@@ -36,6 +38,7 @@ public class QuoteService {
     private final SubscriptionPoolManager pool;
     private final DailyPriceMapper dailyPriceMapper;
     private final com.example.mijang.market.service.MarketCalendarService calendar;
+    private final AdminSettingService settingService;
 
     /**
      * 한 종목의 현재가.
@@ -82,7 +85,12 @@ public class QuoteService {
      * 정규장 IEX 값이 프리마켓·애프터마켓에서 계속 "실시간"으로 보이지 않게 한다.
      * 지연 SIP의 첫 체결이 도착하기 전에는 값은 유지하되 화면이 대기 상태로 읽도록 내린다.
      */
-    private static QuoteResponse forSession(QuoteResponse quote, MarketSession session) {
+    private QuoteResponse forSession(QuoteResponse quote, MarketSession session) {
+        /* 운영 설정에서 실시간 공급을 끄면 값은 그대로 주되 실시간 표시만 내린다.
+           값까지 막으면 화면이 통째로 비고, 지연 시세는 여전히 유효한 정보다 */
+        if (!settingService.isOn(AdminSettingKey.QUOTE_LIVE_ENABLED)) {
+            return demoteToClosed(quote);
+        }
         if (!session.live() || (session != MarketSession.REGULAR && !quote.delayed())) {
             return demoteToClosed(quote);
         }

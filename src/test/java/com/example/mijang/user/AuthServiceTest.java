@@ -1,5 +1,6 @@
 package com.example.mijang.user;
 
+import com.example.mijang.support.FixedSettings;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -41,7 +42,7 @@ class AuthServiceTest {
         var props = new JwtProperties();
         props.setSecret("test-secret-key-for-mijang-authentication-32+");
         mapper = new StubUserMapper();
-        authService = new AuthService(mapper, encoder, new JwtProvider(props));
+        authService = new AuthService(mapper, encoder, new JwtProvider(props), new FixedSettings());
     }
 
     @Test

@@ -87,6 +87,13 @@ public interface PostMapper {
     /** 상태 전환. 삭제·숨김·복원이 전부 이 문 하나다 — 지우는 경로는 없다(2.6). */
     int updateStatus(@Param("postId") Long postId, @Param("status") String status);
 
+    /**
+     * 지금 공개 상태일 때만 바꾼다. 신고 자동 숨김이 쓴다.
+     *
+     * <p>조건 없이 바꾸면 관리자가 손으로 복원해 둔 글을 신고 한 건이 다시 끌어내린다.
+     */
+    int updateStatusIfPublished(@Param("postId") Long postId, @Param("status") String status);
+
     /** 댓글 수 +1. 댓글을 달 때마다 부른다 — 목록에서 매번 세면 글 수만큼 COUNT 가 나간다. */
     int increaseCommentCount(@Param("postId") Long postId);
 }

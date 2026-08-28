@@ -122,6 +122,19 @@ public enum ErrorCode {
             "이미 처리된 신고입니다"),
     COMMUNITY_FORBIDDEN("COMMUNITY_FORBIDDEN", HttpStatus.FORBIDDEN,
             "본인이 작성한 글만 다룰 수 있습니다"),
+    /** 운영 설정의 글쓰기 제한. 며칠 남았는지는 field 가 아니라 메시지로 알린다. */
+    COMMUNITY_WRITE_TOO_EARLY("COMMUNITY_WRITE_TOO_EARLY", HttpStatus.FORBIDDEN,
+            "가입 직후에는 글을 쓸 수 없습니다"),
+    COMMUNITY_BADWORD("COMMUNITY_BADWORD", HttpStatus.BAD_REQUEST,
+            "허용되지 않는 표현이 포함되어 있습니다"),
+
+    // ===== 운영 설정 (SR-013) =====
+    /** 관리자가 신규 가입을 닫아 둔 상태. 자격 문제가 아니라 서비스 상태다. */
+    SIGNUP_DISABLED("SIGNUP_DISABLED", HttpStatus.FORBIDDEN,
+            "현재 신규 가입을 받지 않습니다"),
+    /** 점검 모드. 503 이라 검색 엔진과 클라이언트가 나중에 다시 온다. */
+    MAINTENANCE_MODE("MAINTENANCE_MODE", HttpStatus.SERVICE_UNAVAILABLE,
+            "서비스 점검 중입니다. 잠시 후 다시 시도해 주세요"),
 
     // ===== 외부 벤더 =====
     // 벤더 장애와 우리 쪽 설정 누락을 구분한다. 전자는 재시도, 후자는 사람이 고쳐야 한다.

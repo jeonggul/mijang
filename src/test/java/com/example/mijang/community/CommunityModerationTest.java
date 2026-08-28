@@ -1,5 +1,7 @@
 package com.example.mijang.community;
 
+import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.support.FixedSettings;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -66,6 +68,9 @@ class CommunityModerationTest {
             updatedStatus = status;
             return 1;
         }
+        @Override public int updateStatusIfPublished(Long postId, String status) {
+            return updateStatus(postId, status);
+        }
         @Override public int insert(Long u, String b, String s, String t, String c,
                 java.math.BigDecimal p, java.math.BigDecimal f, boolean sb,
                 java.math.BigDecimal h, Long tx, String ts, String tsym,
@@ -82,6 +87,8 @@ class CommunityModerationTest {
 
     /** 신고 표 흉내. (신고자·대상) 짝을 기억한다. */
     private static class Reports implements ReportMapper {
+        int pending;
+        @Override public int countPendingByTarget(String targetType, Long targetId) { return pending; }
         final List<String> saved = new ArrayList<>();
 
         @Override public int countByReporterAndTarget(Long userId, String type, Long id) {
@@ -101,7 +108,8 @@ class CommunityModerationTest {
         posts = new Posts();
         reactions = new Reactions();
         /* 조회·저장 경로는 이 테스트의 관심사가 아니라 null 로 둔다. 부르면 터져서 오히려 잡힌다 */
-        return new PostService(posts, null, reactions, null, null, null, null, null, null);
+        return new PostService(posts, null, reactions, null, null, null, null, null, null,
+                new FixedSettings().with(AdminSettingKey.COMMUNITY_WRITE_DELAY_DAYS, "0"), null);
     }
 
     @Nested
@@ -212,7 +220,7 @@ class CommunityModerationTest {
         @DisplayName("접수되면 id 가 돌아온다")
         void 접수() {
             Posts posts = new Posts();
-            ReportService s = new ReportService(new Reports(), posts);
+            ReportService s = new ReportService(new Reports(), posts, null, new FixedSettings());
 
             assertThat(s.create(2L, form())).isEqualTo(1L);
         }
@@ -221,7 +229,7 @@ class CommunityModerationTest {
         @Test
         @DisplayName("같은 대상을 두 번 신고하면 409")
         void 중복() {
-            ReportService s = new ReportService(new Reports(), new Posts());
+            ReportService s = new ReportService(new Reports(), new Posts(), null, new FixedSettings());
             s.create(2L, form());
 
             assertThatThrownBy(() -> s.create(2L, form()))
@@ -233,7 +241,7 @@ class CommunityModerationTest {
         void 없는대상() {
             Posts posts = new Posts();
             posts.found = null;
-            ReportService s = new ReportService(new Reports(), posts);
+            ReportService s = new ReportService(new Reports(), posts, null, new FixedSettings());
 
             assertThatThrownBy(() -> s.create(2L, form()))
                     .isInstanceOf(BusinessException.class);

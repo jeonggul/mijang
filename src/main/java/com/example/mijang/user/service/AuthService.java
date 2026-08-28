@@ -1,5 +1,7 @@
 package com.example.mijang.user.service;
 
+import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.admin.service.AdminSettingService;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.security.JwtProvider;
@@ -39,6 +41,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final AdminSettingService settingService;
 
     /**
      * 가입 전 닉네임 사용 가능 확인. 형식 → 금지어 → 중복 순으로 본다.
@@ -77,6 +80,12 @@ public class AuthService {
      */
     @Transactional
     public Long signup(SignupForm form) {
+        /* 운영 설정에서 가입을 닫아 두면 여기서 멈춘다. 중복 검사보다 앞에 두는 이유 —
+           닫아 둔 상태에서 "이미 있는 이메일" 을 알려 주면 가입은 못 하면서
+           계정 존재 여부만 새어 나간다 */
+        if (!settingService.isOn(AdminSettingKey.SIGNUP_ENABLED)) {
+            throw new BusinessException(ErrorCode.SIGNUP_DISABLED);
+        }
         if (userMapper.countByEmail(form.getEmail()) > 0) {
             throw new BusinessException(ErrorCode.AUTH_EMAIL_DUPLICATED, "email");
         }

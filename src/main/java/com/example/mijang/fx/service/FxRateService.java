@@ -18,6 +18,8 @@ package com.example.mijang.fx.service;
 import com.example.mijang.config.FxProperties;
 import com.example.mijang.fx.domain.FxQuote;
 import com.example.mijang.fx.domain.FxRate;
+import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.admin.service.AdminSettingService;
 import com.example.mijang.fx.dto.FxRateResponse;
 import com.example.mijang.fx.mapper.FxQuoteMapper;
 import com.example.mijang.fx.mapper.FxRateMapper;
@@ -48,6 +50,7 @@ public class FxRateService {
     private final FxRateMapper rateMapper;
     private final FxQuoteMapper quoteMapper;
     private final FxProperties props;
+    private final AdminSettingService settingService;
 
     /**
      * 그날 환율을 숫자 하나로. 다른 범위가 계산에 쓴다.
@@ -97,6 +100,11 @@ public class FxRateService {
         FxRate exact = rateMapper.findByDate(date);
         if (exact != null) {
             return Optional.of(FxRateResponse.ofDaily(exact));
+        }
+        /* 운영 설정이 대체를 꺼 두면 직전 영업일 값으로 메우지 않는다. 없는 것은 없다고
+           답해야 화면이 "환율 없음" 을 띄우고, 손익 계산도 그 종목을 건너뛴다 */
+        if (!settingService.isOn(AdminSettingKey.FX_FALLBACK_ENABLED)) {
+            return Optional.empty();
         }
         FxRate previous = rateMapper.findLatestBefore(date, props.getSubstituteLookbackDays());
         if (previous == null) {
