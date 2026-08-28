@@ -100,6 +100,18 @@ public class PageController {
         return "privacy";
     }
 
+    /**
+     * 점검 화면.
+     *
+     * <p>{@link com.example.mijang.config.MaintenanceInterceptor} 가 화면 요청을 이리로
+     * 넘긴다. 주소를 직접 쳐서 들어올 자리는 아니지만, 인터셉터가 forward 하려면
+     * 매핑이 실재해야 한다.
+     */
+    @GetMapping("/maintenance")
+    public String maintenance() {
+        return "maintenance";
+    }
+
     /* ── 대시보드 · 포트폴리오 ───────────────────────────────── */
 
     @GetMapping("/dashboard")

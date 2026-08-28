@@ -114,7 +114,7 @@ public class SecurityConfig {
                                  "/password-forgot", "/password-reset",
                                  "/terms", "/privacy").permitAll()
                 // 비로그인도 볼 수 있는 화면
-                .requestMatchers("/search", "/stock", "/error").permitAll()
+                .requestMatchers("/search", "/stock", "/error", "/maintenance").permitAll()
                 .requestMatchers("/admin").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e

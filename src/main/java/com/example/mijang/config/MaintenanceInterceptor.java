@@ -17,8 +17,10 @@ import com.example.mijang.admin.domain.AdminSettingKey;
 import com.example.mijang.admin.service.AdminSettingService;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -41,7 +43,7 @@ public class MaintenanceInterceptor implements HandlerInterceptor {
     private static final List<String> ALWAYS_OPEN = List.of(
             "/admin", "/api/admin",
             "/login", "/api/auth/login", "/api/auth/logout", "/api/auth/refresh",
-            "/css/", "/js/", "/img/", "/favicon.ico", "/error");
+            "/css/", "/js/", "/img/", "/favicon.ico", "/error", "/maintenance");
 
     private final AdminSettingService settingService;
 
@@ -58,9 +60,21 @@ public class MaintenanceInterceptor implements HandlerInterceptor {
         if (isAdmin()) {
             return true;
         }
-        /* 예외로 던진다. GlobalExceptionHandler 가 API 는 봉투로, 화면은 오류 페이지로
-           바꿔 주므로 여기서 응답 모양을 두 벌 만들 필요가 없다 */
-        throw new BusinessException(ErrorCode.MAINTENANCE_MODE);
+        /* API 는 예외로 던진다. GlobalExceptionHandler 가 503 봉투로 바꿔 준다 */
+        if (path.startsWith("/api/")) {
+            throw new BusinessException(ErrorCode.MAINTENANCE_MODE);
+        }
+        /* 화면은 여기서 직접 점검 화면을 내보낸다.
+           예외로 던지면 처리기가 JSON 봉투만 만들 수 있어 Accept: text/html 과
+           협상에 실패하고, 그 실패가 500 으로 바뀌어 "페이지를 찾을 수 없습니다"
+           가 대신 뜬다 — 점검 중이라는 사실이 사용자에게 전달되지 않는다 */
+        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        try {
+            request.getRequestDispatcher("/maintenance").forward(request, response);
+        } catch (ServletException | IOException e) {
+            throw new BusinessException(ErrorCode.MAINTENANCE_MODE);
+        }
+        return false;
     }
 
     /** ROLE_ADMIN 인지. 비로그인이면 당연히 아니다. */
