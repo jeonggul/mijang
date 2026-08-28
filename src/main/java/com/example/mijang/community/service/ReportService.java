@@ -1,5 +1,8 @@
 package com.example.mijang.community.service;
 
+import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.admin.mapper.AdminCommunityMapper;
+import com.example.mijang.admin.service.AdminSettingService;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.community.dto.ReportForm;
@@ -23,6 +26,8 @@ public class ReportService {
 
     private final ReportMapper reportMapper;
     private final PostMapper postMapper;
+    private final AdminCommunityMapper adminCommunityMapper;
+    private final AdminSettingService settingService;
 
     /**
      * 신고를 접수한다. PENDING 으로 시작한다.
@@ -51,6 +56,32 @@ public class ReportService {
             // 확인과 저장 사이에 같은 신고가 먼저 들어왔다. uk_reports_reporter_target 이 잡는다
             throw new BusinessException(ErrorCode.COMMUNITY_REPORT_DUPLICATED);
         }
-        return reportMapper.findLastInsertedId();
+        Long id = reportMapper.findLastInsertedId();
+        autoHideIfPiledUp(type, form.getTargetId());
+        return id;
+    }
+
+    /**
+     * 미처리 신고가 운영 설정의 기준을 넘으면 자동으로 숨긴다.
+     *
+     * <p>지우지 않고 상태만 내린다 — 관리자가 신고 탭에서 반려하면 그대로 돌아온다.
+     * 기준이 0 이하면 기능을 꺼 둔 것으로 본다.
+     *
+     * <p>이미 숨겨진 글은 다시 내리지 않는다. 상태 갱신이 조건 없이 돌면 관리자가
+     * 손으로 복원해 둔 글을 신고 한 건이 다시 끌어내린다.
+     */
+    private void autoHideIfPiledUp(String targetType, Long targetId) {
+        int threshold = settingService.number(AdminSettingKey.COMMUNITY_AUTOHIDE_REPORTS);
+        if (threshold <= 0) {
+            return;
+        }
+        if (reportMapper.countPendingByTarget(targetType, targetId) < threshold) {
+            return;
+        }
+        if ("POST".equals(targetType)) {
+            postMapper.updateStatusIfPublished(targetId, "HIDDEN");
+        } else if ("COMMENT".equals(targetType)) {
+            adminCommunityMapper.updateCommentStatusIfPublished(targetId, "HIDDEN");
+        }
     }
 }

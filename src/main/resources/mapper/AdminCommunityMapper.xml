@@ -110,4 +110,12 @@
          WHERE id = #{reportId}
            AND status = 'PENDING'
     </update>
+    <!-- PUBLISHED 일 때만. 복원해 둔 댓글을 자동 숨김이 다시 내리지 않게 한다 -->
+    <update id="updateCommentStatusIfPublished">
+        UPDATE comments
+           SET status = #{status}
+         WHERE id = #{commentId}
+           AND status = 'PUBLISHED'
+    </update>
+
 </mapper>

@@ -20,4 +20,13 @@
     <select id="findLastInsertedId" resultType="long">
         SELECT LAST_INSERT_ID()
     </select>
+    <!-- 자동 숨김 판정용. 반려된 신고는 세지 않는다 -->
+    <select id="countPendingByTarget" resultType="int">
+        SELECT COUNT(*)
+          FROM reports
+         WHERE target_type = #{targetType}
+           AND target_id   = #{targetId}
+           AND status      = 'PENDING'
+    </select>
+
 </mapper>

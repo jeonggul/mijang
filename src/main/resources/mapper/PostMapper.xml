@@ -114,6 +114,14 @@
          WHERE id = #{postId}
     </update>
 
+    <!-- PUBLISHED 일 때만. 관리자가 복원해 둔 글을 자동 숨김이 다시 내리지 않게 한다 -->
+    <update id="updateStatusIfPublished">
+        UPDATE posts
+           SET status = #{status}
+         WHERE id = #{postId}
+           AND status = 'PUBLISHED'
+    </update>
+
     <update id="increaseViewCount">
         UPDATE posts SET view_count = view_count + 1 WHERE id = #{postId}
     </update>

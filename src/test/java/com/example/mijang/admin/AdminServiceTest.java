@@ -47,7 +47,17 @@ class AdminServiceTest {
             return 1;
         }
 
-        @Override public List<AdminLogResponse> findRecent(int limit) { return List.of(); }
+        Integer askedLimit;
+        String askedQ;
+        java.util.List<String> askedTypes;
+        java.time.LocalDateTime askedSince;
+
+        @Override public List<AdminLogResponse> findRecent(
+                int limit, String q, java.util.List<String> targetTypes,
+                java.time.LocalDateTime since) {
+            askedLimit = limit; askedQ = q; askedTypes = targetTypes; askedSince = since;
+            return List.of();
+        }
     }
 
     /** 상태 변경을 붙잡아 두는 가짜 종목 매퍼. */
@@ -230,6 +240,68 @@ class AdminServiceTest {
             new BatchLogWriter(batches).skip("일별 스냅샷", "거래일이 아니다");
 
             assertThat(batches.finished).containsExactly("SKIPPED|0|거래일이 아니다");
+        }
+    }
+
+    /*
+     * 운영 로그 필터. 화면의 버튼 하나가 여러 target_type 을 뜻하는 매핑이 서버에 있고,
+     * 안 걸린 조건은 SQL 로 내려가지 않아야 한다.
+     */
+    @Nested
+    @DisplayName("운영 로그 필터")
+    class 운영로그필터 {
+
+        private AdminService logService(Logs logs) {
+            return new AdminService(new Stocks(), null, logs, new Batches());
+        }
+
+        @Test
+        @DisplayName("조건을 안 주면 아무것도 걸지 않는다")
+        void 조건없음() {
+            Logs logs = new Logs();
+            logService(logs).recentLogs(50, null, null, 0);
+
+            assertThat(logs.askedQ).isNull();
+            assertThat(logs.askedTypes).isNull();
+            assertThat(logs.askedSince).isNull();
+        }
+
+        @Test
+        @DisplayName("콘텐츠 한 칸이 게시글·댓글·신고·공지를 묶는다")
+        void 콘텐츠묶음() {
+            Logs logs = new Logs();
+            logService(logs).recentLogs(50, null, "CONTENT", 0);
+
+            assertThat(logs.askedTypes).containsExactlyInAnyOrder("POST", "COMMENT", "REPORT", "NOTICE");
+        }
+
+        @Test
+        @DisplayName("모르는 종류면 거르지 않는다 — 감사 기록은 빈 화면보다 전체가 안전하다")
+        void 모르는종류() {
+            Logs logs = new Logs();
+            logService(logs).recentLogs(50, null, "WHATEVER", 0);
+
+            assertThat(logs.askedTypes).isNull();
+        }
+
+        @Test
+        @DisplayName("공백뿐인 검색어는 조건으로 치지 않는다")
+        void 빈검색어() {
+            Logs logs = new Logs();
+            logService(logs).recentLogs(50, "   ", null, 0);
+
+            assertThat(logs.askedQ).isNull();
+        }
+
+        @Test
+        @DisplayName("기간을 주면 그만큼 거슬러 올라간 시각이 내려간다")
+        void 기간() {
+            Logs logs = new Logs();
+            logService(logs).recentLogs(50, null, null, 7);
+
+            assertThat(logs.askedSince).isNotNull();
+            assertThat(logs.askedSince).isBefore(java.time.LocalDateTime.now());
+            assertThat(logs.askedSince).isAfter(java.time.LocalDateTime.now().minusDays(8));
         }
     }
 }

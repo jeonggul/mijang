@@ -1,5 +1,6 @@
 package com.example.mijang.market.service;
 
+import com.example.mijang.support.FixedSettings;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,7 +20,8 @@ class QuoteServiceSessionTest {
     private final QuoteCacheService cache = mock(QuoteCacheService.class);
     private final MarketCalendarService calendar = mock(MarketCalendarService.class);
     private final QuoteService service = new QuoteService(
-            cache, mock(SubscriptionPoolManager.class), mock(DailyPriceMapper.class), calendar);
+            cache, mock(SubscriptionPoolManager.class), mock(DailyPriceMapper.class), calendar,
+            new FixedSettings());
 
     @Test
     void premarketDoesNotExposePreviousIexQuoteAsRealtime() {

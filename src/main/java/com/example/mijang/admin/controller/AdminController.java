@@ -131,10 +131,20 @@ public class AdminController {
         return ApiResponse.ok(adminService.batchStatus());
     }
 
-    /** 운영 로그. {@code ADMIN-07} */
+    /**
+     * 운영 로그. {@code ADMIN-07}
+     *
+     * @param q    관리자 닉네임 · 대상 검색어
+     * @param type 종류 필터 — `CONTENT` · `USER` · `STOCK` · `BATCH`. 생략하면 전체
+     * @param days 최근 며칠. 0 이면 전 기간
+     */
     @GetMapping("/logs")
-    public ApiResponse<List<AdminLogResponse>> logs(@RequestParam(defaultValue = "50") int limit) {
-        return ApiResponse.ok(adminService.recentLogs(limit));
+    public ApiResponse<List<AdminLogResponse>> logs(
+            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String type,
+            @RequestParam(defaultValue = "0") int days) {
+        return ApiResponse.ok(adminService.recentLogs(limit, q, type, days));
     }
 
     /** 전환 요청 본문. 비활성으로 내릴 때만 사유가 의미 있다. */

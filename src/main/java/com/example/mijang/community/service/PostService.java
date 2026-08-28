@@ -15,6 +15,8 @@
  */
 package com.example.mijang.community.service;
 
+import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.admin.service.AdminSettingService;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.common.time.TradingClock;
@@ -28,6 +30,7 @@ import com.example.mijang.community.dto.TradeCard;
 import com.example.mijang.community.mapper.CommentMapper;
 import com.example.mijang.community.mapper.ReactionMapper;
 import com.example.mijang.community.mapper.PostMapper;
+import com.example.mijang.community.policy.CommunityPolicy;
 import com.example.mijang.fx.service.FxRateService;
 import com.example.mijang.market.service.QuoteService;
 import com.example.mijang.portfolio.domain.Transaction;
@@ -36,8 +39,11 @@ import com.example.mijang.portfolio.mapper.TransactionMapper;
 import com.example.mijang.portfolio.service.HoldingCalculator;
 import com.example.mijang.stock.domain.Stock;
 import com.example.mijang.stock.mapper.StockMapper;
+import com.example.mijang.user.domain.User;
+import com.example.mijang.user.mapper.UserMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +75,8 @@ public class PostService {
     private final QuoteService quoteService;
     private final FxRateService fxRateService;
     private final TradingClock tradingClock;
+    private final AdminSettingService settingService;
+    private final UserMapper userMapper;
 
     /**
      * 게시글 저장. {@code COM-002}
@@ -92,6 +100,7 @@ public class PostService {
      */
     @Transactional
     public Long create(Long userId, BoardType board, String symbol, PostForm form) {
+        guardWrite(userId, form.getTitle(), form.getContent());
         if (!board.needsSymbol()) {
             return insertGeneral(userId, board, form);
         }
@@ -243,6 +252,29 @@ public class PostService {
             throw new BusinessException(ErrorCode.COMMUNITY_FORBIDDEN);
         }
         postMapper.updateStatus(postId, "DELETED");
+    }
+
+    /**
+     * 운영 설정이 켜 둔 작성 규칙을 본다.
+     *
+     * <p>저장 직전이 아니라 <b>맨 앞</b>에서 본다. 종목 조회·시세 조회를 다 하고 나서
+     * 막으면 헛일을 하고, 벤더 호출까지 낭비한다.
+     *
+     * @throws BusinessException 가입 직후 제한에 걸리거나(403) 금칙어가 있을 때(400)
+     */
+    private void guardWrite(Long userId, String title, String content) {
+        int delayDays = settingService.number(AdminSettingKey.COMMUNITY_WRITE_DELAY_DAYS);
+        if (delayDays > 0) {
+            User me = userMapper.findById(userId);
+            if (me != null && CommunityPolicy.tooEarlyToWrite(
+                    me.createdAt(), delayDays, LocalDateTime.now(TradingClock.SERVICE_ZONE))) {
+                throw new BusinessException(ErrorCode.COMMUNITY_WRITE_TOO_EARLY);
+            }
+        }
+        if (settingService.isOn(AdminSettingKey.COMMUNITY_BADWORD_ENABLED)
+                && CommunityPolicy.containsBannedWord(title, content)) {
+            throw new BusinessException(ErrorCode.COMMUNITY_BADWORD, "content");
+        }
     }
 
     /**

@@ -19,11 +19,28 @@
 
     <!-- record 는 순서로 매핑된다. AdminLogResponse 선언 순서와 같아야 한다.
          관리자가 탈퇴해도 기록은 남아야 하므로 LEFT JOIN 이다 -->
+    <!-- 검색·종류·기간은 전부 선택이다. 안 걸린 조건은 문장에 넣지 않는다 —
+         넣어 두면 ix_admin_logs_created 를 못 타고 전체를 훑는다 -->
     <select id="findRecent" resultType="com.example.mijang.admin.dto.AdminLogResponse">
         SELECT l.id, u.nickname, l.action, l.target_type, l.target_id,
                l.target_label, l.detail, l.result, l.created_at
           FROM admin_logs l
           LEFT JOIN users u ON u.id = l.admin_id
+        <where>
+            <if test="q != null and q != ''">
+                <!-- 관리자 닉네임과 대상 라벨 둘 다 본다. 화면 안내가 "관리자 · 대상 검색" 이다 -->
+                AND (u.nickname LIKE CONCAT('%', #{q}, '%')
+                  OR l.target_label LIKE CONCAT('%', #{q}, '%')
+                  OR l.target_id = #{q})
+            </if>
+            <if test="targetTypes != null and targetTypes.size() > 0">
+                AND l.target_type IN
+                <foreach item="t" collection="targetTypes" open="(" separator="," close=")">#{t}</foreach>
+            </if>
+            <if test="since != null">
+                AND l.created_at >= #{since}
+            </if>
+        </where>
          ORDER BY l.id DESC
          LIMIT #{limit}
     </select>

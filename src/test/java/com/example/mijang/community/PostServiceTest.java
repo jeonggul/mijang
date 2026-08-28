@@ -1,5 +1,7 @@
 package com.example.mijang.community;
 
+import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.support.FixedSettings;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -84,6 +86,9 @@ class PostServiceTest {
         @Override public Long findLastInsertedId() { return 7L; }
         @Override public int updateContent(Long postId, String title, String content) { return 1; }
         @Override public int updateStatus(Long postId, String status) { return 1; }
+        @Override public int updateStatusIfPublished(Long postId, String status) {
+            return updateStatus(postId, status);
+        }
         @Override public List<PostRow> findByBoard(String b, String s, int l, int o) { return List.of(); }
         @Override public long countByBoard(String board) { return 0; }
         @Override public List<PostRow> findBySymbol(String s, String so, int l, int o) { return List.of(); }
@@ -171,14 +176,14 @@ class PostServiceTest {
      *
      * <p>둘 다 구체 클래스라 생성자에 null 을 넣는다 — 덮어쓴 메서드 말고는 부르지 않는다.
      */
-    private final QuoteService quotes = new QuoteService(null, null, null, null) {
+    private final QuoteService quotes = new QuoteService(null, null, null, null, new FixedSettings()) {
         @Override public Optional<QuoteResponse> quote(String symbol) {
             return Optional.of(new QuoteResponse(symbol, new BigDecimal("196.40"),
                     Instant.parse("2026-08-24T03:00:00Z"), true, false));
         }
     };
 
-    private final FxRateService fx = new FxRateService(null, null, null) {
+    private final FxRateService fx = new FxRateService(null, null, null, new FixedSettings()) {
         @Override public BigDecimal rateOf(LocalDate date) { return new BigDecimal("1380.0000"); }
         @Override public Optional<FxRateResponse> latest() { return Optional.empty(); }
     };
@@ -193,8 +198,11 @@ class PostServiceTest {
         }
     }
 
+    /* 운영 설정의 글쓰기 제한을 끈다. 이 시험의 관심사가 아니고, 켜 두면 가입일이
+       없는 가짜 사용자 때문에 전부 막힌다 */
     private final PostService service = new PostService(posts, new Comments(), new Reactions(),
-            stocks, transactions, holdings, quotes, fx, new TradingClock());
+            stocks, transactions, holdings, quotes, fx, new TradingClock(),
+            new FixedSettings().with(AdminSettingKey.COMMUNITY_WRITE_DELAY_DAYS, "0"), null);
 
     private static PostForm form() {
         PostForm form = new PostForm();

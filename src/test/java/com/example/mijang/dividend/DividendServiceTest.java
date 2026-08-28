@@ -1,5 +1,6 @@
 package com.example.mijang.dividend;
 
+import com.example.mijang.support.FixedSettings;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -94,7 +95,7 @@ class DividendServiceTest {
         FxProperties props = new FxProperties();
         props.setSubstituteLookbackDays(10);
         return new DividendService(dividends,
-                new Portfolios(), new FxRateService(rates, new Quotes(), props));
+                new Portfolios(), new FxRateService(rates, new Quotes(), props, new FixedSettings()));
     }
 
     private static Dividend estimated() {

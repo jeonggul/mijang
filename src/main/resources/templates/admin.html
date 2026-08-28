@@ -155,9 +155,11 @@
     <div class="page-head"><div><h1>게시글 · 댓글 관리</h1>
       <p>숨김 처리하면 사용자에게 상태 안내 문구로 치환됩니다</p></div></div>
 
-    <div class="pills" data-toggle-group style="margin-bottom:14px">
-      <button type="button" data-value="POST" aria-pressed="true">게시글</button>
-      <button type="button" data-value="CMT" aria-pressed="false">댓글</button>
+    <!-- 좌측 메뉴의 게시글·댓글 탭과 같은 일을 한다. 목록을 두 벌 관리하지 않으려고
+         여기서는 해당 탭 버튼을 눌러 주기만 한다 -->
+    <div class="pills" data-toggle-group data-tab-switch>
+      <button type="button" data-value="POST" data-tab="m-posts" aria-pressed="true">게시글</button>
+      <button type="button" data-value="CMT" data-tab="m-comments" aria-pressed="false">댓글</button>
     </div>
 
     <section class="card">
@@ -175,9 +177,9 @@
     <div class="page-head"><div><h1>게시글 · 댓글 관리</h1>
       <p>숨김 처리하면 사용자에게 상태 안내 문구로 치환됩니다</p></div></div>
 
-    <div class="pills" data-toggle-group style="margin-bottom:14px">
-      <button type="button" data-value="POST" aria-pressed="false">게시글</button>
-      <button type="button" data-value="CMT" aria-pressed="true">댓글</button>
+    <div class="pills" data-toggle-group data-tab-switch>
+      <button type="button" data-value="POST" data-tab="m-posts" aria-pressed="false">게시글</button>
+      <button type="button" data-value="CMT" data-tab="m-comments" aria-pressed="true">댓글</button>
     </div>
 
     <section class="card">
@@ -259,16 +261,18 @@
           <label for="lg-q" class="sr-only">관리자 · 대상 검색</label>
           <input id="lg-q" type="search" placeholder="관리자 · 대상 검색">
         </div>
-        <div class="pills" data-toggle-group>
-          <button type="button" aria-pressed="true">전체</button>
-          <button type="button" aria-pressed="false">콘텐츠</button>
-          <button type="button" aria-pressed="false">사용자</button>
-          <button type="button" aria-pressed="false">종목</button>
-          <button type="button" aria-pressed="false">배치</button>
+        <!-- data-value 가 서버로 그대로 간다. "콘텐츠" 한 칸이 POST·COMMENT·REPORT·NOTICE 를
+             묶는데, 그 매핑은 서버(AdminService.LOG_TYPE_GROUPS)가 갖는다 -->
+        <div class="pills" data-toggle-group data-log-type>
+          <button type="button" data-value="" aria-pressed="true">전체</button>
+          <button type="button" data-value="CONTENT" aria-pressed="false">콘텐츠</button>
+          <button type="button" data-value="USER" aria-pressed="false">사용자</button>
+          <button type="button" data-value="STOCK" aria-pressed="false">종목</button>
+          <button type="button" data-value="BATCH" aria-pressed="false">배치</button>
         </div>
-        <div class="pills" data-toggle-group>
-          <button type="button" aria-pressed="true">최근 7일</button>
-          <button type="button" aria-pressed="false">전체 기간</button>
+        <div class="pills" data-toggle-group data-log-range>
+          <button type="button" data-value="7" aria-pressed="true">최근 7일</button>
+          <button type="button" data-value="0" aria-pressed="false">전체 기간</button>
         </div>
       </div>
     </div>
@@ -331,14 +335,15 @@
     </div>
   </section>
   <section role="tabpanel" id="a-config" aria-labelledby="m-config" hidden>
-    <div class="page-head"><div><h1>운영 설정</h1><p>서비스 전반 동작 방식</p></div></div>
+    <div class="page-head"><div><h1>운영 설정</h1><p>서비스 전반 동작 방식 · 바꾸면 즉시 적용됩니다</p></div></div>
 
+    <!-- data-setting 이 저장 키다. 알약은 data-value, 스위치는 켜짐/꺼짐이 값이 된다 -->
     <section class="card card-pad" style="margin-bottom:16px">
       <h2 style="margin:0 0 6px;font-size:var(--fs-section)">데이터 갱신</h2>
       <div class="setting-row">
         <span class="txt"><b>뉴스 갱신 주기</b><small>Finnhub 한도에 직접 영향을 줍니다</small></span>
         <span class="val">
-          <div class="pills" data-toggle-group>
+          <div class="pills" data-toggle-group data-setting="news.refresh.minutes">
             <button type="button" data-value="30" aria-pressed="false">30분</button>
             <button type="button" data-value="60" aria-pressed="true">1시간</button>
             <button type="button" data-value="180" aria-pressed="false">3시간</button>
@@ -347,11 +352,11 @@
       </div>
       <div class="setting-row">
         <span class="txt"><b>환율 대체값 사용</b><small>수집 실패 시 직전 영업일 환율로 대체합니다</small></span>
-        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="fx.fallback.enabled" checked><span></span></label></span>
       </div>
       <div class="setting-row">
         <span class="txt"><b>실시간 시세 공급</b><small>끄면 전 회원에게 지연 시세만 표시됩니다</small></span>
-        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="quote.live.enabled" checked><span></span></label></span>
       </div>
     </section>
 
@@ -360,7 +365,7 @@
       <div class="setting-row">
         <span class="txt"><b>신규 회원 글쓰기 제한</b><small>가입 후 일정 기간 글을 쓸 수 없게 합니다</small></span>
         <span class="val">
-          <div class="pills" data-toggle-group>
+          <div class="pills" data-toggle-group data-setting="community.write.delay.days">
             <button type="button" data-value="0" aria-pressed="false">없음</button>
             <button type="button" data-value="1" aria-pressed="true">1일</button>
             <button type="button" data-value="3" aria-pressed="false">3일</button>
@@ -368,26 +373,35 @@
         </span>
       </div>
       <div class="setting-row">
-        <span class="txt"><b>자동 숨김 기준</b><small>신고가 이 횟수를 넘으면 자동으로 숨깁니다</small></span>
-        <span class="val"><input type="number" value="5" style="width:88px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-mono)"></span>
+        <span class="txt"><b>자동 숨김 기준</b><small>미처리 신고가 이 횟수에 이르면 자동으로 숨깁니다</small></span>
+        <span class="val">
+          <!-- 자유 입력이 아니라 알약이다. 서버가 허용 목록(3·5·10)으로 막고 있어
+               아무 숫자나 받으면 화면만 저장에 실패한다 -->
+          <div class="pills" data-toggle-group data-setting="community.autohide.reports">
+            <button type="button" data-value="3" aria-pressed="false">3회</button>
+            <button type="button" data-value="5" aria-pressed="true">5회</button>
+            <button type="button" data-value="10" aria-pressed="false">10회</button>
+          </div>
+        </span>
       </div>
       <div class="setting-row">
-        <span class="txt"><b>금칙어 필터</b><small>리딩방·종목 추천 관련 표현 자동 검출</small></span>
-        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+        <span class="txt"><b>금칙어 필터</b><small>리딩방·수익 보장 관련 표현 자동 검출</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="community.badword.enabled" checked><span></span></label></span>
       </div>
     </section>
 
     <section class="card card-pad">
       <h2 style="margin:0 0 6px;font-size:var(--fs-section)">서비스</h2>
       <div class="setting-row">
-        <span class="txt"><b>신규 가입 허용</b><small></small></span>
-        <span class="val"><label class="switch"><input type="checkbox" checked><span></span></label></span>
+        <span class="txt"><b>신규 가입 허용</b><small>끄면 가입 화면에서 안내 문구가 뜹니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="signup.enabled" checked><span></span></label></span>
       </div>
       <div class="setting-row">
         <span class="txt"><b>점검 모드</b><small>켜면 관리자를 제외한 모든 접속이 차단됩니다</small></span>
-        <span class="val"><label class="switch"><input type="checkbox"><span></span></label></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="maintenance.enabled"><span></span></label></span>
       </div>
-      <p class="info info-warn">점검 모드를 켜면 즉시 적용됩니다. 켜기 전에 공지를 먼저 올리세요.</p>
+      <p class="info info-warn" style="margin-top:12px">점검 모드를 켜면 관리자 화면과 로그인만 열립니다. 이 화면에서 다시 끌 수 있습니다.</p>
+      <p class="msg" id="cfg-state" hidden></p>
     </section>
   </section>
   </main>
@@ -573,18 +587,42 @@
   }
 
   /* ── 운영 로그 (ADMIN-07) ─────────────────────────────────── */
+
+  /* 화면의 현재 필터. 눌린 버튼의 data-value 를 그대로 읽는다 —
+     따로 변수에 담아 두면 버튼 상태와 어긋나는 날이 온다 */
+  function logFilter() {
+    function pressed(sel, fallback) {
+      var g = document.querySelector(sel);
+      if (!g) return fallback;
+      var on = g.querySelector('button[aria-pressed="true"]');
+      return on ? (on.dataset.value || "") : fallback;
+    }
+    var q = document.getElementById("lg-q");
+    return {
+      q: q ? q.value.trim() : "",
+      type: pressed("[data-log-type]", ""),
+      days: pressed("[data-log-range]", "7"),
+    };
+  }
+
   async function loadLogs() {
-    var list = await api("/api/admin/logs?limit=50");
+    var f = logFilter();
+    var query = "limit=50&days=" + encodeURIComponent(f.days);
+    if (f.q) query += "&q=" + encodeURIComponent(f.q);
+    if (f.type) query += "&type=" + encodeURIComponent(f.type);
+    var list = await api("/api/admin/logs?" + query);
     var body = document.getElementById("ad-logs");
     if (!body || !list || list.forbidden || list.error) return;
     body.replaceChildren();
-    put("ad-log-count", "최근 " + list.length + "건");
+    var filtered = !!(f.q || f.type) || f.days !== "0";
+    put("ad-log-count", (filtered ? "조건에 맞는 " : "최근 ") + list.length + "건");
     if (list.length === 0) {
       var tr = body.insertRow();
       var td = tr.insertCell();
       td.colSpan = 6; td.className = "sub";
       td.style.padding = "24px"; td.style.textAlign = "center";
-      td.textContent = "아직 기록이 없습니다";
+      /* 조건을 걸어 0건인 것과 애초에 기록이 없는 것은 다른 상황이다 */
+      td.textContent = filtered ? "조건에 맞는 기록이 없습니다" : "아직 기록이 없습니다";
       return;
     }
     list.forEach(function (g) {
@@ -646,6 +684,32 @@
     group.addEventListener("mj:change", function (e) { filter = e.detail; loadStocks(); });
   }
 
+  /* 운영 로그 검색·종류·기간. 셋 다 loadLogs 가 눌린 버튼에서 직접 읽으므로
+     여기서는 "다시 불러라" 만 알려 주면 된다 */
+  ["[data-log-type]", "[data-log-range]"].forEach(function (sel) {
+    var g = document.querySelector(sel);
+    if (g) g.addEventListener("mj:change", loadLogs);
+  });
+  /* 게시글·댓글 전환 알약. 좌측 메뉴 탭을 눌러 실제 화면을 바꾼다 —
+     누르면 눌린 표시만 바뀌고 아무 일도 안 일어나던 자리다 */
+  document.querySelectorAll("[data-tab-switch]").forEach(function (g) {
+    g.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-tab]");
+      if (!btn) return;
+      var tab = document.getElementById(btn.dataset.tab);
+      if (tab) tab.click();
+    });
+  });
+
+  var logQ = document.getElementById("lg-q");
+  if (logQ) {
+    var logTimer = null;
+    logQ.addEventListener("input", function () {
+      clearTimeout(logTimer);
+      logTimer = setTimeout(loadLogs, 250);
+    });
+  }
+
   async function loadBatches() { drawBatches(await api("/api/admin/batches")); }
 
   window.addEventListener("admin:logs-changed", loadLogs);
@@ -659,6 +723,7 @@
 </script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-notices.js}" defer></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-community.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-settings.js}" defer></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-users.js}" defer></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-stats.js}" defer></script>
 </body>

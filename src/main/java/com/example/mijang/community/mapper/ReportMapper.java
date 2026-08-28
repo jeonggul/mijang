@@ -30,4 +30,13 @@ public interface ReportMapper {
 
     /** 방금 넣은 신고의 id. 같은 커넥션 안에서만 유효하다 — @Transactional 이 그걸 보장한다. */
     Long findLastInsertedId();
+
+    /**
+     * 이 대상에 걸린 <b>미처리</b> 신고 수. 자동 숨김 판정에 쓴다.
+     *
+     * <p>처리된(RESOLVED·REJECTED) 것은 세지 않는다. 관리자가 반려한 신고까지 세면
+     * 한 번 무혐의가 난 글이 신고 몇 번 더 쌓였다고 다시 내려간다.
+     */
+    int countPendingByTarget(@Param("targetType") String targetType,
+                             @Param("targetId") Long targetId);
 }

@@ -1,5 +1,6 @@
 package com.example.mijang.portfolio;
 
+import com.example.mijang.support.FixedSettings;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.mijang.common.time.MarketCalendar;
@@ -103,7 +104,7 @@ class SnapshotServiceTest {
     /** 그날 확정 환율만 흉내 낸다. */
     private static class Fx extends FxRateService {
         FxRateResponse value;
-        Fx() { super(null, null, null); }
+        Fx() { super(null, null, null, new FixedSettings()); }
         @Override public Optional<FxRateResponse> findByDate(LocalDate date) {
             return Optional.ofNullable(value);
         }

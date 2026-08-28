@@ -7,6 +7,7 @@
 package com.example.mijang.admin.mapper;
 
 import com.example.mijang.admin.dto.AdminLogResponse;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -28,6 +29,18 @@ public interface AdminLogMapper {
                @Param("detail") String detail,
                @Param("result") String result);
 
-    /** 최근 기록. 관리자 화면이 그대로 쓴다. */
-    List<AdminLogResponse> findRecent(@Param("limit") int limit);
+    /**
+     * 최근 기록. 관리자 화면이 그대로 쓴다.
+     *
+     * <p>세 조건은 전부 선택이고 <b>null 이면 걸지 않는다.</b> 화면의 검색·종류·기간이
+     * 각각 대응한다 — 안 걸린 조건까지 SQL 에 넣으면 인덱스를 못 탄다.
+     *
+     * @param q          관리자 닉네임 또는 대상 라벨의 일부. null·빈 문자열이면 전체
+     * @param targetTypes 종류 필터. 화면의 "콘텐츠" 처럼 한 버튼이 여러 값을 뜻할 수 있어 목록으로 받는다
+     * @param since      이 시각 이후만. null 이면 전 기간
+     */
+    List<AdminLogResponse> findRecent(@Param("limit") int limit,
+                                      @Param("q") String q,
+                                      @Param("targetTypes") List<String> targetTypes,
+                                      @Param("since") LocalDateTime since);
 }

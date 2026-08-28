@@ -18,11 +18,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final LoginUserArgumentResolver loginUserArgumentResolver;
     private final CspInterceptor cspInterceptor;
+    private final MaintenanceInterceptor maintenanceInterceptor;
 
     public WebConfig(LoginUserArgumentResolver loginUserArgumentResolver,
-                     CspInterceptor cspInterceptor) {
+                     CspInterceptor cspInterceptor,
+                     MaintenanceInterceptor maintenanceInterceptor) {
         this.loginUserArgumentResolver = loginUserArgumentResolver;
         this.cspInterceptor = cspInterceptor;
+        this.maintenanceInterceptor = maintenanceInterceptor;
     }
 
     /**
@@ -34,6 +37,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(cspInterceptor).addPathPatterns("/**");
+        /* 점검 모드는 CSP 뒤에 둔다. 막힌 응답에도 실행 규칙은 붙어 있어야 한다 */
+        registry.addInterceptor(maintenanceInterceptor).addPathPatterns("/**");
     }
 
     /**
