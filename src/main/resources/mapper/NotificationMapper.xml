@@ -141,4 +141,24 @@
                               AND n.title LIKE '%지급 예정%'
                               AND n.created_at &gt;= d.created_at)
     </select>
+    <!-- 뉴스 알림 대상 (NOTI-03). 보유·관심 중 news_enabled 를 켠 사람.
+         오늘 같은 종목으로 이미 보낸 사람은 뺀다 — 수집이 매시간 돌기 때문이다 -->
+    <select id="findNewsRecipients" resultType="java.lang.Long">
+        SELECT DISTINCT s.user_id
+          FROM (
+                SELECT user_id FROM holdings   WHERE symbol = #{symbol} AND quantity &gt; 0
+                UNION
+                SELECT user_id FROM watchlists WHERE symbol = #{symbol}
+               ) s
+          JOIN notification_settings ns ON ns.user_id = s.user_id
+         WHERE ns.news_enabled = 1
+           AND NOT EXISTS (
+                SELECT 1 FROM notifications n
+                 WHERE n.user_id = s.user_id
+                   AND n.type    = 'NEWS'
+                   AND n.symbol  = #{symbol}
+                   AND n.created_at &gt;= CURRENT_DATE()
+               )
+    </select>
+
 </mapper>

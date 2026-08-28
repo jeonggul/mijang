@@ -119,6 +119,35 @@ public class NotificationProducerService {
         return produceDividendExDate(today) + produceDividendPay();
     }
 
+    /**
+     * 뉴스 알림. {@code NOTI-03}
+     *
+     * <p>수집이 끝난 뒤, <b>새 기사가 실제로 들어온 종목만</b> 넘겨받아 부른다.
+     * 기사가 없으면 알릴 것도 없다.
+     *
+     * <p>기사 제목을 알림에 싣지 않는다. 한 종목에 여러 건이 한꺼번에 들어오는데
+     * 그중 하나만 고르면 나머지를 가리고, 다 실으면 알림이 목록이 된다.
+     * 몇 건인지만 알리고 나머지는 종목 화면에서 본다.
+     *
+     * @param symbol 새 기사가 들어온 종목
+     * @param newCount 새로 저장된 기사 수
+     * @return 만든 알림 수
+     */
+    @Transactional
+    public int produceNews(String symbol, int newCount) {
+        if (newCount <= 0) {
+            return 0;
+        }
+        List<Long> recipients = notificationMapper.findNewsRecipients(symbol);
+        for (Long userId : recipients) {
+            notificationMapper.insert(userId, "NEWS", symbol,
+                    symbol + " 새 뉴스 " + newCount + "건",
+                    "종목 화면 뉴스 탭에서 확인할 수 있습니다",
+                    "/stock?symbol=" + symbol);
+        }
+        return recipients.size();
+    }
+
     /** 배당락일 임박. 종목 화면으로 보낸다 — 락일과 주당 배당을 확인하는 자리다. */
     private int produceDividendExDate(LocalDate today) {
         List<DividendExDateHit> hits = notificationMapper.findDividendExDateHits(today);

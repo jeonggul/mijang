@@ -1,14 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- 개발명세서(MVC): "NewsMapper XML id 일치" -->
+<!--
+  NewsMapper.xml — 뉴스 SQL
+
+  이 파일이 하는 일
+    수집한 기사를 넣고 찾는다. 중복은 uk_news_vendor 가 DB 레벨에서 막는다.
+
+  개발명세서(MVC): "NewsMapper XML id 일치"
+-->
 <mapper namespace="com.example.mijang.news.mapper.NewsMapper">
 
+    <!-- news 의 PK 는 id 다. 예전에는 n.news_id 로 조인해 이 문장이 아예 실행되지 않았다 -->
     <select id="countBySymbol" resultType="long">
         SELECT COUNT(*)
           FROM news n
-          JOIN news_stocks ns ON ns.news_id = n.news_id
+          JOIN news_stocks ns ON ns.news_id = n.id
          WHERE ns.symbol = #{symbol}
+    </select>
+
+    <!-- 같은 기사가 다시 와도 조용히 넘어간다. 몇 건이 새로 들어왔는지는 반환값으로 안다 -->
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO news (vendor_id, headline, summary, url, source, published_at)
+        VALUES (#{vendorId}, #{headline}, #{summary}, #{url}, #{source}, #{publishedAt})
+    </insert>
+
+    <select id="findIdByVendorId" resultType="java.lang.Long">
+        SELECT id FROM news WHERE vendor_id = #{vendorId}
+    </select>
+
+    <!-- 보유 중이거나 관심에 담긴 종목만. 전 종목을 돌면 벤더 한도를 태운다 -->
+    <select id="findSymbolsOfInterest" resultType="string">
+        SELECT DISTINCT symbol FROM (
+            SELECT symbol FROM holdings WHERE quantity &gt; 0
+            UNION
+            SELECT symbol FROM watchlists
+        ) s
+        ORDER BY symbol
     </select>
 
 </mapper>

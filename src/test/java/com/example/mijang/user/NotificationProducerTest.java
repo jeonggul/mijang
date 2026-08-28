@@ -46,6 +46,8 @@ class NotificationProducerTest {
             return dividendExDateHits;
         }
         @Override public List<DividendPayHit> findDividendPayHits() { return dividendPayHits; }
+        java.util.List<Long> newsRecipients = java.util.List.of();
+        @Override public java.util.List<Long> findNewsRecipients(String symbol) { return newsRecipients; }
         @Override public List<NotificationResponse> findRecent(Long u, int l) { return List.of(); }
         @Override public int markAllRead(Long userId) { return 0; }
         @Override public NotificationSettingsResponse findSettings(Long userId) { return null; }
