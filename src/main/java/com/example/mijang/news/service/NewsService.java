@@ -84,10 +84,9 @@ public class NewsService {
                     cut(item.headline(), HEADLINE_MAX), cut(item.summary(), SUMMARY_MAX),
                     cut(item.url(), URL_MAX), item.source(), publishedAt);
 
-            Long newsId = newsMapper.findIdByVendorId(vendorId);
-            if (newsId != null) {
-                newsStockMapper.link(newsId, symbol);
-            }
+            /* id 를 따로 묻지 않고 vendor_id 로 바로 잇는다 — 기사마다 왕복이 붙으면
+               한 번 수집에 수백 번이 나간다 */
+            newsStockMapper.linkByVendorId(vendorId, symbol);
             saved += inserted;
         }
         return saved;

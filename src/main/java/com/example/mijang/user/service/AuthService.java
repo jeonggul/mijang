@@ -42,6 +42,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final AdminSettingService settingService;
+    private final LoginAttemptService loginAttemptService;
 
     /**
      * 가입 전 닉네임 사용 가능 확인. 형식 → 금지어 → 중복 순으로 본다.
@@ -135,7 +136,13 @@ public class AuthService {
      * @throws BusinessException 어떤 이유든 로그인 실패면 AUTH_INVALID_CREDENTIALS
      */
     @Transactional(readOnly = true)
-    public Tokens login(LoginForm form) {
+    public Tokens login(LoginForm form, String clientIp) {
+        /* 잠긴 동안에도 자격 증명 오류와 같은 응답을 준다. "잠겼습니다" 라고 알려 주면
+           그 이메일이 실재한다는 사실이 드러나, 문구를 통일해 막아 둔 것이 도로 샌다 */
+        if (loginAttemptService.isBlocked(form.getEmail(), clientIp)) {
+            throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+        }
+
         User user = userMapper.findByEmail(form.getEmail());
 
         // 계정이 없거나 소셜 전용이어도 BCrypt 를 한 번 태운다.
@@ -145,8 +152,10 @@ public class AuthService {
         boolean passwordMatches = passwordEncoder.matches(form.getPassword(), hash);
 
         if (user == null || !user.hasPassword() || !passwordMatches || !user.isActive()) {
+            loginAttemptService.recordFailure(form.getEmail(), clientIp);
             throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
         }
+        loginAttemptService.recordSuccess(form.getEmail());
         return issue(user, form.isRememberMe());
     }
 

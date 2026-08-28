@@ -58,6 +58,11 @@ class NewsCollectTest {
             linked.add(newsId + ":" + symbol);
             return 1;
         }
+
+        @Override public int linkByVendorId(String vendorId, String symbol) {
+            linked.add(vendorId + ":" + symbol);
+            return 1;
+        }
     }
 
     /** 정해 둔 기사를 돌려주거나, 터지게 만들 수 있는 가짜 수집기. */
