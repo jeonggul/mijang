@@ -114,6 +114,7 @@ public class FxRateService {
             return Optional.empty();
         }
         return Optional.of(FxRateResponse.ofDaily(
-                FxRate.substitute(date, previous.usdKrw(), previous.rateDate())));
+                FxRate.substitute(date, previous.usdKrw(), previous.rateDate(),
+                                  previous.collectedAt())));
     }
 }

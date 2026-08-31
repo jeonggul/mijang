@@ -54,7 +54,9 @@ public class FxConfirmService {
 
         FxQuote last = quoteMapper.findLastOfDate(USD, date);
         if (last != null) {
-            FxRate confirmed = FxRate.confirmed(date, last.basePrice());
+            /* 받아 넣은 시각은 벤더가 값을 찍은 시각이다. 확정 배치가 도는 23:50 이 아니다 —
+               화면의 "마지막 갱신"이 배치 시각을 가리키면 값의 나이를 알 수 없다 */
+            FxRate confirmed = FxRate.confirmed(date, last.basePrice(), last.quotedAt());
             rateMapper.insertIgnore(confirmed);
             log.info("[환율] {} 확정 {}", date, confirmed.usdKrw());
             return Optional.of(confirmed);
@@ -68,7 +70,8 @@ public class FxConfirmService {
             log.warn("[환율] {} 확정 실패 — 시세도 직전 값도 없다", date);
             return Optional.empty();
         }
-        FxRate substitute = FxRate.substitute(date, previous.usdKrw(), previous.rateDate());
+        FxRate substitute = FxRate.substitute(date, previous.usdKrw(), previous.rateDate(),
+                                              previous.collectedAt());
         rateMapper.insertIgnore(substitute);
         log.info("[환율] {} 확정 {} (← {} 복사)", date, substitute.usdKrw(), previous.rateDate());
         return Optional.of(substitute);

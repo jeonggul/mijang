@@ -58,36 +58,63 @@ class FxRateServiceTest {
      * 2주 전으로 떠서 환율 자체가 낡은 것으로 읽힌다. 실제로 그렇게 오해한 적이 있다.
      * 시각을 비워 보내야 화면이 확정 기준일을 대신 보여 준다.
      */
+    /*
+     * 예전에는 낡은 수집 시각을 확정값에 얹어 내보냈다. 값은 오늘 것인데 화면의
+     * "마지막 갱신" 만 2주 전으로 떠서 환율 자체가 낡은 것으로 읽혔다.
+     * 지금은 그 확정값을 실제로 받아 넣은 시각이 따라간다.
+     */
     @Test
-    @DisplayName("수집이 낡으면 확정 환율을 주되 낡은 시각은 딸려 보내지 않는다")
+    @DisplayName("수집이 낡으면 확정 환율과 그 값을 받아 넣은 시각을 준다")
     void 낡은수집() {
         Instant 두주전 = Instant.now().minusSeconds(14 * 24 * 60 * 60);
+        Instant 받아넣은시각 = Instant.parse("2026-08-31T06:00:00Z");
         LocalDate 오늘 = LocalDate.now();
         when(quoteMapper.findLatest("USD"))
                 .thenReturn(new FxQuote("USD", new BigDecimal("1416.07"), 두주전));
         when(rateMapper.findByDate(오늘))
-                .thenReturn(FxRate.confirmed(오늘, new BigDecimal("1373.21")));
+                .thenReturn(FxRate.confirmed(오늘, new BigDecimal("1373.21"), 받아넣은시각));
 
         FxRateResponse response = service.latest().orElseThrow();
 
         assertThat(response.rate()).isEqualByComparingTo("1373.21");
         assertThat(response.rateDate()).isEqualTo(오늘);
         assertThat(response.quotedAt()).isNull();
-        assertThat(response.lastUpdatedAt()).isNull();
+        /* 낡은 수집 시각(두주전)이 아니라 그 확정값의 시각이어야 한다 */
+        assertThat(response.lastUpdatedAt()).isEqualTo(받아넣은시각);
+    }
+
+    /* 복사해 온 값에 복사한 순간을 적으면 오늘 새로 받아 온 값처럼 보인다 */
+    @Test
+    @DisplayName("대체된 값은 원본을 받아 넣은 시각을 그대로 들고 온다")
+    void 대체값의시각() {
+        Instant 금요일에받음 = Instant.parse("2026-08-28T06:00:00Z");
+        LocalDate 토요일 = LocalDate.of(2026, 8, 29);
+        LocalDate 금요일 = LocalDate.of(2026, 8, 28);
+        when(rateMapper.findByDate(토요일)).thenReturn(null);
+        when(rateMapper.findLatestBefore(org.mockito.ArgumentMatchers.eq(토요일),
+                org.mockito.ArgumentMatchers.anyInt()))
+                .thenReturn(FxRate.confirmed(금요일, new BigDecimal("1373.21"), 금요일에받음));
+
+        FxRateResponse response = service.findByDate(토요일).orElseThrow();
+
+        assertThat(response.substituted()).isTrue();
+        assertThat(response.substitutedFrom()).isEqualTo(금요일);
+        assertThat(response.lastUpdatedAt()).isEqualTo(금요일에받음);
     }
 
     @Test
-    @DisplayName("수집이 아예 없어도 확정 환율로 답한다")
+    @DisplayName("수집이 아예 없어도 확정 환율과 그 시각으로 답한다")
     void 수집없음() {
+        Instant 받아넣은시각 = Instant.parse("2026-08-31T06:00:00Z");
         LocalDate 오늘 = LocalDate.now();
         when(quoteMapper.findLatest("USD")).thenReturn(null);
         when(rateMapper.findByDate(오늘))
-                .thenReturn(FxRate.confirmed(오늘, new BigDecimal("1373.21")));
+                .thenReturn(FxRate.confirmed(오늘, new BigDecimal("1373.21"), 받아넣은시각));
 
         FxRateResponse response = service.latest().orElseThrow();
 
         assertThat(response.rate()).isEqualByComparingTo("1373.21");
-        assertThat(response.lastUpdatedAt()).isNull();
+        assertThat(response.lastUpdatedAt()).isEqualTo(받아넣은시각);
     }
 
     @Test
