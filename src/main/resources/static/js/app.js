@@ -330,15 +330,23 @@ function renderHoldings() {
   document.getElementById("holdings-count").textContent = holdings.length;
 }
 
+/* 우측 패널에 몇 종목까지 늘어놓을지. 이보다 많으면 나머지는 관심종목 화면에서 본다 */
+const WATCH_PREVIEW = 5;
+
 function renderWatchlist() {
+  /* 머리말의 수는 잘라내기 전 전체다. 다섯만 세면 몇 개를 담아 뒀는지 알 수 없다 */
   document.getElementById("watch-count").textContent = watchlist.length;
-  document.getElementById("watchlist").replaceChildren(...watchlist.map(w => {
+  document.getElementById("watchlist").replaceChildren(...watchlist.slice(0, WATCH_PREVIEW).map(w => {
     const li = document.createElement("li");
     li.append(cell("span", "tk", w.symbol),
               cell("span", "px", usd(w.price)),
               cell("span", ("pc " + dir(w.changeRate)).trim(), pct2(w.changeRate)));
     return li;
   }));
+  /* 딱 다섯이면 이미 다 보이므로 내보이지 않는다.
+     눌러 봐야 같은 목록인 더보기는 지키지 못할 약속이다 */
+  const more = document.getElementById("watch-more");
+  if (more) more.hidden = watchlist.length <= WATCH_PREVIEW;
 }
 
 /* 보유 종목 가운데 최대 다섯 종목의 뉴스를 모아 최신 세 건만 보여준다.
