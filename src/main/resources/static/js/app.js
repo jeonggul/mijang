@@ -141,11 +141,11 @@ function renderFxCard() {
 
 function fxUpdatedAt(fx) {
   const value = fx && (fx.lastUpdatedAt || fx.quotedAt);
-  /* 수집이 멈춰 확정 환율로 물러난 경우다. 시각이 없다고 "확인 불가" 를 띄우면
-     환율을 못 구한 것처럼 읽히는데, 값은 멀쩡히 있다. 그 값의 기준일을 보여 준다 */
+  /* 값은 있는데 시각만 없는 경우다 — 컬럼이 생기기 전에 들어온 오래된 행이 그렇다.
+     "확인 불가" 를 띄우면 환율을 못 구한 것처럼 읽히므로 그 값의 기준일로 물러난다 */
   if (!value && fx && fx.rateDate) {
     const [, m, d] = fx.rateDate.split("-");
-    return `${m}.${d} 확정`;
+    return `${m}.${d} 기준`;
   }
   if (!value) return "확인 불가";
   const quotedAt = new Date(value);

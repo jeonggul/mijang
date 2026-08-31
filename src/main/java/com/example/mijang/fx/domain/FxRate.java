@@ -14,6 +14,7 @@
 package com.example.mijang.fx.domain;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 
 /**
@@ -29,15 +30,27 @@ public record FxRate(LocalDate rateDate,
                      BigDecimal usdKrw,
                      String source,
                      boolean substituted,
-                     LocalDate substitutedFrom) {
+                     LocalDate substitutedFrom,
+                     Instant collectedAt) {
 
     /** 벤더에서 그날 값을 실제로 받은 경우. */
     public static FxRate confirmed(LocalDate date, BigDecimal usdKrw) {
-        return new FxRate(date, usdKrw, "OPENEXCHANGERATES", false, null);
+        return confirmed(date, usdKrw, Instant.now());
     }
 
-    /** 그날 값이 없어 직전 값을 복사한 경우. */
-    public static FxRate substitute(LocalDate date, BigDecimal usdKrw, LocalDate from) {
-        return new FxRate(date, usdKrw, "OPENEXCHANGERATES", true, from);
+    /** 받아 넣은 시각을 직접 정한다. 시험이 시계를 고정할 때 쓴다. */
+    public static FxRate confirmed(LocalDate date, BigDecimal usdKrw, Instant at) {
+        return new FxRate(date, usdKrw, "OPENEXCHANGERATES", false, null, at);
+    }
+
+    /**
+     * 그날 값이 없어 직전 값을 복사한 경우.
+     *
+     * <p>복사해 온 값이므로 받아 넣은 시각도 원본의 것을 그대로 들고 간다 —
+     * 복사한 순간을 적으면 오늘 새로 받아 온 값처럼 보인다.
+     */
+    public static FxRate substitute(LocalDate date, BigDecimal usdKrw, LocalDate from,
+                                    Instant originalCollectedAt) {
+        return new FxRate(date, usdKrw, "OPENEXCHANGERATES", true, from, originalCollectedAt);
     }
 }

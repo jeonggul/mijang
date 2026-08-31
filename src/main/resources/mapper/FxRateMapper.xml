@@ -6,13 +6,16 @@
   fx_rates — 그날의 확정 환율.
 
   레코드는 자리 순서로 매핑되므로 SELECT 컬럼 순서가 FxRate 선언 순서와 같아야 한다.
-    FxRate(rateDate, usdKrw, source, substituted, substitutedFrom)
+    FxRate(rateDate, usdKrw, source, substituted, substitutedFrom, collectedAt)
   is_substituted 는 TINYINT(1) 인데 레코드는 boolean 이라 그대로 들어간다.
+
+  collected_at 은 앱이 Instant 로 적어 넣는다. DB 기본값(CURRENT_TIMESTAMP)을 쓰면
+  MySQL 이 KST 로 찍는데 JDBC 는 serverTimezone=UTC 로 읽어 9시간 어긋난다.
 -->
 <mapper namespace="com.example.mijang.fx.mapper.FxRateMapper">
 
     <sql id="cols">
-        rate_date, usd_krw, source, is_substituted, substituted_from
+        rate_date, usd_krw, source, is_substituted, substituted_from, collected_at
     </sql>
 
     <select id="findByDate" resultType="com.example.mijang.fx.domain.FxRate">
@@ -39,7 +42,9 @@
       한 번 확정한 환율을 바꾸면 그것으로 계산해 둔 손익과 어긋난다.
     -->
     <insert id="insertIgnore">
-        INSERT IGNORE INTO fx_rates (rate_date, usd_krw, source, is_substituted, substituted_from)
-        VALUES (#{rateDate}, #{usdKrw}, #{source}, #{substituted}, #{substitutedFrom})
+        INSERT IGNORE INTO fx_rates
+            (rate_date, usd_krw, source, is_substituted, substituted_from, collected_at)
+        VALUES (#{rateDate}, #{usdKrw}, #{source}, #{substituted}, #{substitutedFrom},
+                #{collectedAt})
     </insert>
 </mapper>

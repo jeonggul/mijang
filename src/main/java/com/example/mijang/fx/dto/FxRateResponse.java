@@ -41,9 +41,16 @@ public record FxRateResponse(BigDecimal rate,
         this(rate, rateDate, substituted, substitutedFrom, quotedAt, quotedAt);
     }
 
-    /** 확정 환율(일별)에서 만든다. 시세 시각은 의미가 없어 비운다. */
+    /**
+     * 확정 환율(일별)에서 만든다.
+     *
+     * <p>{@code quotedAt} 은 비운다 — 지금 시세가 아니라 그날의 확정값이다.
+     * 대신 {@code lastUpdatedAt} 에는 <b>그 값을 실제로 받아 넣은 시각</b>을 싣는다.
+     * 갱신될 때마다 그 시각이 따라와야 화면이 값의 나이를 말할 수 있다.
+     */
     public static FxRateResponse ofDaily(com.example.mijang.fx.domain.FxRate r) {
-        return new FxRateResponse(r.usdKrw(), r.rateDate(), r.substituted(), r.substitutedFrom(), null);
+        return new FxRateResponse(r.usdKrw(), r.rateDate(), r.substituted(), r.substitutedFrom(),
+                                  null, r.collectedAt());
     }
 
     /** 현재 시세에서 만든다. 그날 확정이 아니므로 대체 여부는 따지지 않는다. */
