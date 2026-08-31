@@ -45,8 +45,19 @@
     });
   }
 
+  /* 지금 누가 보고 있는지를 화면 전체에 알린다.
+     계정마다 달라야 하는 값(최근 검색 등)을 브라우저에 남기는 화면들이
+     저마다 /api/users/me 를 또 부르지 않도록, 한 번 받은 것을 나눠 쓴다.
+     비로그인이면 빈 문자열이다 — 앞사람 기록이 다음 사람에게 보이면 안 된다 */
+  function publishUser(me) {
+    var id = me && me.userId ? String(me.userId) : "";
+    document.documentElement.dataset.userId = id;
+    document.dispatchEvent(new CustomEvent("mijang:user-change", { detail: id }));
+  }
+
   function loadUser() {
     data("/api/users/me").then(function (me) {
+      publishUser(me);
       if (!me) {
         var avatar = header.querySelector(".avatar-btn");
         avatar.removeAttribute("data-open");
