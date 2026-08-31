@@ -13,6 +13,7 @@ import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.portfolio.domain.Holding;
 import com.example.mijang.portfolio.domain.Transaction;
+import com.example.mijang.stock.mapper.StockSplitMapper;
 import com.example.mijang.portfolio.dto.HoldingResponse;
 import com.example.mijang.portfolio.mapper.HoldingMapper;
 import com.example.mijang.portfolio.mapper.TransactionMapper;
@@ -36,6 +37,7 @@ public class HoldingService {
     private final TransactionMapper transactionMapper;
     private final HoldingMapper holdingMapper;
     private final FxRateService fxRateService;
+    private final StockSplitMapper splitMapper;
 
     /**
      * 한 종목을 처음부터 다시 계산해 저장한다.
@@ -49,7 +51,11 @@ public class HoldingService {
     @Transactional
     public Holding recalculate(Long userId, Long portfolioId, String symbol) {
         List<Transaction> transactions = transactionMapper.findForRecalc(userId, symbol);
-        Holding holding = HoldingCalculator.calculate(symbol, transactions);
+        /* 분할 이전 거래는 지금 기준으로 환산해서 센다. 시세는 이미 분할이 반영된
+           값으로 들어오는데 원장은 그날 체결한 그대로라, 보정하지 않으면 4:1 분할 뒤
+           평가금액이 4분의 1로 보인다 */
+        Holding holding = HoldingCalculator.calculate(
+                symbol, transactions, splitMapper.findBySymbol(symbol));
 
         /* 음수면 저장하지 않고 여기서 막는다. holdings 에 ck_holdings_quantity CHECK(>=0) 이
            걸려 있어 그대로 넣으면 SQL 예외가 먼저 터지고, 화면에는 "서버 오류" 로 나간다 —

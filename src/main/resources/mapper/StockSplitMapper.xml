@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  stock_splits — 주식 분할.
+
+  레코드는 자리 순서로 매핑되므로 SELECT 컬럼 순서가 StockSplit 선언 순서와 같아야 한다.
+    StockSplit(symbol, exDate, splitType, oldRate, newRate)
+-->
+<mapper namespace="com.example.mijang.stock.mapper.StockSplitMapper">
+
+    <!-- 기준일 오름차순. 보정은 오래된 것부터 곱해 나가야 순서가 뒤바뀌지 않는다 -->
+    <select id="findBySymbol" resultType="com.example.mijang.stock.domain.StockSplit">
+        SELECT symbol, ex_date, split_type, old_rate, new_rate
+          FROM stock_splits
+         WHERE symbol = #{symbol}
+         ORDER BY ex_date
+    </select>
+
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO stock_splits
+            (symbol, ex_date, split_type, old_rate, new_rate, vendor_id, source, synced_at)
+        VALUES (#{symbol}, #{exDate}, #{splitType}, #{oldRate}, #{newRate},
+                #{vendorId}, 'ALPACA', NOW(3))
+    </insert>
+
+    <!-- 보유가 있는 종목만. 아무도 안 들고 있는 종목의 분할은 어느 계산에도 안 들어간다 -->
+    <select id="findHeldSymbols" resultType="string">
+        SELECT DISTINCT symbol FROM holdings WHERE quantity &gt; 0 ORDER BY symbol
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM stock_splits
+    </select>
+</mapper>
