@@ -83,9 +83,12 @@ public class FxRateService {
         if (quote != null && quote.quotedAt().isAfter(Instant.now().minus(STALE_AFTER))) {
             return Optional.of(FxRateResponse.ofLive(quote, LocalDate.now()));
         }
-        Optional<FxRateResponse> confirmed = findByDate(LocalDate.now());
-        return quote == null ? confirmed
-                : confirmed.map(rate -> rate.withLastUpdatedAt(quote.quotedAt()));
+        /* 낡은 수집 시각은 붙이지 않는다.
+           예전에는 여기서 그 시각을 "마지막 갱신" 으로 실어 보냈는데, 값은 오늘 확정
+           환율인데 화면에는 2주 전 날짜가 떴다. 사용자는 환율 자체가 2주 전 것이라고
+           읽는다 — 실제로 그렇게 오해한 적이 있다.
+           비워서 내보내면 화면이 확정 기준일을 대신 보여 준다. */
+        return findByDate(LocalDate.now());
     }
 
     /**
