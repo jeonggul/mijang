@@ -153,6 +153,37 @@ public class AlpacaStockClient {
      * @param pageToken 이전 응답의 {@code next_page_token}. 첫 호출은 null
      * @throws BusinessException 벤더가 응답하지 않을 때
      */
+    /**
+     * 분할 이벤트. 정분할과 역분할을 함께 받는다.
+     *
+     * <p>같은 {@code /v1/corporate-actions} 경로다 — types 만 다르다.
+     * 배당과 나누어 부르는 이유는 응답 묶음이 종류별로 갈라져 오기 때문이다.
+     */
+    public JsonNode splits(List<String> symbols, LocalDate start, LocalDate end,
+                           String pageToken) {
+        String joined = String.join(",", symbols);
+        try {
+            return dataClient.get()
+                    .uri(uri -> {
+                        var b = uri.path("/v1/corporate-actions")
+                                .queryParam("types", "forward_split,reverse_split")
+                                .queryParam("symbols", joined)
+                                .queryParam("start", start.toString())
+                                .queryParam("end", end.toString())
+                                .queryParam("limit", 1000);
+                        if (pageToken != null) {
+                            b = b.queryParam("page_token", pageToken);
+                        }
+                        return b.build();
+                    })
+                    .retrieve()
+                    .body(JsonNode.class);
+        } catch (RestClientException e) {
+            log.error("Alpaca 분할 이벤트 조회 실패 — {}건", symbols.size(), e);
+            throw new BusinessException(ErrorCode.VENDOR_UNAVAILABLE);
+        }
+    }
+
     public JsonNode cashDividends(List<String> symbols, LocalDate start, LocalDate end,
                                   String pageToken) {
         String joined = String.join(",", symbols);

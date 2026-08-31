@@ -54,6 +54,11 @@ class PostServiceTest {
 
     /** 저장된 인자를 그대로 붙잡아 두는 가짜 게시글 매퍼. */
     private static class Posts implements PostMapper {
+        @Override public java.util.List<com.example.mijang.community.domain.PostRow> findByUser(
+                Long userId, int limit, int offset) { return java.util.List.of(); }
+
+        @Override public long countByUser(Long userId) { return 0; }
+
         String board;
         String symbol;
         BigDecimal priceAtWrite;
@@ -99,6 +104,11 @@ class PostServiceTest {
     }
 
     private static class Comments implements CommentMapper {
+        @Override public java.util.List<com.example.mijang.community.dto.MyCommentResponse> findByUser(
+                Long userId, int limit, int offset) { return java.util.List.of(); }
+
+        @Override public long countByUser(Long userId) { return 0; }
+
         @Override public int insert(Long p, Long u, Long parent, String c) { return 1; }
         @Override public Long findLastInsertedId() { return 1L; }
         @Override public List<CommentResponse> findByPost(Long postId) { return List.of(); }

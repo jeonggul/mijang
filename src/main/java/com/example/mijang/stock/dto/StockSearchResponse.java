@@ -15,5 +15,8 @@ public record StockSearchResponse(
         String nameKo,
         String exchange,
         String assetClass,
-        boolean active) {
+        boolean active,
+        /* 직전 종가 대비 등락률(%). 종가가 없거나 0 이면 null 이다 —
+           0% 로 채우면 "안 움직였다" 로 읽힌다 */
+        java.math.BigDecimal dayChangeRate) {
 }

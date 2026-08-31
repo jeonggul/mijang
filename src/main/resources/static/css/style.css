@@ -776,6 +776,14 @@ a { color: inherit; text-decoration: none; }
 .list .ttl  { flex: 1; font-weight: 500; }
 .list .meta { font-size: var(--fs-label); color: var(--text-sub); }
 
+/* 마이페이지의 내 글·내 댓글. 한 줄에 제목과 어디에 썼는지를 세로로 쌓는다 —
+   가로로 붙이면 좁은 패널에서 제목이 먼저 잘린다 */
+.my-writing { padding: 0 18px 16px; }
+.my-writing .row { display: block; padding: 9px 0; }
+.my-writing .ttl { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.my-writing .sub { display: block; margin-top: 2px;
+                   font-size: var(--fs-label); color: var(--text-sub); }
+
 /* 기록 메모 — 매수 이유·회고 본문 */
 .memo { padding: 14px 16px; background: var(--surface-soft);
         border-left: 3px solid var(--record); border-radius: 0 8px 8px 0;

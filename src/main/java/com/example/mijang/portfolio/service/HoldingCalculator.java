@@ -12,8 +12,10 @@ package com.example.mijang.portfolio.service;
 
 import com.example.mijang.portfolio.domain.Holding;
 import com.example.mijang.portfolio.domain.Transaction;
+import com.example.mijang.stock.domain.StockSplit;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,6 +82,59 @@ public final class HoldingCalculator {
      */
     public static Holding calculate(String symbol, List<Transaction> transactions) {
         return calculateAll(symbol, transactions).holding();
+    }
+
+    /** 분할을 반영해 계산한다. 분할이 없으면 위와 같다. */
+    public static Holding calculate(String symbol, List<Transaction> transactions,
+                                    List<StockSplit> splits) {
+        return calculateAll(symbol, adjustForSplits(transactions, splits)).holding();
+    }
+
+    /** 분할을 반영해 계산한다. 매도 건별 실현손익까지 함께 준다. */
+    public static Calculation calculateAll(String symbol, List<Transaction> transactions,
+                                           List<StockSplit> splits) {
+        return calculateAll(symbol, adjustForSplits(transactions, splits));
+    }
+
+    /**
+     * 분할 이전 거래를 지금 기준으로 환산한다.
+     *
+     * <p>4:1 분할 전에 10주를 $400 에 샀다면, 지금 기준으로는 40주를 $100 에 산 것과 같다.
+     * <b>수량에 배수를 곱하고 단가를 배수로 나눈다.</b> 두 값을 곱한 체결 금액은 그대로다 —
+     * 분할은 가진 몫을 쪼갤 뿐 돈이 오가지 않는다.
+     *
+     * <p>기준일 <b>당일</b> 거래는 이미 조정된 값으로 체결된다. 그래서 {@code exDate} 보다
+     * <b>앞선</b> 거래만 보정한다. 여기서 경계를 하루 잘못 잡으면 그날 산 사람의 수량만
+     * 배수만큼 틀어지는데, 화면에는 그냥 "수량이 이상하다" 로만 보인다.
+     *
+     * <p>수수료는 건드리지 않는다. 실제로 낸 돈이라 분할과 무관하다.
+     */
+    static List<Transaction> adjustForSplits(List<Transaction> transactions,
+                                             List<StockSplit> splits) {
+        if (splits == null || splits.isEmpty() || transactions.isEmpty()) {
+            return transactions;
+        }
+        List<Transaction> adjusted = new ArrayList<>(transactions.size());
+        for (Transaction tx : transactions) {
+            BigDecimal factor = BigDecimal.ONE;
+            for (StockSplit split : splits) {
+                if (split.exDate() != null && tx.tradeDate() != null
+                        && tx.tradeDate().isBefore(split.exDate())) {
+                    factor = factor.multiply(split.factor());
+                }
+            }
+            adjusted.add(factor.compareTo(BigDecimal.ONE) == 0 ? tx : apply(tx, factor));
+        }
+        return adjusted;
+    }
+
+    /** 한 건에 배수를 먹인다. 원본은 그대로 두고 새 값을 만든다 — 원장은 고쳐 쓰지 않는다. */
+    private static Transaction apply(Transaction tx, BigDecimal factor) {
+        return new Transaction(tx.id(), tx.userId(), tx.portfolioId(), tx.symbol(), tx.side(),
+                tx.quantity().multiply(factor).setScale(PRICE_SCALE, RoundingMode.HALF_UP),
+                tx.price().divide(factor, PRICE_SCALE, RoundingMode.HALF_UP),
+                tx.fxRate(), tx.fee(), tx.tradedAt(), tx.tradeDate(),
+                tx.buyReason(), tx.targetPrice(), tx.sentiment());
     }
 
     /**

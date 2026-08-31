@@ -32,6 +32,26 @@
          ORDER BY COALESCE(c.parent_id, c.id), c.id
     </select>
 
+    <!--
+      내가 쓴 댓글. 마이페이지가 쓴다.
+
+      글 제목을 함께 가져온다 — 어느 글에 단 댓글인지 모르면 목록이 쓸모없다.
+      글이 지워졌으면 LEFT JOIN 이라 제목이 NULL 로 나가고 화면이 그렇게 밝힌다.
+      숨김·삭제된 내 댓글도 함께 돌려준다. 남에게 안 보여도 내가 왜 사라졌는지는 알아야 한다.
+    -->
+    <select id="findByUser" resultType="com.example.mijang.community.dto.MyCommentResponse">
+        SELECT c.id, c.post_id, p.title, c.content, c.created_at, c.status
+          FROM comments c
+          LEFT JOIN posts p ON p.id = c.post_id
+         WHERE c.user_id = #{userId}
+         ORDER BY c.created_at DESC, c.id DESC
+         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM comments WHERE user_id = #{userId}
+    </select>
+
     <!-- parent_id IS NULL 조건이 깊이를 1단계로 묶는다. 대댓글은 여기서 걸러져
          null 이 나가고, 서비스가 그걸 거절로 읽는다 -->
     <select id="findRepliableParentPostId" resultType="java.lang.Long">

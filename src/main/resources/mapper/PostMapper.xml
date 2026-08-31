@@ -24,7 +24,8 @@
         p.price_at_write,
         p.trade_side, p.trade_symbol, p.trade_price, p.trade_at,
         p.trade_pnl_krw, p.trade_pnl_rate,
-        p.like_count, p.comment_count, p.view_count, p.created_at
+        p.like_count, p.comment_count, p.view_count, p.created_at,
+        p.status
     </sql>
 
     <!-- 최신순이 기본이다. 인기순도 created_at 을 뒤에 붙여 같은 좋아요 수에서
@@ -62,6 +63,26 @@
            AND p.status = 'PUBLISHED'
         <include refid="orderBy"/>
          LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!--
+      내가 쓴 글. 마이페이지가 쓴다.
+
+      게시판을 가리지 않는다 — 자유·질문·종목을 따로 보고 싶은 화면이 아니다.
+      숨김·삭제된 글도 빼지 않는다. 남에게는 안 보여도 <b>내 글은 내가 봐야</b>
+      왜 안 보이는지 알 수 있다. 상태는 화면이 배지로 구분한다.
+    -->
+    <select id="findByUser" resultType="com.example.mijang.community.domain.PostRow">
+        SELECT <include refid="cols"/>
+          FROM posts p
+          JOIN users u ON u.id = p.user_id
+         WHERE p.user_id = #{userId}
+         ORDER BY p.created_at DESC, p.id DESC
+         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM posts WHERE user_id = #{userId}
     </select>
 
     <select id="countByBoard" resultType="long">

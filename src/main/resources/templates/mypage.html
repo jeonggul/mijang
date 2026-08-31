@@ -24,9 +24,8 @@
       <ul class="stats">
         <li><span class="k">매매 기록</span><span class="v num" id="my-tx">—</span></li>
         <li><span class="k">보유 종목</span><span class="v num" id="my-holding-count">—</span></li>
-        <!-- 작성 글·기록한 판단은 community 와 회고 범위가 선행이라 아직 셀 수 없다.
-             0 으로 두면 "글을 쓴 적이 없다" 로 읽히므로 — 로 비운다 -->
-        <li><span class="k">작성 글</span><span class="v num">—</span></li>
+        <li><span class="k">작성 글</span><span class="v num" id="my-post-count">—</span></li>
+        <li><span class="k">작성 댓글</span><span class="v num" id="my-comment-count">—</span></li>
         <li><span class="k">기준 통화</span><span class="v" id="my-currency">—</span></li>
       </ul>
     </div>
@@ -40,10 +39,16 @@
     </section>
 
     <section class="card">
-      <h2 class="card-head">작성 글 <span class="sub num">—</span></h2>
-      <!-- MY-03 작성 글은 community 범위가 선행이다. 목록을 만들 수 없으므로
-           프로토타입 더미를 지우고 아직 없다는 것만 밝힌다 -->
-      <p class="note" style="padding:0 18px 18px">커뮤니티 기능이 붙으면 여기에 표시됩니다</p>
+      <h2 class="card-head">작성 글 <span class="sub num" id="my-post-label">—</span></h2>
+      <ul class="list my-writing" id="my-posts"><!-- 스크립트가 채운다 --></ul>
+      <a class="watch-more" id="my-posts-more" th:href="@{/community}" hidden>커뮤니티에서 보기</a>
+    </section>
+  </div>
+
+  <div class="grid-2" style="margin-top:14px">
+    <section class="card">
+      <h2 class="card-head">작성 댓글 <span class="sub num" id="my-comments-label">—</span></h2>
+      <ul class="list my-writing" id="my-comments"><!-- 스크립트가 채운다 --></ul>
     </section>
   </div>
 
@@ -86,6 +91,102 @@
     /* 프로필 이미지가 없으면 마크업의 기본 아바타를 그대로 둔다 */
     var img = document.getElementById("my-avatar");
     if (img && me.profileImageUrl) { img.src = me.profileImageUrl; img.hidden = false; }
+  });
+
+  var PREVIEW = 5;   // 카드에 늘어놓을 최대 줄 수. 나머지는 커뮤니티에서 본다
+
+  /* 숨김·삭제된 내 글·댓글에 붙는 꼬리표.
+     남에게 안 보인다는 사실을 밝히지 않으면 "왜 목록에 없지" 로 남는다 */
+  function statusBadge(status) {
+    if (status === "HIDDEN") return ["숨김", "badge-warn"];
+    if (status === "DELETED") return ["삭제됨", "badge-err"];
+    return null;
+  }
+
+  function when(iso) {
+    return iso ? iso.slice(0, 10) : "";
+  }
+
+  /* 한 줄. 제목과 시각, 필요하면 상태 꼬리표를 단다.
+     제목·본문은 사용자가 쓴 문자열이라 전부 textContent 로 넣는다 */
+  function writingRow(href, title, meta, status) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.href = href;
+    a.className = "row";
+
+    var head = document.createElement("span");
+    head.className = "ttl";
+    head.textContent = title;
+    var badge = statusBadge(status);
+    if (badge) {
+      var b = document.createElement("span");
+      b.className = "badge " + badge[1];
+      b.style.marginLeft = "6px";
+      b.textContent = badge[0];
+      head.appendChild(b);
+    }
+
+    var sub = document.createElement("span");
+    sub.className = "sub";
+    sub.textContent = meta;
+
+    a.append(head, sub);
+    li.appendChild(a);
+    return li;
+  }
+
+  function emptyRow(message) {
+    var li = document.createElement("li");
+    li.className = "note";
+    li.style.padding = "8px 0 12px";
+    li.textContent = message;
+    return li;
+  }
+
+  api("/api/users/me/posts?page=0&size=" + PREVIEW).then(function (page) {
+    if (!page) return;
+    var total = page.totalElements || 0;
+    put("my-post-count", total + "건");
+    put("my-post-label", total + "건");
+
+    var box = document.getElementById("my-posts");
+    if (!box) return;
+    box.replaceChildren();
+    if (total === 0) {
+      box.appendChild(emptyRow("아직 쓴 글이 없습니다"));
+      return;
+    }
+    (page.content || []).forEach(function (post) {
+      var where = post.symbol ? post.symbol
+                : post.board === "QNA" ? "질문" : "자유";
+      box.appendChild(writingRow("/community-post/" + post.id, post.title,
+                                 where + " · " + when(post.createdAt), post.status));
+    });
+    /* 미리 보여 준 것보다 많을 때만 더 볼 자리를 준다 */
+    var more = document.getElementById("my-posts-more");
+    if (more) more.hidden = total <= PREVIEW;
+  });
+
+  api("/api/users/me/comments?page=0&size=" + PREVIEW).then(function (page) {
+    if (!page) return;
+    var total = page.totalElements || 0;
+    put("my-comment-count", total + "건");
+    put("my-comments-label", total + "건");
+
+    var box = document.getElementById("my-comments");
+    if (!box) return;
+    box.replaceChildren();
+    if (total === 0) {
+      box.appendChild(emptyRow("아직 쓴 댓글이 없습니다"));
+      return;
+    }
+    (page.content || []).forEach(function (c) {
+      /* 글이 지워졌으면 제목이 없다. 눌러도 갈 곳이 없다는 것을 문구로 밝힌다 */
+      var title = c.postTitle == null ? "삭제된 글" : c.postTitle;
+      box.appendChild(writingRow("/community-post/" + c.postId, c.content,
+                                 title + " · " + when(c.createdAt), c.status));
+    });
   });
 
   /* 매매 기록 건수는 목록 API 의 총건수를 쓴다. 한 건만 받아 와도 총계는 온다 */
