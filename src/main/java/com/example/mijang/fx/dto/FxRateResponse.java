@@ -51,7 +51,12 @@ public record FxRateResponse(BigDecimal rate,
         return new FxRateResponse(q.basePrice(), date, false, null, q.quotedAt());
     }
 
-    /** 반환값은 확정 환율이지만 마지막 수집 상태는 별도 메타데이터로 보존한다. */
+    /**
+     * 마지막 수집 시각을 갈아 끼운다.
+     *
+     * <p>수집이 낡아 확정값으로 물러났을 때는 <b>쓰지 않는다</b> — 값과 시각이 서로 다른
+     * 날을 가리켜 화면이 환율 자체를 낡은 것으로 보이게 한다.
+     */
     public FxRateResponse withLastUpdatedAt(Instant value) {
         return new FxRateResponse(rate, rateDate, substituted, substitutedFrom, quotedAt, value);
     }
