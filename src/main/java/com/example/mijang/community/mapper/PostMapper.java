@@ -64,6 +64,18 @@ public interface PostMapper {
     /** 일반 커뮤니티 글 수. 페이징에 쓴다. */
     long countByBoard(@Param("board") String board);
 
+    /**
+     * 내가 쓴 글. 게시판을 가리지 않고, 숨김·삭제된 것도 함께 돌려준다.
+     *
+     * <p>남에게 안 보이는 글도 <b>쓴 사람에게는 보여야</b> 한다 — 왜 목록에서
+     * 사라졌는지 알 수 없으면 고장으로 읽힌다.
+     */
+    List<PostRow> findByUser(@Param("userId") Long userId,
+                             @Param("limit") int limit,
+                             @Param("offset") int offset);
+
+    long countByUser(@Param("userId") Long userId);
+
     /** 종목별 게시판 목록. {@code COM-001} */
     List<PostRow> findBySymbol(@Param("symbol") String symbol,
                                @Param("sort") String sort,

@@ -9,6 +9,7 @@
 package com.example.mijang.community.mapper;
 
 import com.example.mijang.community.dto.CommentResponse;
+import com.example.mijang.community.dto.MyCommentResponse;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -48,4 +49,15 @@ public interface CommentMapper {
 
     /** 게시글 댓글 수. COM-003 */
     long countByPost(@Param("postId") Long postId);
+
+    /**
+     * 내가 쓴 댓글. 어느 글에 달았는지까지 함께 온다.
+     *
+     * <p>숨김·삭제된 것도 함께 돌려준다 — 목록에서 사라진 이유를 쓴 사람은 알아야 한다.
+     */
+    List<MyCommentResponse> findByUser(@Param("userId") Long userId,
+                                       @Param("limit") int limit,
+                                       @Param("offset") int offset);
+
+    long countByUser(@Param("userId") Long userId);
 }

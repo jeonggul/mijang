@@ -25,6 +25,7 @@ import com.example.mijang.community.domain.PostRow;
 import com.example.mijang.community.dto.CommentResponse;
 import com.example.mijang.community.dto.PostDetail;
 import com.example.mijang.community.dto.PostForm;
+import com.example.mijang.community.dto.MyCommentResponse;
 import com.example.mijang.community.dto.PostSummary;
 import com.example.mijang.community.dto.TradeCard;
 import com.example.mijang.community.mapper.CommentMapper;
@@ -138,6 +139,36 @@ public class PostService {
     @Transactional(readOnly = true)
     public long countByBoard(BoardType board) {
         return postMapper.countByBoard(board.name());
+    }
+
+    /**
+     * 내가 쓴 글. {@code MY-03}
+     *
+     * <p>게시판을 가리지 않고 최신순으로 준다. 숨김·삭제된 글도 함께 나간다 —
+     * 목록에서 사라진 이유를 쓴 사람은 알 수 있어야 한다.
+     */
+    @Transactional(readOnly = true)
+    public List<PostSummary> listByUser(Long userId, int page, int size) {
+        return postMapper.findByUser(userId, size, page * size)
+                .stream().map(PostService::toSummary).toList();
+    }
+
+    /** 내가 쓴 글 수. */
+    @Transactional(readOnly = true)
+    public long countByUser(Long userId) {
+        return postMapper.countByUser(userId);
+    }
+
+    /** 내가 쓴 댓글. {@code MY-03} */
+    @Transactional(readOnly = true)
+    public List<MyCommentResponse> listCommentsByUser(Long userId, int page, int size) {
+        return commentMapper.findByUser(userId, size, page * size);
+    }
+
+    /** 내가 쓴 댓글 수. */
+    @Transactional(readOnly = true)
+    public long countCommentsByUser(Long userId) {
+        return commentMapper.countByUser(userId);
     }
 
     /** 종목별 게시판 목록. {@code COM-001} */
@@ -351,7 +382,7 @@ public class PostService {
         return new PostSummary(row.id(), row.board(), row.symbol(), row.title(),
                 excerpt(row.content()), row.authorName(), row.shareholder(),
                 row.priceAtWrite(), toTradeCard(row),
-                row.likeCount(), row.commentCount(), row.createdAt());
+                row.likeCount(), row.commentCount(), row.createdAt(), row.status());
     }
 
     /** 매매를 안 붙인 글이면 null. 빈 카드를 내보내면 화면이 빈 상자를 그린다. */

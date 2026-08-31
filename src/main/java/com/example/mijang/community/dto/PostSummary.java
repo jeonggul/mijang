@@ -31,5 +31,7 @@ public record PostSummary(
         TradeCard trade,
         long likeCount,
         long commentCount,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        /* 내 글 목록만 쓴다. 공개 목록은 PUBLISHED 만 담기므로 늘 같은 값이다 */
+        String status) {
 }

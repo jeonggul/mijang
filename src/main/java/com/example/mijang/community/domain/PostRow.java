@@ -41,5 +41,7 @@ public record PostRow(
         long likeCount,
         long commentCount,
         long viewCount,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        /* PUBLISHED · HIDDEN · DELETED. 목록에서는 걸러지지만 내 글 화면은 이유를 밝힌다 */
+        String status) {
 }

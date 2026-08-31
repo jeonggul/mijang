@@ -32,7 +32,7 @@ class CommunityModerationTest {
     private static PostRow post(Long authorId) {
         return new PostRow(10L, "FREE", null, "제목", "본문", authorId, "정하", false,
                 null, null, null, null, null, null, null, 0, 0, 0,
-                LocalDateTime.of(2026, 8, 26, 12, 0));
+                LocalDateTime.of(2026, 8, 26, 12, 0), "PUBLISHED");
     }
 
     /** 반응 표 흉내. 지금 켜져 있는 반응을 셋으로 든다. */
@@ -55,6 +55,11 @@ class CommunityModerationTest {
 
     /** 글 한 건과 상태 변경만 붙잡는 가짜. */
     private static class Posts implements PostMapper {
+        @Override public java.util.List<com.example.mijang.community.domain.PostRow> findByUser(
+                Long userId, int limit, int offset) { return java.util.List.of(); }
+
+        @Override public long countByUser(Long userId) { return 0; }
+
         PostRow found = post(1L);
         String updatedTitle;
         String updatedStatus;

@@ -23,6 +23,7 @@ import com.example.mijang.community.dto.PostDetail;
 import com.example.mijang.community.dto.PostForm;
 import com.example.mijang.community.dto.PostUpdateForm;
 import com.example.mijang.community.dto.ReactionForm;
+import com.example.mijang.community.dto.MyCommentResponse;
 import com.example.mijang.community.dto.PostSummary;
 import com.example.mijang.community.service.PostService;
 import com.example.mijang.security.LoginUser;
@@ -102,6 +103,33 @@ public class PostController {
                                     @PathVariable String symbol,
                                     @Valid @RequestBody PostForm form) {
         return ApiResponse.ok(postService.create(me.userId(), BoardType.STOCK, symbol, form));
+    }
+
+    /**
+     * MY-03 내가 쓴 글.
+     *
+     * <p>로그인이 필요하다. 남의 글 목록을 볼 수 있는 경로가 아니다 —
+     * 사용자 번호를 받지 않고 토큰이 가리키는 사람의 것만 준다.
+     */
+    @GetMapping("/api/users/me/posts")
+    public ApiResponse<PageResponse<PostSummary>> myPosts(
+            @LoginUser SessionUser me,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<PostSummary> content = postService.listByUser(me.userId(), page, size);
+        return ApiResponse.ok(
+                PageResponse.of(content, page, size, postService.countByUser(me.userId())));
+    }
+
+    /** MY-03 내가 쓴 댓글. 위와 같은 이유로 내 것만 준다. */
+    @GetMapping("/api/users/me/comments")
+    public ApiResponse<PageResponse<MyCommentResponse>> myComments(
+            @LoginUser SessionUser me,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<MyCommentResponse> content = postService.listCommentsByUser(me.userId(), page, size);
+        return ApiResponse.ok(PageResponse.of(content, page, size,
+                postService.countCommentsByUser(me.userId())));
     }
 
     /**
