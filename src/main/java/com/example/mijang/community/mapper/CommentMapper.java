@@ -47,9 +47,6 @@ public interface CommentMapper {
      */
     Long findRepliableParentPostId(@Param("commentId") Long commentId);
 
-    /** 게시글 댓글 수. COM-003 */
-    long countByPost(@Param("postId") Long postId);
-
     /**
      * 내가 쓴 댓글. 어느 글에 달았는지까지 함께 온다.
      *

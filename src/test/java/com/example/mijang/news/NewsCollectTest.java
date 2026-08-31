@@ -46,7 +46,6 @@ class NewsCollectTest {
             return 1;
         }
 
-        @Override public Long findIdByVendorId(String vendorId) { return rows.get(vendorId); }
 
         @Override public List<String> findSymbolsOfInterest() { return List.of("AAPL"); }
     }
@@ -54,10 +53,6 @@ class NewsCollectTest {
     private static class Links implements NewsStockMapper {
         final List<String> linked = new ArrayList<>();
 
-        @Override public int link(Long newsId, String symbol) {
-            linked.add(newsId + ":" + symbol);
-            return 1;
-        }
 
         @Override public int linkByVendorId(String vendorId, String symbol) {
             linked.add(vendorId + ":" + symbol);

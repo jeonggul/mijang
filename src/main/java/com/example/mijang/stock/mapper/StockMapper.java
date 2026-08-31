@@ -138,7 +138,4 @@ public interface StockMapper {
                            @Param("securityType") String securityType,
                            @Param("isin") String isin,
                            @Param("assetClass") String assetClass);
-
-    /** 종류가 채워진 종목 수. */
-    int countWithSecurityType();
 }

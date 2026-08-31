@@ -19,6 +19,8 @@ package com.example.mijang.market.client;
 import com.example.mijang.config.ExternalApiProperties;
 import com.example.mijang.config.MarketProperties;
 import com.example.mijang.market.cache.QuoteCacheService;
+import com.example.mijang.market.domain.MarketSession;
+import com.example.mijang.market.service.MarketCalendarService;
 import com.example.mijang.market.pool.SubscriptionPoolManager;
 import com.example.mijang.market.stream.SseEmitterRegistry;
 import jakarta.annotation.PreDestroy;
@@ -71,6 +73,7 @@ public class AlpacaWebSocketClient {
     private final QuoteCacheService cache;
     private final SseEmitterRegistry registry;
     private final SubscriptionPoolManager pool;
+    private final MarketCalendarService calendar;
     private final ObjectMapper mapper = new ObjectMapper();
 
     private final ScheduledExecutorService scheduler =
@@ -171,11 +174,18 @@ public class AlpacaWebSocketClient {
      * <p>정규장에는 IEX 로 진짜 실시간을 받고, 그 밖에는 15분 지연 SIP 로 받는다.
      * 둘을 동시에 열 수 없어 하나를 골라야 한다.
      *
-     * <p>휴장일은 아직 보지 않는다. 그날은 IEX 에 체결이 없어 값이 멈추는데,
-     * {@code market_holidays} 를 채우면 지연 피드로 넘어가게 할 수 있다.
+     * <p>휴장일은 거래 달력이 안다. 예전에는 요일과 시각만 보고 판단해서, 평일 휴장일에
+     * 정규장으로 읽고 IEX 에 붙어 있었다 — 그날은 체결이 없어 화면의 값이 하루 종일
+     * 멈춘다. 달력이 비어 있을 때만 요일·시각으로 물러난다.
      */
     private boolean regularSession() {
         ZonedDateTime now = ZonedDateTime.now(ET);
+        try {
+            return calendar.sessionAt(now) == MarketSession.REGULAR;
+        } catch (RuntimeException e) {
+            /* 달력을 못 읽어도 피드는 붙어 있어야 한다. 아래 어림짐작으로 물러난다 */
+            log.warn("[실시간] 거래 달력을 읽지 못해 요일·시각으로 판단한다", e);
+        }
         DayOfWeek day = now.getDayOfWeek();
         if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
             return false;

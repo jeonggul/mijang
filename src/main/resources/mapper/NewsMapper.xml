@@ -25,9 +25,6 @@
         VALUES (#{vendorId}, #{headline}, #{summary}, #{url}, #{source}, #{publishedAt})
     </insert>
 
-    <select id="findIdByVendorId" resultType="java.lang.Long">
-        SELECT id FROM news WHERE vendor_id = #{vendorId}
-    </select>
 
     <!-- 보유 중이거나 관심에 담긴 종목만. 전 종목을 돌면 벤더 한도를 태운다 -->
     <select id="findSymbolsOfInterest" resultType="string">

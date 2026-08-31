@@ -4,10 +4,6 @@
 <!-- 개발명세서(MVC): "NewsStockMapper XML id 일치" -->
 <mapper namespace="com.example.mijang.news.mapper.NewsStockMapper">
 
-    <insert id="link">
-        INSERT IGNORE INTO news_stocks (news_id, symbol)
-        VALUES (#{newsId}, #{symbol})
-    </insert>
 
     <!-- vendor_id 로 바로 잇는다. id 를 따로 물어보는 왕복을 없앤다 —
          기사마다 조회가 붙으면 한 번 수집에 수백 번이 나간다 -->

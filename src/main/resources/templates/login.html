@@ -34,9 +34,13 @@
         </div>
         <button class="btn btn-primary btn-block" type="submit">로그인</button>
         <p class="divider">또는</p>
-        <button class="btn btn-block" type="button">Google로 계속하기</button>
-        <button class="btn btn-block" type="button">Kakao로 계속하기</button>
-        <p class="note" style="text-align:center">소셜 로그인은 확장 단계 기능입니다</p>
+        <!-- 아직 붙일 곳이 없다. Google·Kakao 애플리케이션 등록이 선행이라
+             누르면 아무 일도 일어나지 않는데, 멀쩡한 버튼처럼 보이면 고장으로 읽힌다.
+             disabled 로 두어 눌리지 않는다는 것을 눈과 스크린리더 양쪽에 드러낸다.
+             연동이 붙으면 disabled 를 떼고 핸들러를 달면 된다 -->
+        <button class="btn btn-block" type="button" disabled>Google로 계속하기</button>
+        <button class="btn btn-block" type="button" disabled>Kakao로 계속하기</button>
+        <p class="note" style="text-align:center">소셜 로그인은 준비 중입니다</p>
       </form>
 
       <p class="auth-foot">아직 계정이 없으신가요? <a th:href="@{/signup}">회원가입</a></p>

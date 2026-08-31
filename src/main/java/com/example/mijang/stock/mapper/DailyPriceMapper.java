@@ -40,14 +40,6 @@ public interface DailyPriceMapper {
                                      @Param("tradeDate") java.time.LocalDate tradeDate);
 
     /**
-     * 직전 거래일 종가. 등락률의 분모다.
-     *
-     * <p>{@code OFFSET 1} 로 두 번째 행을 집는다. 달력상 어제가 아니라
-     * <b>거래일 기준 직전</b>이라야 주말·휴장일에 값이 어긋나지 않는다.
-     */
-    java.math.BigDecimal findPreviousClose(@Param("symbol") String symbol);
-
-    /**
      * 기간 내 최고가·최저가. {@code PRICE-04}
      *
      * <p>저장하지 않고 매번 집계한다. 이유는 2.5.
@@ -67,7 +59,4 @@ public interface DailyPriceMapper {
                @Param("low") java.math.BigDecimal low,
                @Param("close") java.math.BigDecimal close,
                @Param("volume") long volume);
-
-    /** 이미 수집된 마지막 거래일. 배치가 이어받을 지점을 정할 때 쓴다. */
-    LocalDate findLastTradeDate(@Param("symbol") String symbol);
 }

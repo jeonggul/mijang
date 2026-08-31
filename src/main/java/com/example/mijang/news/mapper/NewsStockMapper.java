@@ -11,8 +11,6 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface NewsStockMapper {
 
-    int link(@Param("newsId") Long newsId, @Param("symbol") String symbol);
-
     /**
      * vendor_id 로 바로 잇는다. 기사 id 를 따로 조회하지 않는다.
      *

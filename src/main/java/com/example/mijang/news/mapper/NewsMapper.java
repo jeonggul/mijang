@@ -38,9 +38,6 @@ public interface NewsMapper {
                      @Param("source") String source,
                      @Param("publishedAt") LocalDateTime publishedAt);
 
-    /** vendor_id 로 id 를 찾는다. 방금 넣었든 원래 있었든 연결에는 id 가 필요하다. */
-    Long findIdByVendorId(@Param("vendorId") String vendorId);
-
     /**
      * 수집 대상 종목.
      *

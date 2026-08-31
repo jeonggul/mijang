@@ -53,11 +53,9 @@ class StockDividendQueryServiceTest {
                     : new CandleResponse(TODAY, null, null, null, close, 0L);
         }
         @Override public BigDecimal findCloseOn(String s, LocalDate d) { return null; }
-        @Override public BigDecimal findPreviousClose(String s) { return null; }
         @Override public HighLow findHighLow(String s, LocalDate f) { return null; }
         @Override public int upsert(String s, LocalDate d, BigDecimal o, BigDecimal h,
                 BigDecimal l, BigDecimal c, long v) { return 1; }
-        @Override public LocalDate findLastTradeDate(String s) { return null; }
     }
 
     private static StockDividendQueryService service(Master master, Prices prices) {
