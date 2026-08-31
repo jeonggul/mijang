@@ -82,7 +82,6 @@ class AdminServiceTest {
         @Override public int countWithNameKo() { return 0; }
         @Override public int updateSecurityType(String symbol, String securityType,
                 String isin, String assetClass) { return 1; }
-        @Override public int countWithSecurityType() { return 0; }
 
         @Override public List<StockSearchResponse> findForAdmin(Boolean active, String assetClass,
                                                                 String q, int limit) {

@@ -113,7 +113,6 @@ class PostServiceTest {
         @Override public Long findLastInsertedId() { return 1L; }
         @Override public List<CommentResponse> findByPost(Long postId) { return List.of(); }
         @Override public Long findRepliableParentPostId(Long commentId) { return null; }
-        @Override public long countByPost(Long postId) { return 0; }
     }
 
     /** 종목이 있는지만 답한다. 나머지는 이 시험이 부르지 않는다. */
@@ -139,7 +138,6 @@ class PostServiceTest {
         @Override public int countWithNameKo() { return 0; }
         @Override public int updateSecurityType(String symbol, String securityType,
                                                 String isin, String assetClass) { return 1; }
-        @Override public int countWithSecurityType() { return 0; }
     }
 
     private static class Transactions implements TransactionMapper {

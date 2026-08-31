@@ -32,13 +32,6 @@
         <if test="tradeDate == null"> AND 1 = 0 </if>
     </select>
 
-    <select id="findPreviousClose" parameterType="string" resultType="java.math.BigDecimal">
-        SELECT close
-          FROM daily_prices
-         WHERE symbol = #{symbol}
-         ORDER BY trade_date DESC
-         LIMIT 1 OFFSET 1
-    </select>
 
     <!-- 저장하지 않고 매번 집계한다(2.5). 갱신을 빠뜨려 조용히 틀리는 것보다 낫다 -->
     <select id="findHighLow" resultType="com.example.mijang.stock.dto.HighLow">
@@ -61,8 +54,5 @@
             volume = VALUES(volume)
     </insert>
 
-    <select id="findLastTradeDate" parameterType="string" resultType="java.time.LocalDate">
-        SELECT MAX(trade_date) FROM daily_prices WHERE symbol = #{symbol}
-    </select>
 
 </mapper>

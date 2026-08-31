@@ -62,11 +62,5 @@
            AND status    = 'PUBLISHED'
     </select>
 
-    <select id="countByPost" resultType="long">
-        SELECT COUNT(*)
-          FROM comments
-         WHERE post_id = #{postId}
-           AND status  = 'PUBLISHED'
-    </select>
 
 </mapper>

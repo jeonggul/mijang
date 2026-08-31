@@ -131,9 +131,6 @@
                 OR asset_class &lt;&gt; #{assetClass})
     </update>
 
-    <select id="countWithSecurityType" resultType="_int">
-        SELECT COUNT(*) FROM stocks WHERE security_type IS NOT NULL
-    </select>
 
     <select id="countWithNameKo" resultType="_int">
         SELECT COUNT(*) FROM stocks WHERE name_ko IS NOT NULL
