@@ -302,6 +302,16 @@ table.holdings .stack { display: grid; gap: 3px; }
 .watch .px { font-family: var(--font-mono); font-size: var(--fs-num-sm); color: var(--text-sub); }
 .watch .pc { font-family: var(--font-mono); font-size: var(--fs-num-xs); font-weight: 500; }
 
+/* 관심 종목이 다섯을 넘을 때만 나온다. 목록과 붙어 보이지 않게 괘선으로 끊는다 */
+.watch-more {
+  display: block; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--line);
+  text-align: center; font-size: var(--fs-label); color: var(--text-sub);
+}
+.watch-more:hover { color: var(--record); }
+/* display 를 block 으로 잡았으니 hidden 을 다시 눌러 줘야 한다 */
+.watch-more[hidden] { display: none; }
+
 .tag {
   display: inline-block; margin-top: 10px;
   padding: 3px 6px; border-radius: 4px;

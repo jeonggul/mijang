@@ -126,6 +126,9 @@
     <section class="card">
       <h2 class="card-head">관심 종목 <span class="sub num" id="watch-count">—</span></h2>
       <ul class="watch" id="watchlist"></ul>
+      <!-- 머리말의 수는 전체를 세지만 목록은 다섯까지만 보여준다.
+           그보다 많을 때만 나머지를 볼 자리를 준다 -->
+      <a class="watch-more" id="watch-more" th:href="@{/watchlist}" hidden>더보기</a>
     </section>
 
     <section class="card">
