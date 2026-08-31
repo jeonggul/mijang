@@ -7,14 +7,16 @@
   "use strict";
 
   var source = null;      // 지금 열려 있는 SSE 연결
+  var fxRate = null;      // 원화 환산에 쓸 환율. 한 번만 받아 둔다
   var watching = "";      // 지금 구독 중인 티커 목록. 바뀔 때만 다시 연결한다
   var retry = 0;          // 연속 실패 횟수. 재연결 간격을 늘리는 데 쓴다
 
   /** 화면에 지금 떠 있는 티커를 모은다. 중복은 하나로 친다 */
   function symbolsOnScreen() {
     var set = new Set();
-    document.querySelectorAll("[data-quote]").forEach(function (el) {
-      if (el.dataset.quote) set.add(el.dataset.quote);
+    document.querySelectorAll("[data-quote], [data-quote-krw]").forEach(function (el) {
+      var sym = el.dataset.quote || el.dataset.quoteKrw;
+      if (sym) set.add(sym);
     });
     return Array.from(set).sort();
   }
@@ -22,6 +24,28 @@
   function usd(v) {
     return "$" + Number(v).toLocaleString("en-US",
       { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function krw(v) {
+    return Math.round(Number(v)).toLocaleString("ko-KR") + "원";
+  }
+
+  /* 원화 환산에 쓸 환율. 화면에 [data-quote-krw] 가 하나라도 있을 때만 받는다 —
+     쓰지도 않을 값을 모든 화면에서 부를 이유가 없다 */
+  async function ensureFxRate() {
+    if (fxRate !== null) return fxRate;
+    if (!document.querySelector("[data-quote-krw]")) return null;
+    try {
+      var res = await fetch("/api/fx/rates");
+      if (!res.ok) return null;
+      var body = await res.json();
+      if (body.success && body.data && body.data.rate != null) {
+        fxRate = Number(body.data.rate);
+      }
+    } catch (e) {
+      /* 환율을 못 받아도 달러 값은 그대로 보여야 한다 */
+    }
+    return fxRate;
   }
 
   /**
@@ -33,6 +57,13 @@
   function paint(quote) {
     document.querySelectorAll('[data-quote="' + quote.symbol + '"]').forEach(function (el) {
       el.textContent = usd(quote.price);
+      el.classList.toggle("stale", !quote.live);
+    });
+    /* 원화 환산 자리. 환율을 못 받았으면 건드리지 않는다 —
+       달러 값에 1 을 곱한 숫자를 원화라고 내놓는 것보다 비어 있는 편이 낫다 */
+    if (fxRate == null) return;
+    document.querySelectorAll('[data-quote-krw="' + quote.symbol + '"]').forEach(function (el) {
+      el.textContent = krw(quote.price * fxRate);
       el.classList.toggle("stale", !quote.live);
     });
   }
@@ -99,6 +130,7 @@
     var symbols = symbolsOnScreen();
     if (symbols.join(",") === watching && source) return;   // 바뀐 게 없으면 그대로 둔다
 
+    await ensureFxRate();
     await primeOnce(symbols);
 
     /* 이 경로는 로그인을 요구한다. 비로그인이면 401 이 오는데 그것이 정상이다 —

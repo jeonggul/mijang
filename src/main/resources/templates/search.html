@@ -160,6 +160,19 @@
   }
 
   /* 한 줄을 만든다. 검색 API 는 시세를 주지 않아 가격 칸은 — 다 */
+  /* 등락률 한 칸. 값이 없으면 0% 대신 — 을 둔다 —
+     0% 는 "안 움직였다" 라는 뜻이라, 모른다는 것과 다르다 */
+  function fillChange(cell, rate) {
+    if (rate == null) {
+      cell.className = "r sub";
+      cell.textContent = "—";
+      return;
+    }
+    var n = Number(rate);
+    cell.className = "r num " + (n > 0 ? "rise" : n < 0 ? "fall" : "sub");
+    cell.textContent = (n > 0 ? "+" : "") + n.toFixed(2) + "%";
+  }
+
   function row(stock) {
     var tr = document.createElement("tr");
     var on = watched.has(stock.symbol);
@@ -169,14 +182,15 @@
       '<td><a></a></td>' +
       '<td class="txt"></td>' +
       '<td></td>' +
-      /* 검색 API 는 시세를 주지 않는다. data-quote 를 달아 두면
-         quotes.js 가 실시간으로(장 마감이면 종가로) 채워 준다 */
+      /* 현재가는 data-quote 를 달아 두면 quotes.js 가 실시간으로(장 마감이면 종가로)
+         채워 준다. 등락률은 실시간 값에 기준가가 없어 서버가 준 것을 그대로 쓴다 */
       '<td class="r num">—</td>' +
-      '<td class="r sub">—</td>' +
+      '<td class="r num"></td>' +
       '<td class="r"><button class="star" type="button" aria-label="관심 종목"></button></td>';
     fillSymbolCell(tr.children[0], stock);
     tr.children[2].textContent = stock.exchange || "—";
     tr.children[3].setAttribute("data-quote", stock.symbol);
+    fillChange(tr.children[4], stock.dayChangeRate);
     fillStar(tr.children[5].firstChild, stock.symbol, on);
     /* 종목명은 textContent 로 넣는다. 벤더 문자열이라 그대로 HTML 에 붙이지 않는다.
        한글명이 있으면 그것을 앞에 세운다. 없는 종목(대부분 ETF)은 영문명 그대로다 */

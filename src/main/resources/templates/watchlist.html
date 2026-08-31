@@ -78,8 +78,9 @@
       '<td class="txt"></td>' +
       /* data-quote 가 붙은 자리는 quotes.js 가 실시간으로 갈아 끼운다 */
       '<td class="r num">' + money(item.currentPrice) + '</td>' +
-      /* 원화 환산은 fx 범위가 붙기 전까지 비운다(2.8) */
-      '<td class="r sub">—</td>' +
+      /* 원화 환산도 quotes.js 가 채운다. 현재가와 같은 시세에 환율을 곱하므로
+         두 칸이 서로 다른 시점을 가리키지 않는다 */
+      '<td class="r num" data-quote-krw="">—</td>' +
       '<td class="r num ' + cls + '">' + percent(item.dayChangeRate) + '</td>' +
       '<td class="r"><a class="btn btn-sm" href="/record-new">기록 추가</a> ' +
         '<button class="btn btn-sm" type="button">해제</button></td>';
@@ -94,6 +95,7 @@
       tr.children[0].append(" ", bad);
     }
     tr.children[2].setAttribute("data-quote", item.symbol);
+    tr.children[3].setAttribute("data-quote-krw", item.symbol);
     tr.children[5].querySelector("button").setAttribute("data-remove", item.id);
 
     /* 종목명은 textContent 로 넣는다. 벤더 문자열이라 그대로 HTML 에 붙이지 않는다.
