@@ -31,6 +31,27 @@
         SELECT LAST_INSERT_ID()
     </select>
 
+    <!-- user_id 를 WHERE 에 둔다. 서비스가 먼저 소유를 확인하지만, 질의 자체가
+         남의 행에 닿지 않아야 검사 한 겹이 빠져도 새어 나가지 않는다.
+         지운 기록은 되살리지 않는다 — deleted_at IS NULL 이 그 뜻이다 -->
+    <update id="update">
+        UPDATE transactions
+           SET symbol       = #{symbol},
+               side         = #{side},
+               quantity     = #{quantity},
+               price        = #{price},
+               fx_rate      = #{fxRate},
+               fee          = #{fee},
+               traded_at    = #{tradedAt},
+               trade_date   = #{tradeDate},
+               buy_reason   = #{buyReason},
+               target_price = #{targetPrice},
+               sentiment    = #{sentiment}
+         WHERE id      = #{id}
+           AND user_id = #{userId}
+           AND deleted_at IS NULL
+    </update>
+
     <!-- 정렬이 계산 결과를 좌우한다(2.2).
          같은 날 여러 건은 id 순으로 이어 붙여 입력 순서를 유지한다 -->
     <select id="findForRecalc" resultType="com.example.mijang.portfolio.domain.Transaction">

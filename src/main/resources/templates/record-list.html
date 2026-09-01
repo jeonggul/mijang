@@ -180,6 +180,8 @@
         '<b class="tk"></b><span class="nm"></span>' +
         '<time class="date"></time>' +
         '<span class="spacer"></span>' +
+        /* 수정은 record-new 를 수정 모드로 연다. 폼과 검증을 한 벌만 둔다 */
+        '<a class="btn btn-sm" data-edit>수정</a>' +
         '<button class="btn btn-sm" type="button">삭제</button>' +
       '</header>' +
       '<dl class="figures">' +
@@ -210,6 +212,7 @@
     t.dateTime = tx.tradeDate;
     t.textContent = tx.tradeDate;
     art.querySelector("button").dataset.txId = tx.id;
+    art.querySelector("[data-edit]").setAttribute("href", "/record-new?edit=" + tx.id);
 
     var dd = art.querySelectorAll("dd");
     dd[0].textContent = shares(tx.quantity) + "주";
@@ -354,6 +357,8 @@
   }
 
   box.addEventListener("click", function (e) {
+    /* 수정은 링크라 그대로 흘려보낸다. 여기서 가로채면 페이지 이동이 막힌다 */
+    if (e.target.closest("[data-edit]")) return;
     var btn = e.target.closest("[data-tx-id]");
     if (!btn) return;
     var tx = loaded[btn.dataset.txId];

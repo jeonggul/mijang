@@ -29,6 +29,13 @@ class TaxServiceTest {
 
     /** 종목별 거래 목록을 들고 있는 가짜 매퍼. 재계산용 조회만 진짜처럼 답한다. */
     private static class Ledger implements TransactionMapper {
+        @Override public int update(Long id, Long userId, String symbol, String side,
+                                    java.math.BigDecimal quantity, java.math.BigDecimal price,
+                                    java.math.BigDecimal fxRate, java.math.BigDecimal fee,
+                                    java.time.LocalDateTime tradedAt, java.time.LocalDate tradeDate,
+                                    String buyReason, java.math.BigDecimal targetPrice,
+                                    String sentiment) { return 1; }
+
         final Map<String, List<Transaction>> bySymbol = new LinkedHashMap<>();
 
         void add(Transaction tx) {

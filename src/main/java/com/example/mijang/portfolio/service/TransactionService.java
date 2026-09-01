@@ -105,6 +105,85 @@ public class TransactionService {
     }
 
     /**
+     * 한 건 조회. 수정 화면이 값을 채울 때 쓴다.
+     *
+     * <p>목록에서 찾아 쓸 수도 있지만 그러면 200건 너머의 기록은 고칠 수 없다.
+     *
+     * @throws BusinessException 없거나 남의 기록일 때(404)
+     */
+    @Transactional(readOnly = true)
+    public TransactionResponse detail(Long userId, Long txId) {
+        Transaction tx = transactionMapper.findById(txId, userId);
+        if (tx == null) {
+            throw new BusinessException(ErrorCode.TX_NOT_FOUND);
+        }
+        Stock stock = stockMapper.findBySymbol(tx.symbol());
+        return new TransactionResponse(tx.id(), tx.symbol(),
+                stock == null ? null : stock.name(),
+                tx.side(), tx.quantity(), tx.price(), tx.fxRate(), tx.fee(),
+                tx.tradedAt(), tx.tradeDate(),
+                tx.buyReason(), tx.targetPrice(), tx.sentiment(), null);
+    }
+
+    /**
+     * 한 건을 통째로 고친다. {@code ACCOUNT-04}
+     *
+     * <p>등록과 같은 검사를 거친다 — 종목이 실재하는가, 거래일이 미래는 아닌가,
+     * 환율이 비었으면 그날 값으로 채운다.
+     *
+     * <p><b>종목을 바꾸면 두 종목을 다시 계산한다.</b> 옛 종목에서 이 거래가 빠지고
+     * 새 종목에 더해지므로 한쪽만 계산하면 나머지 한쪽이 어긋난 채로 남는다.
+     * 화면에는 오류가 아니라 그냥 틀린 수량으로 보여서 눈치채기 어렵다.
+     *
+     * <p>수량 검사는 저장 <b>뒤</b>다. 등록과 같은 이유다 — 과거 기록을 고쳐 뒤따르는
+     * 매도가 보유를 넘기는 경우는 전체를 다시 계산해야만 드러난다. 예외를 던지면
+     * 트랜잭션이 통째로 되돌아가 원래 값이 남는다.
+     *
+     * @throws BusinessException 없거나 남의 기록일 때(404)
+     */
+    @Transactional
+    public void update(Long userId, Long txId, TransactionForm form) {
+        Transaction before = transactionMapper.findById(txId, userId);
+        if (before == null) {
+            throw new BusinessException(ErrorCode.TX_NOT_FOUND);
+        }
+        String symbol = normalize(form.getSymbol());
+
+        Stock stock = stockMapper.findBySymbol(symbol);
+        if (stock == null) {
+            throw new BusinessException(ErrorCode.STOCK_NOT_FOUND, "symbol");
+        }
+        /* 폐지 종목으로 <b>옮기는</b> 것만 막는다. 원래 그 종목이던 기록은 고칠 수 있어야
+           한다 — 폐지됐다고 과거의 오타를 영영 못 고치면 원장이 틀린 채로 굳는다 */
+        if (!stock.tradable() && !symbol.equals(before.symbol())) {
+            throw new BusinessException(ErrorCode.TX_STOCK_INACTIVE, "symbol");
+        }
+
+        LocalDate tradeDate = tradingClock.tradeDate(
+                form.getTradedAt().atZone(TradingClock.SERVICE_ZONE).toInstant());
+        if (tradeDate.isAfter(tradingClock.today())) {
+            throw new BusinessException(ErrorCode.TX_TRADE_DATE_FUTURE, "tradedAt");
+        }
+
+        BigDecimal fxRate = resolveFxRate(form.getFxRate(), tradeDate);
+        BigDecimal fee = form.getFee() == null ? BigDecimal.ZERO : form.getFee();
+
+        transactionMapper.update(txId, userId, symbol,
+                form.getSide(), form.getQuantity(), form.getPrice(), fxRate, fee,
+                form.getTradedAt(), tradeDate,
+                form.getBuyReason(), form.getTargetPrice(), form.getSentiment());
+
+        /* 옮겨 간 경우 옛 종목부터 정리한다. 순서는 상관없지만 둘 다 해야 한다 */
+        if (!symbol.equals(before.symbol())) {
+            holdingService.recalculate(userId, before.portfolioId(), before.symbol());
+        }
+        Holding holding = holdingService.recalculate(userId, before.portfolioId(), symbol);
+        if (holding.quantity().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException(ErrorCode.TX_QUANTITY_EXCEEDS_HOLDING, "quantity");
+        }
+    }
+
+    /**
      * 삭제. 지우지 않고 표시만 하고(2.9) 해당 종목을 다시 계산한다.
      *
      * <p>삭제 <b>전에</b> 종목을 알아내야 한다. 지운 뒤에는 어느 종목을 다시 계산해야

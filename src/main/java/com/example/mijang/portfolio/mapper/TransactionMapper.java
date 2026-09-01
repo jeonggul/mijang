@@ -44,6 +44,28 @@ public interface TransactionMapper {
     Long findLastInsertedId();
 
     /**
+     * 한 건을 통째로 고친다. 남의 기록은 손대지 못한다 — WHERE 에 user_id 가 있다.
+     *
+     * <p>실현손익은 여기서 건드리지 않는다. 원장에 저장하지 않고 조회할 때마다
+     * 다시 계산하는 값이라(2.1) 고칠 것이 없다.
+     *
+     * @return 고친 행 수. 0 이면 없거나 남의 것이다
+     */
+    int update(@Param("id") Long id,
+               @Param("userId") Long userId,
+               @Param("symbol") String symbol,
+               @Param("side") String side,
+               @Param("quantity") BigDecimal quantity,
+               @Param("price") BigDecimal price,
+               @Param("fxRate") BigDecimal fxRate,
+               @Param("fee") BigDecimal fee,
+               @Param("tradedAt") LocalDateTime tradedAt,
+               @Param("tradeDate") LocalDate tradeDate,
+               @Param("buyReason") String buyReason,
+               @Param("targetPrice") BigDecimal targetPrice,
+               @Param("sentiment") String sentiment);
+
+    /**
      * 재계산용. 한 종목의 거래를 <b>거래일 오름차순</b>으로 전부 가져온다.
      *
      * <p>정렬이 계산 결과를 좌우한다. 순서가 뒤바뀌면 평단가가 달라진다(2.2).
