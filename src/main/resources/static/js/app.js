@@ -60,12 +60,14 @@ function toHolding(h) {
     marketValueKrw: h.marketValueKrw == null ? null : Number(h.marketValueKrw),
     evalPnlKrw: h.evalPnlKrw == null ? null : Number(h.evalPnlKrw),
     avgFxRate: h.avgFxRate == null ? null : Number(h.avgFxRate),
-    pricePnlKrw: null,
-    fxPnlKrw: null,
-    /* 수익률은 받은 값으로 구할 수 있다 — 평가손익 ÷ 매입원가(2.8).
-       주가·환율 분해와 달리 서버가 따로 주지 않아도 되는 표시용 파생값이다 */
+    /* 예전에는 셋 다 null 로 박아 두어 보유 표의 세 자리가 늘 비어 있었다.
+       서버가 총계와 같은 식으로 나눠서 준다 */
+    pricePnlKrw: h.pricePnlKrw == null ? null : Number(h.pricePnlKrw),
+    fxPnlKrw: h.fxPnlKrw == null ? null : Number(h.fxPnlKrw),
+    /* 수익률은 받은 값으로 구할 수 있다 — 평가손익 ÷ 매입원가(2.8) */
     returnRate: returnRateOf(h),
-    dayChangeRate: null,
+    /* pct 가 비율을 받아 퍼센트로 만든다. API 는 퍼센트로 주므로 100 으로 나눈다 */
+    dayChangeRate: h.dayChangeRate == null ? null : Number(h.dayChangeRate) / 100,
   };
 }
 
