@@ -245,6 +245,14 @@
     timer = setTimeout(search, 200);
   });
 
+  /* 헤더 검색창에서 엔터를 치면 /search?q=... 로 넘어온다(header-search.js).
+     그 값을 받지 않으면 빈 화면이 떠서 방금 친 것을 다시 쳐야 한다 */
+  var initialQuery = new URLSearchParams(location.search).get("q");
+  if (initialQuery) {
+    input.value = initialQuery;
+    search();
+  }
+
   var filter = document.getElementById("ex-filter");
   if (filter) {
     filter.addEventListener("mj:change", function (e) {

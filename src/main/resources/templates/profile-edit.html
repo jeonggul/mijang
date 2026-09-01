@@ -17,18 +17,20 @@
 
 <div class="page-wide">
   <section class="card card-pad profile-head">
-    <span class="ava-lg" aria-hidden="true"></span>
+    <span class="ava-lg" aria-hidden="true"><img id="profile-avatar" alt="" hidden></span>
     <div class="info">
       <h1 id="profile-name">—</h1>
       <p class="note"><span id="profile-email">—</span> · <span id="profile-joined">—</span> 가입</p>
       <ul class="stats">
         <li><span class="k">매매 기록</span><span class="v num" id="profile-tx-count">—</span></li>
         <li><span class="k">보유 종목</span><span class="v num" id="profile-holding-count">—</span></li>
-        <li><span class="k">작성 글</span><span class="v num">—</span></li>
+        <li><span class="k">작성 글</span><span class="v num" id="profile-post-count">—</span></li>
         <li><span class="k">기준 통화</span><span class="v" id="profile-currency">—</span></li>
       </ul>
     </div>
-    <a class="btn btn-sm" th:href="@{/profile-edit}">프로필 수정</a>
+    <!-- 여기가 이미 프로필 수정 화면이다. 같은 곳으로 보내는 버튼은 눌러도 제자리라
+         돌아갈 곳을 준다 -->
+    <a class="btn btn-sm" th:href="@{/mypage}">마이페이지</a>
   </section>
 
   <section class="card card-pad">
@@ -112,6 +114,15 @@
     count();
     var img = document.getElementById("img-preview");
     if (img && me.profileImageUrl) { img.src = me.profileImageUrl; img.hidden = false; }
+    var avatar = document.getElementById("profile-avatar");
+    if (avatar && me.profileImageUrl) { avatar.src = me.profileImageUrl; avatar.hidden = false; }
+  });
+
+  /* 작성 글 수. 커뮤니티가 붙기 전에는 셀 수 없어 비워 뒀던 자리다 */
+  fetch("/api/users/me/posts?page=0&size=1").then(function (res) {
+    return res.ok ? res.json() : null;
+  }).then(function (body) {
+    if (body && body.success) put("profile-post-count", (body.data.totalElements || 0) + "건");
   });
 
   fetch("/api/transactions?page=0&size=1").then(function (res) {
@@ -155,6 +166,11 @@
     var img = document.getElementById("img-preview");
     if (img) {
       if (out.data.profileImageUrl) { img.src = out.data.profileImageUrl; img.hidden = false; }
+      var top = document.getElementById("profile-avatar");
+      if (top) {
+        top.hidden = !out.data.profileImageUrl;
+        if (out.data.profileImageUrl) top.src = out.data.profileImageUrl;
+      }
       else { img.hidden = true; }
     }
   });

@@ -180,6 +180,8 @@
         '<b class="tk"></b><span class="nm"></span>' +
         '<time class="date"></time>' +
         '<span class="spacer"></span>' +
+        /* 회고는 판단을 남긴 매수에만 붙는다. 없는 기록에 달면 눌러도 빈 화면이다 */
+        '<a class="btn btn-sm" data-retro hidden>회고 보기</a>' +
         /* 수정은 record-new 를 수정 모드로 연다. 폼과 검증을 한 벌만 둔다 */
         '<a class="btn btn-sm" data-edit>수정</a>' +
         '<button class="btn btn-sm" type="button">삭제</button>' +
@@ -213,6 +215,14 @@
     t.textContent = tx.tradeDate;
     art.querySelector("button").dataset.txId = tx.id;
     art.querySelector("[data-edit]").setAttribute("href", "/record-new?edit=" + tx.id);
+
+    /* 회고 화면이 카드로 만드는 조건과 같아야 한다(retrospect.js eligible).
+       여기가 느슨하면 눌렀을 때 그 기록이 회고 목록에 없다 */
+    var retro = art.querySelector("[data-retro]");
+    if (buy && (tx.buyReason || tx.targetPrice != null || tx.sentiment)) {
+      retro.setAttribute("href", "/retrospect#retro-" + tx.id);
+      retro.hidden = false;
+    }
 
     var dd = art.querySelectorAll("dd");
     dd[0].textContent = shares(tx.quantity) + "주";
@@ -358,7 +368,7 @@
 
   box.addEventListener("click", function (e) {
     /* 수정은 링크라 그대로 흘려보낸다. 여기서 가로채면 페이지 이동이 막힌다 */
-    if (e.target.closest("[data-edit]")) return;
+    if (e.target.closest("[data-edit]") || e.target.closest("[data-retro]")) return;
     var btn = e.target.closest("[data-tx-id]");
     if (!btn) return;
     var tx = loaded[btn.dataset.txId];

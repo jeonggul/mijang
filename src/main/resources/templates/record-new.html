@@ -395,7 +395,7 @@
     save.textContent = "수정 저장";
 
     (async function () {
-      var res = await fetch("/api/transactions/" + EDIT_ID);
+      var res = await fetch("/api/transactions/" + encodeURIComponent(EDIT_ID));
       if (res.status === 401) { location.href = "/login"; return; }
       var out = await res.json();
       if (!out.success) { show("기록을 불러오지 못했습니다"); save.disabled = true; return; }
@@ -470,7 +470,8 @@
 
     /* 수정 모드면 그 기록을 고치고, 아니면 새로 넣는다.
        두 화면을 따로 만들면 검증과 단위 환산이 두 벌이 되어 한쪽만 고쳐진다 */
-    var res = await fetch(EDIT_ID ? "/api/transactions/" + EDIT_ID : "/api/transactions", {
+    var res = await fetch(EDIT_ID ? "/api/transactions/" + encodeURIComponent(EDIT_ID)
+                                  : "/api/transactions", {
       method: EDIT_ID ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)

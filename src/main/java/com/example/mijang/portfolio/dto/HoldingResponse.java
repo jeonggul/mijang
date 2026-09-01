@@ -29,5 +29,11 @@ public record HoldingResponse(
         BigDecimal realizedPnlKrw,
         BigDecimal currentPrice,
         BigDecimal marketValueKrw,
-        BigDecimal evalPnlKrw) {
+        BigDecimal evalPnlKrw,
+        /* 평가손익을 두 갈래로 나눈 값. ProfitLossCalculator 와 같은 식이라
+           행을 다 더하면 화면 위쪽 합계와 맞는다 — 다르면 둘 중 하나가 틀린 것으로 보인다 */
+        BigDecimal pricePnlKrw,
+        BigDecimal fxPnlKrw,
+        /* 직전 종가 대비 등락률(%). 관심종목·검색과 같은 식이다 */
+        BigDecimal dayChangeRate) {
 }

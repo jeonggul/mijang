@@ -88,6 +88,17 @@ public enum ErrorCode {
     TX_QUANTITY_EXCEEDS_HOLDING("TX_QUANTITY_EXCEEDS_HOLDING", HttpStatus.UNPROCESSABLE_CONTENT,
             "보유 수량보다 많이 매도할 수 없습니다"),
     /** 명세서 1.6. 날짜 형식 자체가 틀린 것이 아니라 값이 미래이므로 400이다. */
+    /**
+     * 그날 환율을 못 찾았고 사용자도 적지 않았다.
+     *
+     * <p>입력이 틀린 게 아니라 우리가 값을 못 채운 것이라 422 다. 문구는 화면의
+     * 환율 힌트("그날 환율이 없습니다 · 직접 입력해주세요")와 같은 말을 해야 한다 —
+     * 힌트를 보고도 그냥 낸 사람에게 "요청 값이 올바르지 않습니다" 만 뜨면
+     * 무엇을 고쳐야 하는지 알 수 없다.
+     */
+    TX_FX_RATE_REQUIRED("TX_FX_RATE_REQUIRED", HttpStatus.UNPROCESSABLE_CONTENT,
+            "그날 환율을 찾지 못했습니다. 적용 환율을 직접 입력해주세요"),
+
     TX_TRADE_DATE_FUTURE("TX_TRADE_DATE_FUTURE", HttpStatus.BAD_REQUEST,
             "거래일은 미래일 수 없습니다"),
     /** 명세서 1.6. */
