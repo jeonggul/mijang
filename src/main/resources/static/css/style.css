@@ -1147,6 +1147,9 @@ body.landing .card {
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-card); padding: 16px 18px; margin-bottom: 12px;
 }
+/* 기록 목록에서 "회고 보기" 로 들어왔을 때 어느 카드인지 짚어 준다.
+   --record 는 기록 계열 강조색이다. 손익 색(--rise/--fall)을 쓰면 방향이 있는 것처럼 읽힌다 */
+.retro-card.focused { border-color: var(--record); box-shadow: 0 0 0 3px color-mix(in srgb, var(--record) 22%, transparent); }
 .retro-card header { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .retro-card .tk { font-family: var(--font-mono); font-size: var(--fs-num-sm); }
 .retro-card .nm { font-size: var(--fs-label); color: var(--text-sub); }

@@ -39,6 +39,12 @@
     list.replaceChildren();
     if (ordered.length === 0) { var empty = document.createElement("section"); empty.className = "card sub"; empty.style.cssText = "padding:28px;text-align:center"; empty.textContent = "판단 메모·목표가·심리를 남긴 매수 기록이 없습니다"; list.appendChild(empty); return; }
     ordered.forEach(function (tx) { list.appendChild(card(tx)); }); renderNav();
+    /* 카드를 스크립트가 그린 뒤라 브라우저가 이미 해시를 처리하고 지나갔다.
+       기록 목록에서 "회고 보기" 로 들어오면 그 카드로 직접 데려간다 */
+    if (location.hash.indexOf("#retro-") === 0) {
+      var target = document.getElementById(location.hash.slice(1));
+      if (target) { target.scrollIntoView({ block: "center" }); target.classList.add("focused"); }
+    }
   }
   Promise.all([api("/api/transactions?page=0&size=200"), api("/api/portfolio/holdings")]).then(function (values) {
     records = ((values[0] && values[0].content) || []).filter(eligible); (values[1] || []).forEach(function (h) { holdings.set(h.symbol, h); }); render();
