@@ -141,6 +141,13 @@ class PostServiceTest {
     }
 
     private static class Transactions implements TransactionMapper {
+        @Override public int update(Long id, Long userId, String symbol, String side,
+                                    java.math.BigDecimal quantity, java.math.BigDecimal price,
+                                    java.math.BigDecimal fxRate, java.math.BigDecimal fee,
+                                    java.time.LocalDateTime tradedAt, java.time.LocalDate tradeDate,
+                                    String buyReason, java.math.BigDecimal targetPrice,
+                                    String sentiment) { return 1; }
+
         Transaction found;
         final List<Transaction> ledger = new ArrayList<>();
 
