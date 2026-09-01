@@ -306,7 +306,7 @@ public class TransactionService {
         }
         BigDecimal resolved = fxRateService.rateOf(tradeDate);
         if (resolved == null) {
-            throw new BusinessException(ErrorCode.COMMON_INVALID_REQUEST, "fxRate");
+            throw new BusinessException(ErrorCode.TX_FX_RATE_REQUIRED, "fxRate");
         }
         return resolved;
     }
