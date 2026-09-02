@@ -649,6 +649,11 @@ table.holdings .stack { display: grid; gap: 3px; }
 .demo-tip-head { margin: 0 0 8px; font-size: var(--fs-badge); color: var(--text-sub); }
 .demo-tip-foot { margin: 8px 0 0; font-size: var(--fs-badge); color: var(--text-sub); line-height: 1.5; }
 
+/* 계정 하나 묶음. 여럿일 때 어디까지가 한 계정인지 괘선으로 끊는다 */
+.demo-item + .demo-item { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.demo-hint { margin: 0 0 6px; font-size: var(--fs-badge); color: var(--text-sub); }
+.demo-go { margin-top: 2px; }
+
 .demo-row {
   display: flex; align-items: center; gap: 8px; width: 100%;
   padding: 8px 9px; margin-bottom: 4px;

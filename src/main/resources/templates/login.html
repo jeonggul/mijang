@@ -18,31 +18,39 @@
     <div class="auth-card">
       <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></p>
 
-      <!-- 체험 계정 안내. 설정에 값이 없으면 이 블록 자체가 렌더되지 않는다 —
+      <!-- 계정 안내. 설정에 목록이 없으면 이 블록 자체가 렌더되지 않는다 —
            운영에 그대로 올라가도 설정을 채우지 않는 한 아무것도 새지 않는다 -->
-      <div class="menu-anchor demo-anchor" th:if="${demoEmail}">
+      <div class="menu-anchor demo-anchor" th:if="${!#lists.isEmpty(demoAccounts)}">
         <button class="demo-tip-btn" type="button" data-open="demo-tip"
-                aria-label="체험 계정 안내">
+                aria-label="계정 안내 열기">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
             <path d="M12 11v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             <circle cx="12" cy="7.8" r="1.1" fill="currentColor"/>
           </svg>
-          체험 계정
+          계정 안내
         </button>
 
-        <div class="dropdown demo-tip" id="demo-tip" hidden role="dialog"
-             aria-label="체험 계정 정보">
+        <div class="dropdown demo-tip" id="demo-tip" hidden role="dialog" aria-label="계정 안내">
           <p class="demo-tip-head">눌러서 입력칸에 채웁니다</p>
-          <!-- 값은 th:text 로 넣는다. 서버가 준 문자열이라 그대로 HTML 에 붙이지 않는다 -->
-          <button class="demo-row" type="button" data-fill="email" th:attr="data-value=${demoEmail}">
-            <span class="k">이메일</span><span class="v" th:text="${demoEmail}">—</span>
-          </button>
-          <button class="demo-row" type="button" data-fill="pw" th:attr="data-value=${demoPassword}">
-            <span class="k">비밀번호</span><span class="v" th:text="${demoPassword}">—</span>
-          </button>
-          <button class="btn btn-sm btn-block" type="button" id="demo-fill-all">둘 다 채우기</button>
-          <p class="demo-tip-foot">둘러보기용 계정입니다. 실제 매매와 무관합니다.</p>
+
+          <!-- 값은 th:text·th:attr 로 넣는다. 서버가 준 문자열이라 그대로 HTML 에 붙이지 않는다 -->
+          <div class="demo-item" th:each="acc : ${demoAccounts}">
+            <button class="demo-row" type="button" data-fill="email"
+                    th:attr="data-value=${acc.email}">
+              <span class="k">이메일</span><span class="v" th:text="${acc.email}">—</span>
+            </button>
+            <!-- 비밀번호를 설정에 두지 않은 계정은 이 줄이 없다. 직접 친다 -->
+            <button class="demo-row" type="button" data-fill="pw"
+                    th:if="${acc.hasPassword()}" th:attr="data-value=${acc.password}">
+              <span class="k">비밀번호</span><span class="v" th:text="${acc.password}">—</span>
+            </button>
+            <p class="demo-hint" th:unless="${acc.hasPassword()}">비밀번호는 직접 입력합니다</p>
+            <button class="btn btn-sm btn-block demo-go" type="button"
+                    th:attr="data-email=${acc.email},data-password=${acc.password}">채우기</button>
+          </div>
+
+          <p class="demo-tip-foot">둘러보기용 안내입니다. 실제 매매와 무관합니다.</p>
         </div>
       </div>
 
@@ -100,12 +108,12 @@
   }
   form.addEventListener("input", clear);
 
-  /* ── 체험 계정 말풍선 ────────────────────────────────────
+  /* ── 계정 안내 말풍선 ────────────────────────────────────
      아이콘을 누르면 열린다(여닫기는 ui.js 의 data-open 이 맡는다).
      줄을 누르면 그 값을 입력칸에 넣고 클립보드에도 담는다 — 직접 복사해
      다른 곳에 붙이고 싶을 수 있어 둘 다 한다.
 
-     값을 화면 스크립트에 박지 않는다. 서버가 data-value 로 내려준 것만 읽는다.
+     값을 화면 스크립트에 박지 않는다. 서버가 data-* 로 내려준 것만 읽는다.
      설정이 비어 있으면 이 블록 자체가 렌더되지 않아 아래 코드는 그냥 지나간다. */
   var tip = document.getElementById("demo-tip");
   if (tip) {
@@ -113,7 +121,7 @@
 
     function fill(which, value) {
       var input = document.getElementById(FIELD[which]);
-      if (!input || value == null) return;
+      if (!input || !value) return;
       input.value = value;
       /* 브라우저 자동완성이 걸려 있어도 화면 값과 폼 값이 어긋나지 않게 알린다 */
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -139,13 +147,19 @@
         flash(row);
         return;
       }
-      if (e.target.closest("#demo-fill-all")) {
-        tip.querySelectorAll("[data-fill]").forEach(function (r) {
-          fill(r.dataset.fill, r.dataset.value);
-        });
-        tip.hidden = true;
-        document.getElementById("pw").focus();
-      }
+
+      var go = e.target.closest(".demo-go");
+      if (!go) return;
+
+      fill("email", go.dataset.email);
+      fill("pw", go.dataset.password);
+      tip.hidden = true;
+      /* 비밀번호를 설정에 두지 않은 계정이면 그 칸에 초점을 준다 — 바로 칠 수 있게.
+         다 채워졌으면 로그인 버튼으로 보낸다 */
+      var next = go.dataset.password
+        ? form.querySelector('button[type="submit"]')
+        : document.getElementById("pw");
+      if (next) next.focus();
     });
   }
 
