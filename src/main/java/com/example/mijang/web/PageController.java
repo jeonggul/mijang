@@ -4,6 +4,7 @@ import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.config.PasswordResetProperties;
 import com.example.mijang.user.service.PasswordService;
 import java.util.Locale;
+import com.example.mijang.config.DemoAccountProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,6 +26,8 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequiredArgsConstructor
 public class PageController {
 
+    private final DemoAccountProperties demoAccount;
+
     private final PasswordResetProperties resetProperties;
     private final PasswordService passwordService;
 
@@ -41,8 +44,18 @@ public class PageController {
         return "landing";
     }
 
+    /**
+     * 로그인 화면.
+     *
+     * <p>체험 계정이 설정돼 있으면 화면에 안내를 띄운다. 값이 없으면 아이콘도 나오지
+     * 않는다 — 운영에 그대로 올라가도 설정을 채우지 않는 한 아무것도 새지 않는다.
+     */
     @GetMapping("/login")
-    public String login() {
+    public String login(Model model) {
+        if (demoAccount.isConfigured()) {
+            model.addAttribute("demoEmail", demoAccount.getEmail());
+            model.addAttribute("demoPassword", demoAccount.getPassword());
+        }
         return "login";
     }
 
