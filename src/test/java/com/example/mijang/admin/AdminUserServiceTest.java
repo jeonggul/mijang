@@ -35,6 +35,68 @@ class AdminUserServiceTest {
         service = new AdminUserService(users, logs, versions);
     }
 
+    /* ── 권한 해제 (ADMIN-03) ────────────────────────────────
+       정지와 같은 안전장치를 걸어야 한다. 관리자가 한 명도 안 남으면
+       아무도 관리자 화면에 들어갈 수 없어 되돌릴 방법이 DB 밖에 없다. */
+
+    @Test
+    @DisplayName("관리자를 일반 사용자로 내리고 토큰을 끊는다")
+    void 권한해제() {
+        users.account = new AdminUserAccount(2L, "a@x.com", "부관리", "ADMIN", "ACTIVE", 3);
+        users.activeAdminIds = List.of(1L, 2L);
+
+        service.demote(1L, 2L);
+
+        assertThat(users.roleUpdated).isEqualTo("2|ADMIN|USER");
+        /* 권한만 내리고 토큰을 두면 손에 든 ADMIN 토큰으로 계속 들어올 수 있다.
+           옛 세대(3)로 온 토큰은 낡은 것으로 판정돼야 한다 */
+        assertThat(versions.isStale(2L, 3)).isTrue();
+        assertThat(logs.written).anyMatch(line -> line.startsWith("USER_DEMOTE|"));
+    }
+
+    /* 내리는 순간 그 화면을 잃는다. 실수로 눌러도 되돌릴 수 없다 */
+    @Test
+    @DisplayName("본인은 내릴 수 없다")
+    void 본인해제() {
+        assertThatThrownBy(() -> service.demote(1L, 1L))
+                .isInstanceOf(BusinessException.class);
+        assertThat(users.roleUpdated).isNull();
+    }
+
+    /* 마지막 한 명까지 내리면 아무도 관리자 화면에 못 들어간다 */
+    @Test
+    @DisplayName("마지막 활성 관리자는 내릴 수 없다")
+    void 마지막관리자() {
+        users.account = new AdminUserAccount(2L, "a@x.com", "부관리", "ADMIN", "ACTIVE", 3);
+        users.activeAdminIds = List.of(2L);
+
+        assertThatThrownBy(() -> service.demote(1L, 2L))
+                .isInstanceOf(BusinessException.class);
+        assertThat(users.roleUpdated).isNull();
+    }
+
+    /* 두 번 눌러도 같은 결과여야 한다. 목록이 늦게 갱신되면 두 번 눌릴 수 있다 */
+    @Test
+    @DisplayName("이미 일반 사용자면 아무것도 하지 않는다")
+    void 이미일반() {
+        users.account = new AdminUserAccount(2L, "a@x.com", "사용자", "USER", "ACTIVE", 3);
+
+        service.demote(1L, 2L);
+
+        assertThat(users.roleUpdated).isNull();
+    }
+
+    @Test
+    @DisplayName("탈퇴한 계정은 손대지 않는다")
+    void 탈퇴계정() {
+        users.account = new AdminUserAccount(2L, "a@x.com", "부관리", "ADMIN", "WITHDRAWN", 3);
+        users.activeAdminIds = List.of(1L, 2L);
+
+        assertThatThrownBy(() -> service.demote(1L, 2L))
+                .isInstanceOf(BusinessException.class);
+        assertThat(users.roleUpdated).isNull();
+    }
+
     @Test
     @DisplayName("목록 조건을 정규화하고 limit은 200으로 제한한다")
     void 목록조건() {
@@ -164,6 +226,16 @@ class AdminUserServiceTest {
         public int updateStatus(Long id, String status, String expectedStatus) {
             if (updateResult == 1) {
                 updated = id + "|" + expectedStatus + "|" + status;
+            }
+            return updateResult;
+        }
+
+        String roleUpdated;
+
+        @Override
+        public int updateRole(Long id, String role, String expectedRole) {
+            if (updateResult == 1) {
+                roleUpdated = id + "|" + expectedRole + "|" + role;
             }
             return updateResult;
         }

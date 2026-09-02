@@ -63,11 +63,13 @@ public class AdminService {
      * @param status ACTIVE·INACTIVE·ALL. 그 밖의 값은 ALL 로 본다
      */
     @Transactional(readOnly = true)
-    public List<StockSearchResponse> stocks(String status, String assetClass, String q, int limit) {
+    public List<StockSearchResponse> stocks(String status, String assetClass, String q,
+                                            int limit, int offset) {
         Boolean active = "ACTIVE".equals(status) ? Boolean.TRUE
                        : "INACTIVE".equals(status) ? Boolean.FALSE
                        : null;
-        return stockMapper.findForAdmin(active, blankToNull(assetClass), blankToNull(q), limit);
+        return stockMapper.findForAdmin(active, blankToNull(assetClass), blankToNull(q),
+                                        limit, Math.max(0, offset));
     }
 
     /** 같은 조건의 전체 건수. 화면 머리말에 쓴다. */

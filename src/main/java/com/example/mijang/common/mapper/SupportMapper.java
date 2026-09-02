@@ -37,4 +37,13 @@ public interface SupportMapper {
         public String getContent() { return content; }
         public boolean isPinned() { return pinned; }
     }
+
+    /** 공지 수정. 지워진 공지는 되살아나지 않는다 — deleted_at IS NULL 이 그 뜻이다. */
+    int updateNotice(@org.apache.ibatis.annotations.Param("id") Long id,
+                     @org.apache.ibatis.annotations.Param("title") String title,
+                     @org.apache.ibatis.annotations.Param("content") String content,
+                     @org.apache.ibatis.annotations.Param("pinned") boolean pinned);
+
+    /** 공지 삭제. 지우지 않고 표시만 한다. */
+    int deleteNotice(@org.apache.ibatis.annotations.Param("id") Long id);
 }

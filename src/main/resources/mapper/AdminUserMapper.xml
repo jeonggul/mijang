@@ -56,6 +56,23 @@
          FOR UPDATE
     </select>
 
+    <!--
+      권한 강등. 지금 권한이 기대와 같을 때만 바뀐다.
+      두 관리자가 동시에 눌러 마지막 한 명까지 내려가는 것을 막는다 —
+      뒤에 온 쪽은 0 을 돌려받고 서비스가 충돌로 읽는다.
+
+      password_version 을 함께 올린다. 권한이 내려갔는데 이미 손에 든 토큰의
+      role 이 ADMIN 이면 그 토큰이 살아 있는 동안 관리자 화면을 계속 쓸 수 있다.
+    -->
+    <update id="updateRole">
+        UPDATE users
+           SET role = #{role},
+               password_version = password_version + 1
+         WHERE id   = #{id}
+           AND role = #{expectedRole}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </update>
+
     <update id="updateStatus">
         UPDATE users
            SET status = #{status},

@@ -19,7 +19,7 @@
     <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>ADMIN</small></p>
     <p class="nav-label">운영 메뉴</p>
     <ul class="settings-nav" role="tablist" aria-orientation="vertical">
-      <li><button role="tab" id="m-dash" aria-controls="a-dash" aria-selected="true" aria-current="page">운영 현황</button></li>
+      <li><button role="tab" id="m-dash" aria-controls="a-dash" aria-selected="true">운영 현황</button></li>
       <li><button role="tab" id="m-stocks" aria-controls="a-stocks" aria-selected="false">종목 마스터</button></li>
       <li><button role="tab" id="m-sync" aria-controls="a-sync" aria-selected="false">배치 상태</button></li>
       <li><button role="tab" id="m-users" aria-controls="a-users" aria-selected="false">사용자</button></li>
@@ -41,7 +41,7 @@
 
   <main class="admin-main">
   <section role="tabpanel" id="a-dash" aria-labelledby="m-dash">
-    <div class="page-head"><div><h1>운영 현황</h1><p>ROLE_ADMIN 전용 화면입니다</p></div></div>
+    <div class="page-head"><div><h1>운영 현황</h1></div></div>
 
     <div class="summary-strip">
       <div><span class="k">가입 사용자</span><b class="num" id="ad-user-total">—</b><span class="s">탈퇴 계정 포함</span></div>
@@ -75,8 +75,7 @@
     </section>
   </section>
   <section role="tabpanel" id="a-stocks" aria-labelledby="m-stocks" hidden>
-    <div class="page-head"><div><h1>종목 마스터</h1>
-      <p>Alpaca에서 매일 동기화됩니다 · 상장폐지 종목은 삭제하지 않고 비활성화합니다</p></div></div>
+    <div class="page-head"><div><h1>종목 마스터</h1></div></div>
 
     <div class="card card-pad" style="margin-bottom:14px">
       <div class="row-between">
@@ -97,16 +96,28 @@
     <section class="card">
       <h2 class="card-head">종목 목록 <span class="sub num" id="ad-stock-count">—</span></h2>
         <div class="table-wrap">
-          <table class="tbl tbl-band">
+          <!-- colgroup 으로 폭을 못 박는다. 필터를 바꾸면 남는 종목이 달라져 가장 긴
+               종목명에 맞춰 열이 늘었다 줄었다 했다 — 같은 표가 필터마다 다르게 보인다 -->
+          <table class="tbl tbl-band tbl-fixed">
+            <colgroup>
+              <col style="width:11%"><col style="width:32%"><col style="width:11%">
+              <col style="width:12%"><col style="width:14%"><col style="width:10%">
+              <col style="width:10%">
+            </colgroup>
             <thead><tr><th class="" scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="" scope="col">거래소</th><th class="" scope="col">섹터</th><th class="r" scope="col">최근 동기화</th><th class="" scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
             <tbody id="ad-stocks"><!-- 스크립트가 채운다 --></tbody>
           </table>
         </div>
+      <nav class="pager" aria-label="종목 목록 페이지">
+        <button class="btn btn-sm" type="button" id="ms-prev">이전</button>
+        <span class="sub num" id="ms-page">1 / 1</span>
+        <button class="btn btn-sm" type="button" id="ms-next">다음</button>
+      </nav>
       <p class="note" style="padding:12px 18px 16px">비활성 종목은 검색에서 제외되지만 과거 매매 기록에서는 계속 조회됩니다</p>
     </section>
   </section>
   <section role="tabpanel" id="a-sync" aria-labelledby="m-sync" hidden>
-    <div class="page-head"><div><h1>배치 상태</h1><p>휴장일에는 시세 배치가 자동으로 건너뜁니다</p></div></div>
+    <div class="page-head"><div><h1>배치 상태</h1></div></div>
 
     <div class="grid-3" style="margin-bottom:14px" id="ad-batch-cards"><!-- 스크립트가 채운다 --></div>
 
@@ -122,8 +133,7 @@
     </section>
   </section>
   <section role="tabpanel" id="a-users" aria-labelledby="m-users" hidden>
-    <div class="page-head"><div><h1>사용자 관리</h1>
-      <p>본인 계정과 마지막 활성 관리자는 상태를 변경할 수 없습니다</p></div></div>
+    <div class="page-head"><div><h1>사용자 관리</h1></div></div>
 
     <div class="card card-pad" style="margin-bottom:14px">
       <div class="row-between">
@@ -152,8 +162,7 @@
     </section>
   </section>
   <section role="tabpanel" id="a-posts" aria-labelledby="m-posts" hidden>
-    <div class="page-head"><div><h1>게시글 · 댓글 관리</h1>
-      <p>숨김 처리하면 사용자에게 상태 안내 문구로 치환됩니다</p></div></div>
+    <div class="page-head"><div><h1>게시글 · 댓글 관리</h1></div></div>
 
     <!-- 좌측 메뉴의 게시글·댓글 탭과 같은 일을 한다. 목록을 두 벌 관리하지 않으려고
          여기서는 해당 탭 버튼을 눌러 주기만 한다 -->
@@ -174,8 +183,7 @@
     </section>
   </section>
   <section role="tabpanel" id="a-comments" aria-labelledby="m-comments" hidden>
-    <div class="page-head"><div><h1>게시글 · 댓글 관리</h1>
-      <p>숨김 처리하면 사용자에게 상태 안내 문구로 치환됩니다</p></div></div>
+    <div class="page-head"><div><h1>게시글 · 댓글 관리</h1></div></div>
 
     <div class="pills" data-toggle-group data-tab-switch>
       <button type="button" data-value="POST" data-tab="m-posts" aria-pressed="false">게시글</button>
@@ -194,7 +202,7 @@
     </section>
   </section>
   <section role="tabpanel" id="a-report" aria-labelledby="m-report" hidden>
-    <div class="page-head"><div><h1>신고 관리</h1><p>미처리 신고 3건이 대기 중입니다</p></div></div>
+    <div class="page-head"><div><h1>신고 관리</h1></div></div>
 
     <div class="pills" id="report-filter" data-toggle-group style="margin-bottom:14px">
       <button type="button" data-value="PENDING" aria-pressed="true">미처리</button>
@@ -222,8 +230,8 @@
       <h2 class="card-head">공지 목록 <span class="sub num" id="admin-notice-count">—</span></h2>
         <div class="table-wrap">
           <table class="tbl tbl-band">
-            <thead><tr><th scope="col">고정</th><th class="txt" scope="col">제목</th><th scope="col">등록일</th><th scope="col">수정일</th></tr></thead>
-            <tbody id="admin-notice-list"><tr><td colspan="4" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
+            <thead><tr><th scope="col">고정</th><th class="txt" scope="col">제목</th><th scope="col">등록일</th><th scope="col">수정일</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="admin-notice-list"><tr><td colspan="5" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
           </table>
         </div>
       <p class="note" style="padding:12px 18px 16px">등록일과 실제 수정 시각을 분리해 표시합니다</p>
@@ -253,7 +261,7 @@
     </form>
   </section>
   <section role="tabpanel" id="a-logs" aria-labelledby="m-logs" hidden>
-    <div class="page-head"><div><h1>운영 로그</h1><p>관리자가 수행한 모든 변경 작업이 기록됩니다</p></div></div>
+    <div class="page-head"><div><h1>운영 로그</h1></div></div>
 
     <div class="card card-pad" style="margin-bottom:14px">
       <div class="row-between">
@@ -335,7 +343,7 @@
     </div>
   </section>
   <section role="tabpanel" id="a-config" aria-labelledby="m-config" hidden>
-    <div class="page-head"><div><h1>운영 설정</h1><p>서비스 전반 동작 방식 · 바꾸면 즉시 적용됩니다</p></div></div>
+    <div class="page-head"><div><h1>운영 설정</h1></div></div>
 
     <!-- data-setting 이 저장 키다. 알약은 data-value, 스위치는 켜짐/꺼짐이 값이 된다 -->
     <section class="card card-pad" style="margin-bottom:16px">
@@ -526,9 +534,14 @@
   /* ── 종목 마스터 (ADMIN-01) ───────────────────────────────── */
   var filter = "ALL";
 
+  /* 한 화면에 스무 개. 100개를 통째로 쏟아 놓으면 스크롤로만 찾아야 한다 */
+  var STOCK_PAGE_SIZE = 20;
+  var stockPage = 0;
+  var stockTotal = 0;
+
   function query() {
     var q = document.getElementById("ms-q");
-    var params = "limit=100";
+    var params = "limit=" + STOCK_PAGE_SIZE + "&offset=" + (stockPage * STOCK_PAGE_SIZE);
     if (filter === "ACTIVE" || filter === "INACTIVE") params += "&status=" + filter;
     if (filter === "ETF") params += "&assetClass=ETF";
     if (q && q.value.trim()) params += "&q=" + encodeURIComponent(q.value.trim());
@@ -562,7 +575,20 @@
     if (full) { full.replaceChildren(); list.forEach(function (s) { stockRow(full, s, true); }); }
 
     var total = await api("/api/admin/stocks/count?" + query());
-    if (typeof total === "number") put("ad-stock-count", n(total) + "건");
+    if (typeof total === "number") { stockTotal = total; put("ad-stock-count", n(total) + "건"); }
+    drawStockPager();
+  }
+
+  /* 총건수는 limit 와 무관하게 따로 세어 온다. 마지막 쪽에서 다음을 눌러 빈 화면이
+     뜨지 않도록 여기서 막는다 */
+  function drawStockPager() {
+    var last = Math.max(0, Math.ceil(stockTotal / STOCK_PAGE_SIZE) - 1);
+    if (stockPage > last) { stockPage = last; }
+    put("ms-page", (stockPage + 1) + " / " + (last + 1));
+    var prev = document.getElementById("ms-prev");
+    var next = document.getElementById("ms-next");
+    if (prev) prev.disabled = stockPage <= 0;
+    if (next) next.disabled = stockPage >= last;
   }
 
   /* 운영 현황의 미리보기는 종목 탭의 검색어와 무관해야 한다. 같은 조회를 나눠 쓰면
@@ -676,13 +702,26 @@
     var timer = null;
     q.addEventListener("input", function () {
       clearTimeout(timer);
-      timer = setTimeout(loadStocks, 250);
+      /* 검색어가 바뀌면 첫 쪽으로 돌아간다. 3쪽에 있던 채로 검색하면
+         결과가 세 개뿐일 때 빈 화면이 뜬다 */
+      timer = setTimeout(function () { stockPage = 0; loadStocks(); }, 250);
     });
   }
   var group = document.querySelector("[data-stock-filter]");
   if (group) {
-    group.addEventListener("mj:change", function (e) { filter = e.detail; loadStocks(); });
+    group.addEventListener("mj:change", function (e) {
+      filter = e.detail; stockPage = 0; loadStocks();
+    });
   }
+
+  var msPrev = document.getElementById("ms-prev");
+  var msNext = document.getElementById("ms-next");
+  if (msPrev) msPrev.addEventListener("click", function () {
+    if (stockPage > 0) { stockPage--; loadStocks(); }
+  });
+  if (msNext) msNext.addEventListener("click", function () {
+    if ((stockPage + 1) * STOCK_PAGE_SIZE < stockTotal) { stockPage++; loadStocks(); }
+  });
 
   /* 운영 로그 검색·종류·기간. 셋 다 loadLogs 가 눌린 버튼에서 직접 읽으므로
      여기서는 "다시 불러라" 만 알려 주면 된다 */

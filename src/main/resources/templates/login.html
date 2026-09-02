@@ -95,7 +95,10 @@
     }
 
     if (body.success) {
-      location.href = "/dashboard";
+      /* 관리자는 관리자 화면으로 바로 보낸다. 대시보드를 한 번 거쳐 다시 이동하면
+         쓰지도 않을 보유·시세 조회가 먼저 나간다 */
+      var me = body.data && body.data.user;
+      location.href = me && me.role === "ADMIN" ? "/admin" : "/dashboard";
       return;
     }
     show(body.error ? body.error.message : "로그인에 실패했습니다");

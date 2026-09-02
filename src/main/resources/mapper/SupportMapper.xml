@@ -28,4 +28,20 @@
         INSERT INTO notices (title, content, is_pinned, author_id)
         VALUES (#{title}, #{content}, #{pinned}, #{authorId})
     </insert>
+
+    <update id="updateNotice">
+        UPDATE notices
+           SET title     = #{title},
+               content   = #{content},
+               is_pinned = #{pinned}
+         WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+
+    <!-- 지우지 않고 표시만 한다. 공지를 읽고 들어온 링크가 있을 수 있고,
+         무엇을 언제 내렸는지도 남아야 한다 -->
+    <update id="deleteNotice">
+        UPDATE notices
+           SET deleted_at = NOW(3)
+         WHERE id = #{id} AND deleted_at IS NULL
+    </update>
 </mapper>

@@ -84,7 +84,8 @@ public interface StockMapper {
     List<StockSearchResponse> findForAdmin(@Param("active") Boolean active,
                                            @Param("assetClass") String assetClass,
                                            @Param("q") String q,
-                                           @Param("limit") int limit);
+                                           @Param("limit") int limit,
+                                           @Param("offset") int offset);
 
     /** 위 조건에 걸리는 전체 건수. 목록은 limit 로 잘려 나가므로 총계는 따로 센다. */
     int countForAdmin(@Param("active") Boolean active,

@@ -23,9 +23,6 @@
     <div>
       <h1 th:if="${symbol} == null">글쓰기</h1>
       <h1 th:if="${symbol} != null" th:text="${symbol} + ' 게시판에 글쓰기'">AAPL 게시판에 글쓰기</h1>
-
-      <p th:if="${symbol} == null">게시판을 고르고 글을 남겨보세요</p>
-      <p th:if="${symbol} != null">등록하면 작성 시점 주가가 함께 저장됩니다</p>
     </div>
   </div>
 
