@@ -52,10 +52,7 @@ public class PageController {
      */
     @GetMapping("/login")
     public String login(Model model) {
-        if (demoAccount.isConfigured()) {
-            model.addAttribute("demoEmail", demoAccount.getEmail());
-            model.addAttribute("demoPassword", demoAccount.getPassword());
-        }
+        model.addAttribute("demoAccounts", demoAccount.usable());
         return "login";
     }
 
