@@ -51,6 +51,13 @@ public class AdminUserController {
         return ApiResponse.ok(null);
     }
 
+    /** 관리자 권한 해제. {@code ADMIN-03} 본인과 마지막 활성 관리자는 내릴 수 없다. */
+    @PatchMapping("/{userId}/demote")
+    public ApiResponse<Void> demote(@LoginUser SessionUser me, @PathVariable Long userId) {
+        service.demote(me.userId(), userId);
+        return ApiResponse.ok(null);
+    }
+
     public record StatusRequest(
             @NotBlank
             @Pattern(regexp = "ACTIVE|SUSPENDED", message = "ACTIVE 또는 SUSPENDED여야 합니다")

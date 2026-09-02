@@ -71,8 +71,10 @@ public class AdminController {
             @RequestParam(defaultValue = "ALL") String status,
             @RequestParam(required = false) String assetClass,
             @RequestParam(required = false) String q,
-            @RequestParam(defaultValue = "50") int limit) {
-        return ApiResponse.ok(adminService.stocks(status, assetClass, q, Math.min(limit, 200)));
+            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        return ApiResponse.ok(
+                adminService.stocks(status, assetClass, q, Math.min(limit, 200), offset));
     }
 
     /**

@@ -69,6 +69,19 @@
     button.dataset.nextStatus = user.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
     button.dataset.nickname = user.nickname;
     td.appendChild(button);
+
+    /* 관리자에게만 붙는 권한 해제. 정지와 다른 일이라 버튼을 따로 둔다 —
+       하나로 합치면 "해제" 가 정지 해제인지 권한 해제인지 알 수 없다 */
+    if (user.role === "ADMIN") {
+      var demote = document.createElement("button");
+      demote.className = "btn btn-sm";
+      demote.type = "button";
+      demote.style.marginLeft = "6px";
+      demote.textContent = "권한 해제";
+      demote.dataset.demoteId = user.userId;
+      demote.dataset.nickname = user.nickname;
+      td.appendChild(demote);
+    }
   }
 
   function draw(users) {
@@ -108,6 +121,20 @@
   }
 
   list.addEventListener("click", async function (event) {
+    var demote = event.target.closest("button[data-demote-id]");
+    if (demote) {
+      if (!confirm(demote.dataset.nickname + " 을(를) 일반 사용자로 전환할까요?\n"
+                 + "전환하면 그 계정은 관리자 화면에 들어올 수 없습니다.")) return;
+      demote.disabled = true;
+      var out = await request("/api/admin/users/" + demote.dataset.demoteId + "/demote",
+                              { method: "PATCH" });
+      demote.disabled = false;
+      if (out.error) { alert(out.error); await load(); return; }
+      await load();
+      window.dispatchEvent(new CustomEvent("admin:logs-changed"));
+      return;
+    }
+
     var button = event.target.closest("button[data-user-id]");
     if (!button) return;
     var verb = button.dataset.nextStatus === "SUSPENDED" ? "정지" : "정지 해제";

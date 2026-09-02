@@ -157,8 +157,9 @@
                NULL AS dayChangeRate
           FROM stocks
         <include refid="adminWhere"/>
+         <!-- 정렬을 고정해야 페이지를 넘길 때 같은 종목이 겹치거나 빠지지 않는다 -->
          ORDER BY is_active DESC, symbol
-         LIMIT #{limit}
+         LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <select id="countForAdmin" resultType="_int">

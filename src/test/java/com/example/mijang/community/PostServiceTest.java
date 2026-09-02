@@ -129,7 +129,7 @@ class PostServiceTest {
                                     String assetClass, boolean fractionable) { return 1; }
         @Override public LocalDateTime now() { return LocalDateTime.of(2026, 8, 24, 12, 0); }
         @Override public List<StockSearchResponse> findForAdmin(Boolean a, String c, String q,
-                                                                int l) { return List.of(); }
+                                                                int l, int o) { return List.of(); }
         @Override public int countForAdmin(Boolean active, String assetClass, String q) { return 0; }
         @Override public int setActive(String symbol, boolean active, String reason) { return 1; }
         @Override public int deactivateNotSyncedSince(LocalDateTime threshold) { return 0; }

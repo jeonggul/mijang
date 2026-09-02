@@ -27,6 +27,16 @@ public interface AdminUserMapper {
      *
      * @return 예상한 기존 상태가 맞아 변경된 행 수
      */
+    /**
+     * 권한을 바꾼다. 지금 권한이 기대와 같을 때만 바뀐다.
+     *
+     * <p>두 관리자가 동시에 강등을 눌러 마지막 한 명까지 내려가는 것을 막는다 —
+     * 뒤에 온 쪽은 0 을 돌려받고 서비스가 충돌로 읽는다.
+     */
+    int updateRole(@Param("id") Long id,
+                   @Param("role") String role,
+                   @Param("expectedRole") String expectedRole);
+
     int updateStatus(@Param("id") Long id,
                      @Param("status") String status,
                      @Param("expectedStatus") String expectedStatus);

@@ -84,7 +84,7 @@ class AdminServiceTest {
                 String isin, String assetClass) { return 1; }
 
         @Override public List<StockSearchResponse> findForAdmin(Boolean active, String assetClass,
-                                                                String q, int limit) {
+                                                                String q, int limit, int offset) {
             return List.of();
         }
         @Override public int countForAdmin(Boolean active, String assetClass, String q) { return 0; }

@@ -43,4 +43,26 @@ public class SupportService {
         supportMapper.insertNotice(insert);
         return insert.getId();
     }
+
+    /**
+     * 공지 수정. {@code ADMIN-05}
+     *
+     * @throws BusinessException 없거나 이미 지워진 공지일 때(404)
+     */
+    @Transactional
+    public void updateNotice(Long noticeId, NoticeForm form) {
+        int changed = supportMapper.updateNotice(noticeId,
+                form.title().trim(), form.content().trim(), form.pinned());
+        if (changed != 1) {
+            throw new BusinessException(ErrorCode.NOTICE_NOT_FOUND);
+        }
+    }
+
+    /** 공지 삭제. 지우지 않고 표시만 한다 — 링크를 타고 들어온 사람이 있을 수 있다. */
+    @Transactional
+    public void deleteNotice(Long noticeId) {
+        if (supportMapper.deleteNotice(noticeId) != 1) {
+            throw new BusinessException(ErrorCode.NOTICE_NOT_FOUND);
+        }
+    }
 }

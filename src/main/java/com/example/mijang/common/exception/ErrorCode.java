@@ -109,6 +109,10 @@ public enum ErrorCode {
     TX_FORBIDDEN("TX_FORBIDDEN", HttpStatus.FORBIDDEN,
             "본인의 매매 기록만 다룰 수 있습니다"),
 
+    // ===== 공지 =====
+    NOTICE_NOT_FOUND("NOTICE_NOT_FOUND", HttpStatus.NOT_FOUND,
+            "공지를 찾을 수 없습니다"),
+
     // ===== 환율 (FX-001) =====
     FX_RATE_NOT_FOUND("FX_RATE_NOT_FOUND", HttpStatus.NOT_FOUND,
             "해당 일자의 고시 환율이 없습니다"),
