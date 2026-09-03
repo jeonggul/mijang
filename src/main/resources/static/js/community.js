@@ -240,6 +240,19 @@ async function loadDetail(postId) {
   document.getElementById("board-name").textContent =
     post.symbol ? post.symbol + " 게시판" : post.board === "QNA" ? "질문 게시판" : "자유 게시판";
 
+  /* 내려간 글은 쓴 사람에게만 열린다. 왜 목록에서 사라졌는지 여기서 밝힌다 —
+     안 밝히면 공개된 글과 똑같이 보여 무슨 일이 있었는지 알 수 없다 */
+  const notice = document.getElementById("post-status");
+  if (notice) {
+    const down = post.status && post.status !== "PUBLISHED";
+    notice.hidden = !down;
+    if (down) {
+      notice.textContent = post.status === "DELETED"
+        ? "삭제한 글입니다. 목록에는 나만 볼 수 있고 다른 사람에게는 보이지 않습니다."
+        : "운영자가 숨긴 글입니다. 나만 볼 수 있고 다른 사람에게는 보이지 않습니다.";
+    }
+  }
+
   const meta = document.getElementById("post-meta");
   meta.replaceChildren();
   meta.appendChild(el("span", "who", post.authorName));
@@ -261,6 +274,11 @@ async function loadDetail(postId) {
   paintReaction("scrap-btn", "스크랩", post.myScrap);
   document.getElementById("edit-btn").hidden = !post.mine;
   document.getElementById("delete-btn").hidden = !post.mine;
+  /* 내려간 글에는 반응·수정·삭제가 서버에서 막힌다(공개된 글만 받는다).
+     버튼을 남겨 두면 눌렀을 때 "찾을 수 없습니다" 만 뜬다 */
+  if (post.status && post.status !== "PUBLISHED") {
+    document.querySelector(".post-actions").hidden = true;
+  }
   document.getElementById("price-note").hidden = post.symbol === null;
 
   document.getElementById("comment-count").textContent = post.comments.length + "개";

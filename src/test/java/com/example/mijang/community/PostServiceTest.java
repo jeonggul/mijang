@@ -99,7 +99,12 @@ class PostServiceTest {
         @Override public long countByBoard(String board) { return 0; }
         @Override public List<PostRow> findBySymbol(String s, String so, int l, int o) { return List.of(); }
         @Override public long countBySymbol(String symbol) { return 0; }
-        @Override public PostRow findById(Long postId) { return found; }
+        @Override public PostRow findById(Long postId) {
+            /* 실제 매퍼는 PUBLISHED 만 준다. 상태를 흉내 내지 않으면
+               "내려간 글은 상세에서만 열린다" 규칙을 시험할 수 없다 */
+            return found != null && "PUBLISHED".equals(found.status()) ? found : null;
+        }
+        @Override public PostRow findAnyById(Long postId) { return found; }
         @Override public int increaseViewCount(Long postId) { return 1; }
         @Override public int increaseCommentCount(Long postId) { return 1; }
     }

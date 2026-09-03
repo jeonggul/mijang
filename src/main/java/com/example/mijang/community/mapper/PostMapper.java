@@ -88,6 +88,18 @@ public interface PostMapper {
     /** 상세. 숨김·삭제된 글은 없는 것으로 본다. {@code COM-003} */
     PostRow findById(@Param("postId") Long postId);
 
+    /**
+     * 상태를 가리지 않고 한 건. <b>본인 글 상세에만 쓴다.</b>
+     *
+     * <p>{@link #findById} 와 나눠 둔 이유 — 반응·수정·삭제는 공개된 글에만 걸려야 하고,
+     * 상세만 예외다. 내가 쓴 글 목록에는 숨김·삭제된 글도 나오는데(2026-09-03 점검 5.3)
+     * 그걸 열면 404 가 났다. 목록에는 보이는데 못 여는 상태였다.
+     *
+     * <p>이 메서드가 상태를 안 거르므로, <b>남의 숨김 글을 막는 일은 서비스가 한다.</b>
+     * 여기서 걸러 버리면 본인 글도 함께 막혀 고치려던 것이 그대로 남는다.
+     */
+    PostRow findAnyById(@Param("postId") Long postId);
+
     /** 조회수 +1. 상세를 열 때마다 부른다. */
     int increaseViewCount(@Param("postId") Long postId);
 
