@@ -1,3 +1,41 @@
+/* 로그인한 사람만 답을 받을 수 있는 호출을 거르는 자리.
+
+   왜 굳이 — /search 와 /stock 은 가입 없이 보는 화면인데, 열 때마다 401 이 다섯 개씩
+   찍혀 콘솔이 빨갛게 찼다. 진짜 오류가 그 사이에 묻힌다(2026-09-03 점검 5.2).
+
+   약속(promise)을 여기서 미리 만들어 두는 것이 요점이다. 답을 채우는 것은 header.js 가
+   /api/users/me 를 받은 뒤인데, 그쪽은 defer 라 화면 안의 스크립트보다 늦게 돈다.
+   그때 값을 읽으러 가면 아직 비어 있어 "비로그인" 으로 읽히고, 로그인한 사람의 별표와
+   보유가 빈 채로 남는다. 그래서 먼저 부르는 쪽이 값을 기다리게 만든다.
+
+   header.js 가 아예 없는 화면(로그인·가입 등)에서도 멈추지 않도록, 아무도 답하겠다고
+   나서지 않으면 load 시점에 비로그인으로 확정한다. 기다리다 영영 안 끝나는 것이 제일
+   나쁘다. 답하겠다고 나선 경우에는 기다린다 — 여기서 먼저 끊으면 응답이 늦은 사람이
+   비로그인으로 굳는다. */
+(function () {
+  var settle;
+  var signedIn = new Promise(function (resolve) { settle = resolve; });
+  var done = false;
+  var claimed = false;
+
+  /** header.js 가 자기가 답하겠다고 알린다. 스스로 돌기 시작할 때 부른다. */
+  window.mijangClaimUser = function () { claimed = true; };
+
+  /** header.js 가 /api/users/me 를 받으면 부른다. 두 번 불러도 처음 것만 남는다. */
+  window.mijangResolveUser = function (me) {
+    if (done) return;
+    done = true;
+    settle(me || null);
+  };
+
+  window.addEventListener("load", function () {
+    if (!claimed) window.mijangResolveUser(null);
+  });
+
+  window.mijangSignedIn = function () {
+    return signedIn.then(function (me) { return !!me; });
+  };
+}());
 /* ==========================================================================
    미장 — 공통 인터랙션
    페이지마다 필요한 것만 알아서 붙는다. 없으면 그냥 넘어간다.

@@ -3,6 +3,9 @@
   var header = document.querySelector(".header");
   if (!header || header.dataset.ready) return;
   header.dataset.ready = "true";
+  /* 로그인 여부를 내가 답하겠다고 알린다(ui.js). 이걸 알리지 않으면 ui.js 가
+     load 시점에 비로그인으로 확정해 버려, 응답이 늦으면 별표·보유가 빈 채로 남는다 */
+  if (window.mijangClaimUser) window.mijangClaimUser();
 
   function data(url, options) {
     return fetch(url, options).then(function (res) {
@@ -50,13 +53,18 @@
      저마다 /api/users/me 를 또 부르지 않도록, 한 번 받은 것을 나눠 쓴다.
      비로그인이면 빈 문자열이다 — 앞사람 기록이 다음 사람에게 보이면 안 된다 */
   function publishUser(me) {
+    /* 로그인 여부를 기다리는 화면 스크립트에 답을 준다(ui.js).
+       여기가 아니라 loadUser 끝에서 알리면, 응답이 실패한 경우에 아무도 답을 못 받는다 */
+    if (window.mijangResolveUser) window.mijangResolveUser(me);
     var id = me && me.userId ? String(me.userId) : "";
     document.documentElement.dataset.userId = id;
     document.dispatchEvent(new CustomEvent("mijang:user-change", { detail: id }));
   }
 
+  /* 로그인 여부를 알아내 화면 전체에 알린다. publishUser 가 ui.js 의 약속을 채우고,
+     로그인해야만 답이 오는 호출들이 그것을 기다렸다가 움직인다(2026-09-03 점검 5.2) */
   function loadUser() {
-    data("/api/users/me").then(function (me) {
+    return data("/api/users/me").then(function (me) {
       publishUser(me);
       if (!me) {
         var avatar = header.querySelector(".avatar-btn");
@@ -66,7 +74,7 @@
         header.querySelector("[data-header-email]").textContent = "";
         var notificationAnchor = header.querySelector('[data-open="notif-menu"]');
         if (notificationAnchor) notificationAnchor.closest(".menu-anchor").hidden = true;
-        return;
+        return null;
       }
       header.querySelector("[data-header-nickname]").textContent = me.nickname || "";
       header.querySelector("[data-header-email]").textContent = me.email || "";
@@ -77,6 +85,7 @@
         document.documentElement.dataset.theme = me.theme.toLowerCase();
         localStorage.setItem("mijang-theme", me.theme.toLowerCase());
       }
+      return me;
     });
   }
 
@@ -154,9 +163,15 @@
   });
 
   highlightNav();
-  loadUser();
+  /* 장 상태는 공개다. 로그인 여부와 무관하게 부른다.
+     알림은 로그인해야 답이 오므로 me 를 받은 뒤에만 부른다 */
   loadMarket();
-  loadNotifications();
+  loadUser().then(function (me) {
+    if (me) loadNotifications();
+  }).catch(function () {
+    /* 통신 자체가 실패했다. 기다리는 쪽을 풀어 준다 — 안 풀면 별표가 영영 안 그려진다 */
+    if (window.mijangResolveUser) window.mijangResolveUser(null);
+  });
   paintMarket();
   setInterval(paintMarket, 1000);
   setInterval(loadMarket, 60000);

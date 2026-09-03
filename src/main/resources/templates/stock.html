@@ -750,9 +750,10 @@
 
   /* 담은 목록에서 이 종목을 찾아 별표 상태를 맞춘다 */
   async function loadWatch() {
+    if (!(await window.mijangSignedIn())) return;   // 비로그인은 담은 목록이 없다
     try {
       var res = await fetch("/api/watchlists");
-      if (!res.ok) return;                      // 비로그인
+      if (!res.ok) return;                      // 그새 만료됐을 수 있다
       var body = await res.json();
       if (!body.success) return;
       var hit = body.data.find(function (w) { return w.symbol === symbol; });
@@ -1652,10 +1653,14 @@
   Promise.all([
     fetch("/api/stocks/" + encodeURIComponent(symbol) + "/dividends")
       .then(function (res) { return res.ok ? res.json() : null; }),
-    /* 비로그인이면 401 — 내 수령액 열만 비운다 */
-    fetch("/api/dividends")
-      .then(function (res) { return res.ok ? res.json() : null; })
-      .catch(function () { return null; }),
+    /* 내 수령액은 로그인해야 답이 온다. 비로그인이면 아예 부르지 않고 그 열을 비운다 —
+       불러 봐야 401 이고, 공개 화면 콘솔만 빨개진다(2026-09-03 점검 5.2) */
+    window.mijangSignedIn().then(function (signedIn) {
+      if (!signedIn) return null;
+      return fetch("/api/dividends")
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .catch(function () { return null; });
+    }),
   ]).then(function (results) {
     var tab = results[0] && results[0].success ? results[0].data : null;
     if (!tab) { notice("배당 정보를 불러오지 못했습니다"); return; }
@@ -1713,6 +1718,8 @@
   }
 
   (async function () {
+    /* 내 보유는 로그인해야 답이 온다. 비로그인이면 마크업의 안내를 그대로 둔다 */
+    if (!(await window.mijangSignedIn())) return;
     var holdings = await api("/api/portfolio/holdings");
     if (holdings === undefined) return;
 

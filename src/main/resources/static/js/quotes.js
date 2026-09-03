@@ -133,20 +133,23 @@
     await ensureFxRate();
     await primeOnce(symbols);
 
-    /* 이 경로는 로그인을 요구한다. 비로그인이면 401 이 오는데 그것이 정상이다 —
-       바로 아래 SSE 가 붙으면서 서버가 알아서 구독을 맞춰 준다.
-       예전에는 응답을 보지도 않고 넘어가서, 401 인지 서버가 죽은 것인지 구분되지 않았다 */
-    try {
-      var res = await fetch("/api/market/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(symbols),
-      });
-      if (!res.ok && res.status !== 401 && res.status !== 403) {
-        console.warn("[시세] 구독 갱신 실패", res.status);
+    /* 이 경로는 로그인을 요구한다. 비로그인이면 아예 부르지 않는다 —
+       바로 아래 SSE 가 붙으면서 서버가 알아서 구독을 맞춰 주므로 부를 이유가 없고,
+       부르면 공개 화면에서 401 만 남는다(2026-09-03 점검 5.2).
+       로그인 상태에서 실패하면 그때는 알린다 — 401 인지 서버가 죽은 것인지 구분해야 한다 */
+    if (await window.mijangSignedIn()) {
+      try {
+        var res = await fetch("/api/market/subscriptions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(symbols),
+        });
+        if (!res.ok && res.status !== 401 && res.status !== 403) {
+          console.warn("[시세] 구독 갱신 실패", res.status);
+        }
+      } catch (e) {
+        console.warn("[시세] 구독 갱신을 보내지 못했다", e);
       }
-    } catch (e) {
-      console.warn("[시세] 구독 갱신을 보내지 못했다", e);
     }
 
     connect(symbols);
