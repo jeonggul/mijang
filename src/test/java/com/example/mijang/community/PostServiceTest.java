@@ -2,6 +2,7 @@ package com.example.mijang.community;
 
 import com.example.mijang.admin.domain.AdminSettingKey;
 import com.example.mijang.support.FixedSettings;
+import com.example.mijang.support.TestLedger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -216,7 +217,7 @@ class PostServiceTest {
     /* 운영 설정의 글쓰기 제한을 끈다. 이 시험의 관심사가 아니고, 켜 두면 가입일이
        없는 가짜 사용자 때문에 전부 막힌다 */
     private final PostService service = new PostService(posts, new Comments(), new Reactions(),
-            stocks, transactions, holdings, quotes, fx, new TradingClock(),
+            stocks, transactions, holdings, TestLedger.of(transactions), quotes, fx, new TradingClock(),
             new FixedSettings().with(AdminSettingKey.COMMUNITY_WRITE_DELAY_DAYS, "0"), null);
 
     private static PostForm form() {

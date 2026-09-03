@@ -38,6 +38,7 @@ import com.example.mijang.portfolio.domain.Transaction;
 import com.example.mijang.portfolio.mapper.HoldingMapper;
 import com.example.mijang.portfolio.mapper.TransactionMapper;
 import com.example.mijang.portfolio.service.HoldingCalculator;
+import com.example.mijang.portfolio.service.LedgerService;
 import com.example.mijang.stock.domain.Stock;
 import com.example.mijang.stock.mapper.StockMapper;
 import com.example.mijang.user.domain.User;
@@ -73,6 +74,7 @@ public class PostService {
     private final StockMapper stockMapper;
     private final TransactionMapper transactionMapper;
     private final HoldingMapper holdingMapper;
+    private final LedgerService ledgerService;
     private final QuoteService quoteService;
     private final FxRateService fxRateService;
     private final TradingClock tradingClock;
@@ -352,8 +354,9 @@ public class PostService {
                     null, null);
         }
 
-        HoldingCalculator.Calculation calc = HoldingCalculator.calculateAll(
-                symbol, transactionMapper.findForRecalc(userId, symbol));
+        /* 입력은 LedgerService 를 거쳐 모은다. 거래만 따로 읽으면 분할 보정이 빠져
+           매매 카드 수익률이 매매 기록 화면과 갈린다(2026-09-03 점검 4.1) */
+        HoldingCalculator.Calculation calc = ledgerService.calculationOf(userId, symbol);
         BigDecimal realized = calc.realizedBySellId().get(tx.id());
         BigDecimal cost = calc.costBasisBySellId().get(tx.id());
         return new TradeSnapshot(tx.id(), tx.side(), tx.symbol(), tx.price(), tx.tradedAt(),

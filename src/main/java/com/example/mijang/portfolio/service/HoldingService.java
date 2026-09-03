@@ -2,8 +2,8 @@
  * HoldingService — 보유 현황을 다시 계산하고 꺼내 주는 곳
  *
  * 이 파일이 하는 일
- *   계산 자체는 HoldingCalculator 가 한다. 이 파일은 그 앞뒤를 맡는다 —
- *   거래를 DB 에서 꺼내 계산기에 넣고, 나온 결과를 holdings 에 저장한다.
+ *   계산 자체는 HoldingCalculator 가 하고, 입력을 모으는 일은 LedgerService 가 한다.
+ *   이 파일은 그 결과를 판단해 holdings 에 저장한다.
  *   화면이 보유 목록을 물어보면 현재가·평가금액을 붙여 돌려준다.
  */
 package com.example.mijang.portfolio.service;
@@ -12,11 +12,8 @@ import com.example.mijang.fx.service.FxRateService;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.portfolio.domain.Holding;
-import com.example.mijang.portfolio.domain.Transaction;
-import com.example.mijang.stock.mapper.StockSplitMapper;
 import com.example.mijang.portfolio.dto.HoldingResponse;
 import com.example.mijang.portfolio.mapper.HoldingMapper;
-import com.example.mijang.portfolio.mapper.TransactionMapper;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,10 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class HoldingService {
 
-    private final TransactionMapper transactionMapper;
     private final HoldingMapper holdingMapper;
     private final FxRateService fxRateService;
-    private final StockSplitMapper splitMapper;
+    private final LedgerService ledgerService;
 
     /**
      * 한 종목을 처음부터 다시 계산해 저장한다.
@@ -50,12 +46,7 @@ public class HoldingService {
      */
     @Transactional
     public Holding recalculate(Long userId, Long portfolioId, String symbol) {
-        List<Transaction> transactions = transactionMapper.findForRecalc(userId, symbol);
-        /* 분할 이전 거래는 지금 기준으로 환산해서 센다. 시세는 이미 분할이 반영된
-           값으로 들어오는데 원장은 그날 체결한 그대로라, 보정하지 않으면 4:1 분할 뒤
-           평가금액이 4분의 1로 보인다 */
-        HoldingCalculator.Calculation calc = HoldingCalculator.calculateAll(
-                symbol, transactions, splitMapper.findBySymbol(symbol));
+        HoldingCalculator.Calculation calc = ledgerService.calculationOf(userId, symbol);
         Holding holding = calc.holding();
 
         /* 최종 수량이 아니라 훑는 <b>도중</b>의 최저 수량을 본다. 최종 수량만 보면

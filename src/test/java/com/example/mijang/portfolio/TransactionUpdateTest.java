@@ -21,6 +21,7 @@ import com.example.mijang.portfolio.mapper.PortfolioMapper;
 import com.example.mijang.portfolio.mapper.TransactionMapper;
 import com.example.mijang.portfolio.service.HoldingService;
 import com.example.mijang.portfolio.service.TransactionService;
+import com.example.mijang.support.TestLedger;
 import com.example.mijang.stock.domain.Stock;
 import com.example.mijang.stock.mapper.StockMapper;
 import java.math.BigDecimal;
@@ -61,7 +62,8 @@ class TransactionUpdateTest {
         FxRateService fx = mock(FxRateService.class);
         TradingClock clock = new TradingClock();
 
-        service = new TransactionService(txMapper, pfMapper, stockMapper, fx, holdingService, clock);
+        service = new TransactionService(txMapper, pfMapper, stockMapper, fx, holdingService,
+                TestLedger.of(txMapper), clock);
 
         when(stockMapper.findBySymbol(any())).thenAnswer(i ->
                 new Stock(1L, i.getArgument(0), "이름", null, "NASDAQ", "STOCK",

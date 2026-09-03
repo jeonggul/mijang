@@ -12,6 +12,7 @@ import com.example.mijang.portfolio.mapper.PortfolioMapper;
 import com.example.mijang.portfolio.mapper.TransactionMapper;
 import com.example.mijang.portfolio.service.HoldingService;
 import com.example.mijang.portfolio.service.TransactionService;
+import com.example.mijang.support.TestLedger;
 import com.example.mijang.stock.mapper.StockMapper;
 import java.time.LocalDate;
 import java.util.List;
@@ -47,6 +48,6 @@ class TransactionExportServiceTest {
     private static TransactionService service(TransactionMapper mapper) {
         return new TransactionService(mapper,
                 mock(PortfolioMapper.class), mock(StockMapper.class), mock(FxRateService.class),
-                mock(HoldingService.class), mock(TradingClock.class));
+                mock(HoldingService.class), TestLedger.of(mapper), mock(TradingClock.class));
     }
 }
