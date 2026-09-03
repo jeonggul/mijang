@@ -113,7 +113,7 @@ class CommunityModerationTest {
         posts = new Posts();
         reactions = new Reactions();
         /* 조회·저장 경로는 이 테스트의 관심사가 아니라 null 로 둔다. 부르면 터져서 오히려 잡힌다 */
-        return new PostService(posts, null, reactions, null, null, null, null, null, null,
+        return new PostService(posts, null, reactions, null, null, null, null, null, null, null,
                 new FixedSettings().with(AdminSettingKey.COMMUNITY_WRITE_DELAY_DAYS, "0"), null);
     }
 

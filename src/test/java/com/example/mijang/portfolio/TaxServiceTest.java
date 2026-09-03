@@ -7,6 +7,7 @@ import com.example.mijang.portfolio.dto.CapitalGainsResponse;
 import com.example.mijang.portfolio.dto.TransactionResponse;
 import com.example.mijang.portfolio.mapper.TransactionMapper;
 import com.example.mijang.portfolio.service.TaxService;
+import com.example.mijang.support.TestLedger;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -60,6 +61,11 @@ class TaxServiceTest {
         @Override public int softDelete(Long id, Long u) { return 0; }
     }
 
+    /** 거래가 하나도 없는 원장으로 세운다. 인라인으로 두면 같은 값을 두 번 만든다 */
+    private static TaxService taxOf(Ledger ledger) {
+        return new TaxService(ledger, TestLedger.of(ledger));
+    }
+
     private static long seq = 0;
 
     /** 판단 메모 없는 거래 한 건. 세금 계산에는 수량·단가·환율·날짜만 쓰인다. */
@@ -81,7 +87,7 @@ class TaxServiceTest {
         ledger.add(tx("TSLA", "BUY", "5", "200", "1400", LocalDate.of(2026, 2, 1)));
         ledger.add(tx("TSLA", "SELL", "5", "180", "1400", LocalDate.of(2026, 4, 1)));
 
-        CapitalGainsResponse out = new TaxService(ledger).capitalGains(USER, 2026);
+        CapitalGainsResponse out = new TaxService(ledger, TestLedger.of(ledger)).capitalGains(USER, 2026);
 
         assertThat(out.sellCount()).isEqualTo(2);
         assertThat(out.gainKrw()).isEqualByComparingTo("350000");
@@ -96,7 +102,7 @@ class TaxServiceTest {
         ledger.add(tx("AAPL", "BUY", "10", "100", "1400", LocalDate.of(2026, 1, 5)));
         ledger.add(tx("AAPL", "SELL", "5", "150", "1400", LocalDate.of(2026, 3, 10)));
 
-        CapitalGainsResponse out = new TaxService(ledger).capitalGains(USER, 2026);
+        CapitalGainsResponse out = new TaxService(ledger, TestLedger.of(ledger)).capitalGains(USER, 2026);
 
         assertThat(out.taxableKrw()).isEqualByComparingTo("0");
         assertThat(out.estimatedTaxKrw()).isEqualByComparingTo("0");
@@ -110,7 +116,7 @@ class TaxServiceTest {
         ledger.add(tx("NVDA", "BUY", "10", "100", "1400", LocalDate.of(2026, 1, 5)));
         ledger.add(tx("NVDA", "SELL", "10", "600", "1400", LocalDate.of(2026, 6, 1)));
 
-        CapitalGainsResponse out = new TaxService(ledger).capitalGains(USER, 2026);
+        CapitalGainsResponse out = new TaxService(ledger, TestLedger.of(ledger)).capitalGains(USER, 2026);
 
         assertThat(out.netKrw()).isEqualByComparingTo("7000000");
         assertThat(out.taxableKrw()).isEqualByComparingTo("4500000");
@@ -125,7 +131,7 @@ class TaxServiceTest {
         ledger.add(tx("AAPL", "SELL", "5", "150", "1400", LocalDate.of(2025, 3, 10)));
         ledger.add(tx("AAPL", "SELL", "5", "160", "1400", LocalDate.of(2026, 2, 10)));
 
-        CapitalGainsResponse out = new TaxService(ledger).capitalGains(USER, 2025);
+        CapitalGainsResponse out = new TaxService(ledger, TestLedger.of(ledger)).capitalGains(USER, 2025);
 
         assertThat(out.sellCount()).isEqualTo(1);
         assertThat(out.gainKrw()).isEqualByComparingTo("350000");
@@ -139,7 +145,7 @@ class TaxServiceTest {
         ledger.add(tx("AAPL", "BUY", "10", "100", "1400", LocalDate.of(2024, 1, 5)));
         ledger.add(tx("AAPL", "SELL", "5", "150", "1400", LocalDate.of(2025, 3, 10)));
 
-        CapitalGainsResponse out = new TaxService(ledger).capitalGains(USER, null);
+        CapitalGainsResponse out = new TaxService(ledger, TestLedger.of(ledger)).capitalGains(USER, null);
 
         assertThat(out.year()).isEqualTo(2025);
         assertThat(out.sellCount()).isEqualTo(1);
@@ -148,7 +154,7 @@ class TaxServiceTest {
     @Test
     @DisplayName("매도가 없으면 전부 0이다")
     void 매도가없으면빈값이다() {
-        CapitalGainsResponse out = new TaxService(new Ledger()).capitalGains(USER, 2026);
+        CapitalGainsResponse out = taxOf(new Ledger()).capitalGains(USER, 2026);
 
         assertThat(out.sellCount()).isZero();
         assertThat(out.netKrw()).isEqualByComparingTo("0");
@@ -165,7 +171,7 @@ class TaxServiceTest {
         ledger.add(tx("MSFT", "BUY", "10", "200", "1400", LocalDate.of(2026, 2, 5)));
         ledger.add(tx("MSFT", "SELL", "10", "180", "1400", LocalDate.of(2026, 3, 5)));
 
-        CapitalGainsResponse out = new TaxService(ledger).capitalGains(USER, 2026);
+        CapitalGainsResponse out = new TaxService(ledger, TestLedger.of(ledger)).capitalGains(USER, 2026);
 
         assertThat(out.gainKrw()).isEqualByComparingTo("420000");
     }

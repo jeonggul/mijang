@@ -46,6 +46,7 @@ public class TransactionService {
     private final StockMapper stockMapper;
     private final FxRateService fxRateService;
     private final HoldingService holdingService;
+    private final LedgerService ledgerService;
     private final TradingClock tradingClock;
 
     /**
@@ -244,11 +245,11 @@ public class TransactionService {
             return rows;
         }
 
+        /* 입력은 LedgerService 를 거쳐 모은다. 여기서 거래만 따로 읽으면 분할 보정이
+           빠져 같은 매도의 실현손익이 보유 현황 쪽과 갈린다(2026-09-03 점검 4.1) */
         Map<Long, BigDecimal> realized = new HashMap<>();
         for (String sold : soldSymbols) {
-            realized.putAll(HoldingCalculator
-                    .calculateAll(sold, transactionMapper.findForRecalc(userId, sold))
-                    .realizedBySellId());
+            realized.putAll(ledgerService.calculationOf(userId, sold).realizedBySellId());
         }
         return rows.stream()
                 .map(r -> "SELL".equals(r.side())

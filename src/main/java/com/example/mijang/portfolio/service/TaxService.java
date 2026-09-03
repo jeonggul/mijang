@@ -44,6 +44,7 @@ public class TaxService {
     private static final BigDecimal TAX_RATE = new BigDecimal("0.22");
 
     private final TransactionMapper transactionMapper;
+    private final LedgerService ledgerService;
 
     /**
      * 한 해의 실현손익과 과세 추정.
@@ -91,13 +92,18 @@ public class TaxService {
     private record SellRealized(LocalDate date, BigDecimal realizedKrw) {
     }
 
-    /** 전 종목을 훑어 매도 건별 실현손익을 모은다. 계산기는 portfolio 의 것을 그대로 쓴다. */
+    /**
+     * 전 종목을 훑어 매도 건별 실현손익을 모은다. 계산기는 portfolio 의 것을 그대로 쓴다.
+     *
+     * <p>입력은 {@link LedgerService#calculationOf} 를 거친다. 거래만 따로 읽으면 분할 보정이
+     * 빠져 세금 화면의 실현손익이 보유 현황·매매 기록과 갈린다(2026-09-03 점검 4.1).
+     */
     private List<SellRealized> collectSells(Long userId) {
         List<SellRealized> sells = new ArrayList<>();
         for (String symbol : transactionMapper.findSymbolsByUser(userId)) {
             List<Transaction> txs = transactionMapper.findForRecalc(userId, symbol);
             Map<Long, BigDecimal> realized =
-                    HoldingCalculator.calculateAll(symbol, txs).realizedBySellId();
+                    ledgerService.calculationOf(userId, symbol).realizedBySellId();
             for (Transaction tx : txs) {
                 BigDecimal r = tx.id() == null ? null : realized.get(tx.id());
                 if (r != null) {
