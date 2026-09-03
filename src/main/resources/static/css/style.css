@@ -635,7 +635,9 @@ table.holdings .stack { display: grid; gap: 3px; }
 /* ── 로그인 화면의 체험 계정 말풍선 ──────────────────────────
    .dropdown 을 그대로 쓴다. 여닫기도 ui.js 의 data-open 이 맡는다 —
    화면마다 다른 여닫기를 만들면 ESC·바깥 클릭 같은 것을 매번 다시 짜게 된다 */
-.demo-anchor { display: flex; justify-content: center; margin: -4px 0 16px; }
+.demo-anchor {
+  display: flex; flex-direction: column; align-items: center; margin: -4px 0 16px;
+}
 .demo-tip-btn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px;
@@ -644,8 +646,15 @@ table.holdings .stack { display: grid; gap: 3px; }
 }
 .demo-tip-btn:hover { color: var(--record); border-color: var(--record); }
 
-/* 가운데 정렬한 버튼 아래에 붙는다. 기본 .dropdown 은 오른쪽 기준이라 여기서 덮는다 */
-.demo-tip { right: auto; left: 50%; transform: translateX(-50%); width: 268px; padding: 10px; }
+/* 떠 있지 않고 자리를 차지한다. 다른 드롭다운과 다른 이유 —
+   이 말풍선 바로 아래가 이메일·비밀번호·로그인 버튼이다. 기본 .dropdown 처럼
+   절대 위치로 띄우면 그 위를 덮어, 열어 둔 채로는 로그인 버튼이 아예 눌리지 않는다.
+   버튼이 말풍선 밑에 깔려 클릭이 삼켜지므로 "아무 반응이 없다" 로만 보인다
+   (2026-09-03 점검 5.1). 열면 아래를 밀어내도록 흐름 안에 둔다 */
+.demo-tip {
+  position: static; transform: none; right: auto; left: auto;
+  width: 268px; max-width: 100%; margin-top: 8px; padding: 10px;
+}
 .demo-tip-head { margin: 0 0 8px; font-size: var(--fs-badge); color: var(--text-sub); }
 .demo-tip-foot { margin: 8px 0 0; font-size: var(--fs-badge); color: var(--text-sub); line-height: 1.5; }
 
