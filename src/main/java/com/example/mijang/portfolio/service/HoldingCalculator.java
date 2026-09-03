@@ -57,14 +57,31 @@ public final class HoldingCalculator {
      * 만들 수 없고, 나눌 원가는 그 매도 시점의 평단가·평균매수환율에서 나오므로 이 루프
      * 밖에서는 다시 구할 수 없다. 커뮤니티 글에 붙는 매매 카드가 이 값으로 수익률을 낸다.
      *
+     * <p>{@code minQuantity} 는 <b>훑는 도중</b> 수량이 내려간 가장 낮은 값이다. 최종 수량만으로는
+     * 보유를 넘겨 판 것을 잡지 못한다 — 매수보다 앞선 날짜로 매도를 끼워 넣으면 그 시점에는
+     * 한 주도 없었는데도 최종 수량은 양수로 끝나기 때문이다. 그때 계산은 원가를 0 으로 놓고
+     * 매도대금 전액을 이익으로 잡아 평단가와 실현손익이 함께 틀어진다.
+     *
      * @param holding          보유 현황
      * @param realizedBySellId 매도 기록 id → 그 매도가 확정한 손익(원). 매수는 들어 있지 않다
      * @param costBasisBySellId 매도 기록 id → 그 매도가 처분한 몫의 원가(원). 수수료는 빼지 않는다 —
      *                          원가는 원가고, 수수료는 손익 쪽에서 이미 차감됐다
+     * @param minQuantity      훑는 동안의 최저 수량. 음수면 어느 시점엔가 보유를 넘겨 팔았다는 뜻
      */
     public record Calculation(Holding holding,
                               Map<Long, BigDecimal> realizedBySellId,
-                              Map<Long, BigDecimal> costBasisBySellId) {
+                              Map<Long, BigDecimal> costBasisBySellId,
+                              BigDecimal minQuantity) {
+
+        /**
+         * 보유를 넘겨 판 시점이 있었는가.
+         *
+         * <p>최종 수량이 아니라 <b>도중</b>을 본다. 부르는 쪽이 매번 부호를 따지지 않도록
+         * 이름을 붙여 둔다 — 이 판단이 흩어지면 한 곳만 고쳐지는 날이 온다.
+         */
+        public boolean oversold() {
+            return minQuantity.compareTo(BigDecimal.ZERO) < 0;
+        }
     }
 
     /**
@@ -145,6 +162,9 @@ public final class HoldingCalculator {
      */
     public static Calculation calculateAll(String symbol, List<Transaction> transactions) {
         BigDecimal quantity = BigDecimal.ZERO;
+        /* 훑는 도중 내려간 가장 낮은 수량. 마지막 값만 보면 과거 날짜로 끼워 넣은
+           초과 매도를 놓친다 — 뒤에 오는 매수가 수량을 도로 양수로 만들어 준다 */
+        BigDecimal minQuantity = BigDecimal.ZERO;
         BigDecimal avgPrice = BigDecimal.ZERO;
         BigDecimal avgFxRate = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
@@ -181,6 +201,7 @@ public final class HoldingCalculator {
                 // 매도는 평단가·평균환율을 바꾸지 않는다. 판 것은 남은 것의 원가와 무관하다(2.3)
                 quantity = quantity.subtract(tx.quantity());
             }
+            minQuantity = minQuantity.min(quantity);
         }
 
         Holding holding = new Holding(symbol,
@@ -191,7 +212,8 @@ public final class HoldingCalculator {
                 realizedPnlKrw.setScale(KRW_SCALE, RoundingMode.HALF_UP));
         return new Calculation(holding,
                 Collections.unmodifiableMap(realizedBySellId),
-                Collections.unmodifiableMap(costBasisBySellId));
+                Collections.unmodifiableMap(costBasisBySellId),
+                minQuantity.setScale(PRICE_SCALE, RoundingMode.HALF_UP));
     }
 
     /**

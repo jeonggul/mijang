@@ -45,8 +45,8 @@ public class HoldingService {
      * <p>증분이 아니라 <b>전체 재생</b>이다(2.2). 과거 날짜를 나중에 넣거나 중간 기록을 지워도
      * 항상 옳은 값이 나온다.
      *
-     * @return 계산된 보유 현황. 매도 초과면 수량이 음수인 채로 돌아온다 —
-     *         거절 여부는 부르는 쪽이 판단한다(2.5)
+     * @return 계산된 보유 현황
+     * @throws BusinessException 어느 시점에든 보유를 넘겨 팔았을 때(400)
      */
     @Transactional
     public Holding recalculate(Long userId, Long portfolioId, String symbol) {
@@ -54,13 +54,19 @@ public class HoldingService {
         /* 분할 이전 거래는 지금 기준으로 환산해서 센다. 시세는 이미 분할이 반영된
            값으로 들어오는데 원장은 그날 체결한 그대로라, 보정하지 않으면 4:1 분할 뒤
            평가금액이 4분의 1로 보인다 */
-        Holding holding = HoldingCalculator.calculate(
+        HoldingCalculator.Calculation calc = HoldingCalculator.calculateAll(
                 symbol, transactions, splitMapper.findBySymbol(symbol));
+        Holding holding = calc.holding();
 
-        /* 음수면 저장하지 않고 여기서 막는다. holdings 에 ck_holdings_quantity CHECK(>=0) 이
-           걸려 있어 그대로 넣으면 SQL 예외가 먼저 터지고, 화면에는 "서버 오류" 로 나간다 —
-           보유량을 넘겨 팔았다는 사실이 사용자에게 전달되지 않는다(2.5) */
-        if (holding.quantity().compareTo(BigDecimal.ZERO) < 0) {
+        /* 최종 수량이 아니라 훑는 <b>도중</b>의 최저 수량을 본다. 최종 수량만 보면
+           매수보다 앞선 날짜로 끼워 넣은 초과 매도를 놓친다 — 뒤에 오는 매수가 수량을
+           도로 양수로 만들어 검사를 통과시키고, 그 매도는 원가 0 으로 계산돼
+           평단가와 실현손익이 함께 틀어진 채 저장된다(2026-09-03 점검 3.2).
+
+           holdings 에 ck_holdings_quantity CHECK(>=0) 이 걸려 있어 음수를 그대로 넣으면
+           SQL 예외가 먼저 터지고 화면에는 "서버 오류" 로 나간다 — 보유량을 넘겨 팔았다는
+           사실이 사용자에게 전달되지 않는다(2.5) */
+        if (calc.oversold()) {
             throw new BusinessException(ErrorCode.TX_QUANTITY_EXCEEDS_HOLDING, "quantity");
         }
         holdingMapper.upsert(userId, portfolioId, symbol,

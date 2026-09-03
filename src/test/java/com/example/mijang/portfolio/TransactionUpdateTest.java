@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.mijang.common.exception.BusinessException;
+import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.common.time.TradingClock;
 import com.example.mijang.fx.service.FxRateService;
 import com.example.mijang.portfolio.domain.Holding;
@@ -172,15 +173,21 @@ class TransactionUpdateTest {
     class 수량 {
 
         /* 매수를 줄이면 뒤따르던 매도가 보유를 넘길 수 있다.
-           저장 뒤 전체를 다시 계산해야만 드러난다 */
+           저장 뒤 전체를 다시 계산해야만 드러난다.
+
+           판단은 HoldingService.recalculate 안에 있다 — 최종 수량이 아니라 훑는 도중의
+           최저 수량을 봐야 해서, 계산 결과를 쥐고 있는 그쪽이 판단할 자리다.
+           여기서는 그 예외가 위로 전해져 트랜잭션이 되돌아가는지만 본다 */
         @Test
-        @DisplayName("고친 결과 보유가 음수면 되돌린다")
+        @DisplayName("재계산이 보유 초과를 잡으면 그대로 던져 되돌린다")
         void 보유초과() {
             when(txMapper.findById(TX, USER)).thenReturn(existing("AAPL"));
-            when(holdingService.recalculate(USER, PF, "AAPL")).thenReturn(holding("-3"));
+            when(holdingService.recalculate(USER, PF, "AAPL"))
+                    .thenThrow(new BusinessException(ErrorCode.TX_QUANTITY_EXCEEDS_HOLDING, "quantity"));
 
             assertThatThrownBy(() -> service.update(USER, TX, form("AAPL")))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TX_QUANTITY_EXCEEDS_HOLDING);
         }
 
         @Test

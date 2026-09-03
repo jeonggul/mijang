@@ -234,6 +234,33 @@ class HoldingCalculatorTest {
         }
 
         @Test
+        @DisplayName("최종 수량이 양수여도 도중에 보유를 넘겼으면 minQuantity 가 음수다")
+        void 과거날짜_초과매도() {
+            /* 2026-09-03 점검 3.2 에서 재현한 경로다. 8/10 매수보다 앞선 8/5 로 매도를
+               끼워 넣으면 그 시점 보유는 0 인데, 최종 수량은 매수가 채워 줘 5 로 끝난다.
+               최종 수량만 보는 검사는 이것을 통과시켰다 */
+            HoldingCalculator.Calculation calc = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1, sell("5", "200", "1300", "0", 5)),
+                    withId(2, buy("10", "100", "1300", "0", 10))));
+
+            assertThat(calc.holding().quantity()).isEqualByComparingTo("5");
+            assertThat(calc.minQuantity()).isEqualByComparingTo("-5");
+            assertThat(calc.oversold()).isTrue();
+        }
+
+        @Test
+        @DisplayName("정상 순서로 사고팔면 minQuantity 가 0 아래로 내려가지 않는다")
+        void 정상순서() {
+            HoldingCalculator.Calculation calc = HoldingCalculator.calculateAll("AAPL", List.of(
+                    withId(1, buy("10", "100", "1300", "0", 1)),
+                    withId(2, sell("10", "200", "1300", "0", 2)),
+                    withId(3, buy("3", "150", "1300", "0", 3))));
+
+            assertThat(calc.minQuantity()).isEqualByComparingTo("0");
+            assertThat(calc.oversold()).isFalse();
+        }
+
+        @Test
         @DisplayName("거래가 없으면 전부 0 이다")
         void 거래없음() {
             Holding h = HoldingCalculator.calculate("AAPL", List.of());

@@ -13,7 +13,6 @@ import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.common.time.TradingClock;
 import com.example.mijang.fx.service.FxRateService;
-import com.example.mijang.portfolio.domain.Holding;
 import com.example.mijang.portfolio.domain.Transaction;
 import com.example.mijang.portfolio.dto.TransactionForm;
 import com.example.mijang.portfolio.dto.TransactionResponse;
@@ -96,11 +95,11 @@ public class TransactionService {
                 form.getBuyReason(), form.getTargetPrice(), form.getSentiment());
         Long id = transactionMapper.findLastInsertedId();
 
-        // 재계산 결과가 음수면 이 기록을 넣을 수 없다는 뜻이다. 예외로 전체를 되돌린다(2.5)
-        Holding holding = holdingService.recalculate(userId, portfolioId, symbol);
-        if (holding.quantity().compareTo(BigDecimal.ZERO) < 0) {
-            throw new BusinessException(ErrorCode.TX_QUANTITY_EXCEEDS_HOLDING, "quantity");
-        }
+        /* 재계산이 보유 초과를 잡으면 예외를 던지고, 트랜잭션이 통째로 되돌아가
+           방금 넣은 기록도 사라진다(2.5). 검사가 "최종 수량" 이 아니라 "훑는 도중의
+           최저 수량" 인 것이 중요하다 — 과거 날짜로 끼워 넣은 매도는 최종 수량만
+           보면 잡히지 않는다 */
+        holdingService.recalculate(userId, portfolioId, symbol);
         return id;
     }
 
@@ -177,10 +176,7 @@ public class TransactionService {
         if (!symbol.equals(before.symbol())) {
             holdingService.recalculate(userId, before.portfolioId(), before.symbol());
         }
-        Holding holding = holdingService.recalculate(userId, before.portfolioId(), symbol);
-        if (holding.quantity().compareTo(BigDecimal.ZERO) < 0) {
-            throw new BusinessException(ErrorCode.TX_QUANTITY_EXCEEDS_HOLDING, "quantity");
-        }
+        holdingService.recalculate(userId, before.portfolioId(), symbol);
     }
 
     /**
