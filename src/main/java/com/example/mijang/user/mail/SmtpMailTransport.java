@@ -42,6 +42,10 @@ public class SmtpMailTransport implements MailTransport {
             helper.setSubject("[미장] 비밀번호 재설정 안내");
             helper.setText(buildBody(resetUrl, ttlMinutes), true);
             mailSender.send(message);
+            /* 성공도 남긴다. 예전에는 실패만 적어서, 로그가 조용하면 보낸 것인지
+               아예 부르지 않은 것인지 구분할 수 없었다 — 메일이 안 온다는 말에
+               어디부터 봐야 할지 알 수 없었다. 주소는 가려서 남긴다 */
+            log.info("재설정 메일 발송 — {}", MailTransport.mask(toEmail));
         } catch (MessagingException | MailException | UnsupportedEncodingException e) {
             // 사용자에게는 성공과 같은 응답이 이미 나갔다. 원인은 로그에만 남긴다
             log.error("재설정 메일 발송 실패 — {}", MailTransport.mask(toEmail), e);
