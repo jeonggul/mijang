@@ -31,6 +31,13 @@ public record PostDetail(
         long commentCount,
         long viewCount,
         LocalDateTime createdAt,
+        /**
+         * 글 상태. {@code PUBLISHED} 가 아니면 쓴 사람에게만 보이는 글이다.
+         *
+         * <p>화면이 "숨겨진 글입니다" 를 띄우는 데 쓴다. 이 값이 없으면 본인 글 상세가
+         * 공개된 글과 똑같이 보여, 왜 목록에서 사라졌는지 알 수 없다(2026-09-03 점검 5.3).
+         */
+        String status,
         boolean mine,
         boolean myLike,
         boolean myScrap,

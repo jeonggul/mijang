@@ -120,6 +120,14 @@
            AND p.status = 'PUBLISHED'
     </select>
 
+    <!-- 상태를 안 거른다. 본인 글 상세 전용이고, 남의 숨김 글을 막는 것은 서비스가 한다 -->
+    <select id="findAnyById" resultType="com.example.mijang.community.domain.PostRow">
+        SELECT <include refid="cols"/>
+          FROM posts p
+          JOIN users u ON u.id = p.user_id
+         WHERE p.id = #{postId}
+    </select>
+
     <update id="updateContent">
         UPDATE posts
            SET title = #{title}, content = #{content}

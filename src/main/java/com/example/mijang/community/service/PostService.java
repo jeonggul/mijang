@@ -68,6 +68,9 @@ public class PostService {
     /** 수익률 자리수. {@code RatioTypeHandler} 와 같다 — 0.1590 은 15.90%. */
     private static final int RATE_SCALE = 4;
 
+    /** 남에게 보이는 상태. 나머지(HIDDEN·DELETED)는 쓴 사람에게만 보인다. */
+    private static final String PUBLISHED = "PUBLISHED";
+
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
     private final ReactionMapper reactionMapper;
@@ -189,17 +192,38 @@ public class PostService {
     /**
      * 상세와 댓글. {@code COM-003}
      *
-     * <p>조회수를 먼저 올리고 읽는다. 읽고 나서 올리면 방금 올린 1 이 화면에 안 보인다.
+     * <p><b>본인 글이면 숨김·삭제된 것도 열린다.</b> 내가 쓴 글 목록은 그것들도 보여주는데
+     * (목록에서 사라진 이유를 쓴 사람은 알 수 있어야 한다) 열면 404 가 났다 — 목록에는
+     * 보이는데 못 여는 상태였다(2026-09-03 점검 5.3). 상태는 응답에 실어 보내 화면이
+     * "숨겨진 글" 이라고 밝히게 한다.
+     *
+     * <p>남의 글은 그대로 공개된 것만 보인다. 걸러 내는 자리를 매퍼가 아니라 여기 둔 이유가
+     * 그것이다 — 매퍼에서 거르면 본인 글까지 함께 막힌다.
+     *
+     * <p>조회수는 <b>공개된 글에만</b> 올린다. 숨은 글은 남에게 보이지 않으니 조회수가
+     * 오를 이유가 없고, 없는 글에 올리면 아무도 못 보는 숫자만 커진다.
      *
      * @param viewerId 로그인하지 않았으면 null. 수정·삭제 버튼을 띄울지 정하는 데만 쓴다
-     * @throws BusinessException 없거나 숨겨진 글일 때(404)
+     * @throws BusinessException 없거나, 남의 숨겨진 글일 때(404)
      */
     @Transactional
     public PostDetail detail(Long viewerId, Long postId) {
-        postMapper.increaseViewCount(postId);
-        PostRow row = postMapper.findById(postId);
+        PostRow row = postMapper.findAnyById(postId);
         if (row == null) {
             throw new BusinessException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
+        boolean mine = viewerId != null && viewerId.equals(row.authorId());
+        boolean published = PUBLISHED.equals(row.status());
+        if (!published && !mine) {
+            throw new BusinessException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
+
+        /* 읽고 나서 올리므로 방금 올린 1 이 row 에 없다. 화면에는 더해서 내보낸다 —
+           다시 읽으면 질의가 하나 더 늘고, 먼저 올리면 없는 글의 조회수가 오른다 */
+        long viewCount = row.viewCount();
+        if (published) {
+            postMapper.increaseViewCount(postId);
+            viewCount++;
         }
         List<CommentResponse> comments = commentMapper.findByPost(postId);
         /* 버튼 상태(눌려 있음)를 그리려면 내 반응이 필요하다. 비로그인은 조회하지 않는다 */
@@ -207,8 +231,8 @@ public class PostService {
                 ? List.of() : reactionMapper.findTypes(postId, viewerId);
         return new PostDetail(row.id(), row.board(), row.symbol(), row.title(), row.content(),
                 row.authorName(), row.shareholder(), row.priceAtWrite(), toTradeCard(row),
-                row.likeCount(), row.commentCount(), row.viewCount(), row.createdAt(),
-                viewerId != null && viewerId.equals(row.authorId()),
+                row.likeCount(), row.commentCount(), viewCount, row.createdAt(),
+                row.status(), mine,
                 myTypes.contains("LIKE"), myTypes.contains("SCRAP"), comments);
     }
 

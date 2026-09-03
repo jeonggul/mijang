@@ -64,7 +64,12 @@ class CommunityModerationTest {
         String updatedTitle;
         String updatedStatus;
 
-        @Override public PostRow findById(Long postId) { return found; }
+        @Override public PostRow findById(Long postId) {
+            /* 실제 매퍼는 PUBLISHED 만 준다. 상태를 흉내 내지 않으면
+               "내려간 글은 상세에서만 열린다" 규칙을 시험할 수 없다 */
+            return found != null && "PUBLISHED".equals(found.status()) ? found : null;
+        }
+        @Override public PostRow findAnyById(Long postId) { return found; }
         @Override public int updateContent(Long postId, String title, String content) {
             updatedTitle = title;
             return 1;
