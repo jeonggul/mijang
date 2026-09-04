@@ -632,6 +632,24 @@ table.holdings .stack { display: grid; gap: 3px; }
 
 /* ── 인증 화면 ─────────────────────────────────────────────── */
 .auth { min-height: 100vh; display: grid; place-content: center; justify-items: stretch; padding: 60px 20px; }
+/* ── 소셜 로그인 버튼 ────────────────────────────────────────
+   원 안에 로고만 넣고 가로로 늘어놓는다. 이름을 적지 않아도 로고로 알아보고,
+   버튼 두 개가 세로로 쌓이면 로그인 폼보다 눈에 먼저 들어온다 */
+.social-row { display: flex; justify-content: center; gap: 14px; margin: 4px 0 12px; }
+.social-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--surface);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.social-btn svg { width: 24px; height: 24px; display: block; }
+.social-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-pop); }
+.social-btn:focus-visible { outline: 2px solid var(--record); outline-offset: 2px; }
+/* 카카오는 브랜드 색이 배경이다. 로고가 검정이라 노란 바탕이 있어야 알아본다 */
+.social-btn.kakao { background: #FEE500; border-color: #FEE500; }
+.social-btn.kakao:hover { border-color: #F2D900; }
+.social-btn.google:hover { border-color: var(--text-sub); }
+
 /* ── 로그인 화면의 체험 계정 말풍선 ──────────────────────────
    .dropdown 을 그대로 쓴다. 여닫기도 ui.js 의 data-open 이 맡는다 —
    화면마다 다른 여닫기를 만들면 ESC·바깥 클릭 같은 것을 매번 다시 짜게 된다 */

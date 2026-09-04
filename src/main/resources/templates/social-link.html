@@ -1,0 +1,93 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 계정 연결</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="auth">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></p>
+
+      <!-- 왜 이 화면이 뜨는지 먼저 말한다. 이유를 모르면 "왜 또 비밀번호를 묻지" 가 된다 -->
+      <p class="note" style="line-height:1.7;margin-bottom:16px">
+        <b th:text="${linkEmail}">이메일</b> 로 이미 가입된 계정이 있습니다.<br>
+        기존 비밀번호를 확인하면 <span th:text="${linkProvider}">소셜</span> 계정을 연결하고
+        바로 로그인합니다.
+      </p>
+
+      <form id="link-form">
+        <div class="field">
+          <label for="link-pw">비밀번호</label>
+          <input id="link-pw" name="password" type="password"
+                 autocomplete="current-password" placeholder="기존 비밀번호" required>
+          <p class="msg err" id="link-msg" hidden></p>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" id="link-btn">연결하고 로그인</button>
+      </form>
+
+      <p class="auth-foot">
+        비밀번호가 기억나지 않으시나요? <a th:href="@{/password-forgot}">비밀번호 찾기</a>
+      </p>
+    </div>
+    <p class="auth-note">
+      연결하면 다음부터는 소셜 로그인만으로 들어올 수 있습니다.
+    </p>
+  </div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 소셜 계정 연결 (AUTH-07)
+   연결할 신원은 세션에 있다. 여기서는 비밀번호만 보낸다 —
+   본문으로 신원을 받으면 아무 계정이나 자기 것으로 붙일 수 있다. */
+(function () {
+  var form = document.getElementById("link-form");
+  var pw = document.getElementById("link-pw");
+  var msg = document.getElementById("link-msg");
+  var btn = document.getElementById("link-btn");
+
+  function show(text) {
+    msg.textContent = text;
+    msg.hidden = false;
+    btn.disabled = false;
+  }
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    msg.hidden = true;
+    btn.disabled = true;
+
+    var body;
+    try {
+      var res = await fetch("/api/auth/social/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw.value })
+      });
+      body = await res.json();
+    } catch (err) {
+      show("서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요");
+      return;
+    }
+
+    if (body.success) {
+      var me = body.data && body.data.user;
+      location.href = me && me.role === "ADMIN" ? "/admin" : "/dashboard";
+      return;
+    }
+    show(body.error ? body.error.message : "연결하지 못했습니다");
+  });
+})();
+</script>
+</body>
+</html>

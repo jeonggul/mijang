@@ -23,6 +23,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1'
 
 	// JWT — jjwt 는 api/impl/jackson 세 개로 나뉜다. 컴파일에는 api 만 필요하다

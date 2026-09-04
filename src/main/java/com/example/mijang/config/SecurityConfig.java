@@ -2,6 +2,7 @@ package com.example.mijang.config;
 
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.security.JwtAuthenticationFilter;
+import com.example.mijang.user.oauth.SocialAuthHandlers;
 import java.nio.charset.StandardCharsets;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -30,9 +31,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
+    private final SocialAuthHandlers socialAuthHandlers;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter,
+                          SocialAuthHandlers socialAuthHandlers) {
         this.jwtFilter = jwtFilter;
+        this.socialAuthHandlers = socialAuthHandlers;
     }
 
     /**
@@ -115,6 +119,8 @@ public class SecurityConfig {
                                  "/terms", "/privacy").permitAll()
                 // 비로그인도 볼 수 있는 화면
                 .requestMatchers("/search", "/stock", "/error", "/maintenance").permitAll()
+                /* 소셜 로그인이 오가는 길. 여기가 막히면 제공자에서 돌아오지 못한다 */
+                .requestMatchers("/oauth2/**", "/login/oauth2/**", "/social-link").permitAll()
                 .requestMatchers("/admin").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e
@@ -122,6 +128,12 @@ public class SecurityConfig {
                 // sendError 를 써야 ERROR 디스패치를 타고 상태 코드가 보존된다.
                 // sendRedirect 로 보내면 새 GET 이라 상태 속성이 없어 500 으로 떨어진다.
                 .accessDeniedHandler((req, res, ex) -> res.sendError(403)))
+            /* 소셜 로그인. 인증이 끝나면 우리 핸들러가 JWT 쿠키를 굽는다 —
+               세션 로그인으로 남기지 않는다(인증 방식을 두 벌로 만들지 않으려고) */
+            .oauth2Login(o -> o
+                .loginPage("/login")
+                .successHandler(socialAuthHandlers.success())
+                .failureHandler(socialAuthHandlers.failure()))
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
