@@ -66,7 +66,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/signup", "/api/auth/login",
                                  "/api/auth/refresh", "/api/auth/logout",
                                  "/api/auth/check-nickname",
-                                 "/api/auth/password/forgot", "/api/auth/password/reset").permitAll()
+                                 "/api/auth/password/forgot", "/api/auth/password/reset",
+                                 // 소셜 계정 연결은 로그인 <b>전에</b> 부른다. 인증을 걸면
+                                 // 연결하려는 사람이 영영 들어올 수 없다. 대신 연결할 신원을
+                                 // 세션에서만 꺼내고, 비밀번호를 다시 확인한다.
+                                 "/api/auth/social/link").permitAll()
                 // 종목별 커뮤니티는 종목 정보가 아니라 커뮤니티다. 아래 /api/stocks/** 보다
                 // 먼저 둔다 — 규칙은 처음 걸리는 것이 이긴다.
                 //
