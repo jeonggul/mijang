@@ -59,9 +59,17 @@ public class CspInterceptor implements HandlerInterceptor {
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response,
                            Object handler, ModelAndView modelAndView) {
-        if (modelAndView != null) {
-            modelAndView.addObject(NONCE_ATTRIBUTE, request.getAttribute(NONCE_ATTRIBUTE));
+        if (modelAndView == null) {
+            return;
         }
+        /* 리다이렉트에는 넣지 않는다. RedirectView 는 모델 값을 질의 문자열로 붙여서
+           /login?cspNonce=... 처럼 nonce 가 주소에 새어 나온다 — 브라우저 기록과
+           Referer 에 남고, 그린 화면과 다른 nonce 라 쓸모도 없다 */
+        if (modelAndView.getViewName() != null
+                && modelAndView.getViewName().startsWith("redirect:")) {
+            return;
+        }
+        modelAndView.addObject(NONCE_ATTRIBUTE, request.getAttribute(NONCE_ATTRIBUTE));
     }
 
     private String newNonce() {
