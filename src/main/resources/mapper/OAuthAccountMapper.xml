@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.user.mapper.OAuthAccountMapper">
+
+    <!-- 탈퇴한 계정은 잇지 않는다. 그 계정으로 다시 들어오는 길이 되면 안 된다 -->
+    <select id="findUserId" resultType="java.lang.Long">
+        SELECT o.user_id
+          FROM oauth_accounts o
+          JOIN users u ON u.id = o.user_id
+         WHERE o.provider          = #{provider}
+           AND o.provider_user_id  = #{providerUserId}
+           AND u.status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <select id="existsByUserAndProvider" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM oauth_accounts
+             WHERE user_id = #{userId} AND provider = #{provider}
+        )
+    </select>
+
+    <insert id="insert">
+        INSERT INTO oauth_accounts (user_id, provider, provider_user_id)
+        VALUES (#{userId}, #{provider}, #{providerUserId})
+    </insert>
+</mapper>

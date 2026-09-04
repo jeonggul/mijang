@@ -2,9 +2,11 @@ package com.example.mijang.web;
 
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.config.PasswordResetProperties;
+import com.example.mijang.user.oauth.SocialAuthHandlers;
 import com.example.mijang.user.service.LoginHintService;
 import com.example.mijang.user.service.PasswordService;
 import java.util.Locale;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -100,6 +102,24 @@ public class PageController {
             model.addAttribute("errorMessage", e.getMessage());
         }
         return "password-reset";
+    }
+
+    /**
+     * 소셜 계정 연결 확인. {@code AUTH-07}
+     *
+     * <p>같은 이메일로 이미 가입된 사람이 소셜로 들어왔을 때만 온다.
+     * 자동으로 잇지 않는 이유 — 제공자가 이메일을 검증하지 않으면 남의 주소를 적은
+     * 소셜 계정으로 그 사람의 매매 원장에 들어갈 수 있다.
+     */
+    @GetMapping("/social-link")
+    public String socialLink(HttpServletRequest request, Model model) {
+        var pending = SocialAuthHandlers.pendingOf(request);
+        if (pending == null) {
+            return "redirect:/login";   // 직접 주소를 친 경우다. 보여 줄 것이 없다
+        }
+        model.addAttribute("linkEmail", pending.email());
+        model.addAttribute("linkProvider", "GOOGLE".equals(pending.provider()) ? "구글" : "카카오");
+        return "social-link";
     }
 
     /** 이용약관. 가입 화면에서 새 탭으로 연다. 비로그인도 볼 수 있어야 한다. */

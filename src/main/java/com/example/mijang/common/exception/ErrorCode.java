@@ -109,6 +109,21 @@ public enum ErrorCode {
     TX_FORBIDDEN("TX_FORBIDDEN", HttpStatus.FORBIDDEN,
             "본인의 매매 기록만 다룰 수 있습니다"),
 
+    // ===== 소셜 로그인 (AUTH-07) =====
+    /**
+     * 제공자가 이메일을 주지 않았다.
+     *
+     * <p>카카오는 동의를 받지 않았거나 비즈 앱이 아니면 이메일을 안 준다.
+     * users.email 이 NOT NULL·UNIQUE 라 회원을 만들 수 없고, 가짜 주소를 지어 넣으면
+     * 비밀번호 찾기가 영영 막힌다. 그래서 만들지 않고 거절한다.
+     */
+    SOCIAL_EMAIL_REQUIRED("SOCIAL_EMAIL_REQUIRED", HttpStatus.UNPROCESSABLE_CONTENT,
+            "이메일 제공에 동의해야 소셜 로그인을 쓸 수 있습니다"),
+
+    /** 같은 이메일로 이미 가입돼 있다. 비밀번호를 확인한 뒤 잇는다. */
+    SOCIAL_LINK_REQUIRED("SOCIAL_LINK_REQUIRED", HttpStatus.UNPROCESSABLE_CONTENT,
+            "이미 가입된 이메일입니다. 비밀번호를 확인한 뒤 연결합니다"),
+
     // ===== 공지 =====
     NOTICE_NOT_FOUND("NOTICE_NOT_FOUND", HttpStatus.NOT_FOUND,
             "공지를 찾을 수 없습니다"),

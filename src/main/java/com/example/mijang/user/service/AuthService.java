@@ -213,6 +213,16 @@ public class AuthService {
      * <p>로그인과 갱신이 같은 결과를 내야 해서 한 곳에 모았다.
      * 한쪽만 고치면 두 경로의 토큰 내용이 달라진다.
      */
+    /**
+     * 소셜 로그인이 쓰는 토큰 발급.
+     *
+     * <p>비밀번호를 확인하는 자리가 아니다 — 제공자가 이미 신원을 확인했다.
+     * 그래도 발급 경로는 같아야 해서 {@link #issue} 를 그대로 탄다.
+     */
+    public Tokens issueForSocial(User user) {
+        return issue(user, true);
+    }
+
     private Tokens issue(User user, boolean remember) {
         String access = jwtProvider.createAccessToken(
                 user.id(), user.nickname(), user.role(), user.passwordVersion());
