@@ -49,6 +49,11 @@
         <h2 class="card-head">작성 댓글 <span class="sub num" id="my-comments-label">—</span></h2>
         <ul class="list my-writing" id="my-comments"><!-- 스크립트가 채운다 --></ul>
       </section>
+
+      <section class="card">
+        <h2 class="card-head">스크랩한 글 <span class="sub num" id="my-scraps-label">—</span></h2>
+        <ul class="list my-writing" id="my-scraps"><!-- 스크립트가 채운다 --></ul>
+      </section>
     </div>
   </div>
 </div>
@@ -164,6 +169,26 @@
     /* 미리 보여 준 것보다 많을 때만 더 볼 자리를 준다 */
     var more = document.getElementById("my-posts-more");
     if (more) more.hidden = total <= PREVIEW;
+  });
+
+  api("/api/users/me/scraps?page=0&size=" + PREVIEW).then(function (page) {
+    if (!page) return;
+    var total = page.totalElements || 0;
+    put("my-scraps-label", total + "건");
+
+    var box = document.getElementById("my-scraps");
+    if (!box) return;
+    box.replaceChildren();
+    if (total === 0) {
+      box.appendChild(emptyRow("스크랩한 글이 없습니다"));
+      return;
+    }
+    (page.content || []).forEach(function (post) {
+      var where = post.symbol ? post.symbol
+                : post.board === "QNA" ? "질문" : "자유";
+      box.appendChild(writingRow("/community-post/" + post.id, post.title,
+                                 where + " · " + when(post.createdAt), post.status));
+    });
   });
 
   api("/api/users/me/comments?page=0&size=" + PREVIEW).then(function (page) {

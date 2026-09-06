@@ -164,6 +164,24 @@ public class PostService {
         return postMapper.countByUser(userId);
     }
 
+    /**
+     * 내가 스크랩한 글. {@code MY-03}
+     *
+     * <p>스크랩한 순서(최신 먼저)다. 공개된 글만 나간다 — 내 글 목록과 달리
+     * 남의 글이라 숨김·삭제되면 상세를 열 수 없다.
+     */
+    @Transactional(readOnly = true)
+    public List<PostSummary> listScrappedByUser(Long userId, int page, int size) {
+        return postMapper.findScrappedByUser(userId, size, page * size)
+                .stream().map(PostService::toSummary).toList();
+    }
+
+    /** 내가 스크랩한 글 수. */
+    @Transactional(readOnly = true)
+    public long countScrappedByUser(Long userId) {
+        return postMapper.countScrappedByUser(userId);
+    }
+
     /** 내가 쓴 댓글. {@code MY-03} */
     @Transactional(readOnly = true)
     public List<MyCommentResponse> listCommentsByUser(Long userId, int page, int size) {
