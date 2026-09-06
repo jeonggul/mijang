@@ -33,10 +33,18 @@
   </section>
 
   <div class="grid-2">
-    <section class="card">
-      <h2 class="card-head">보유 요약 <span class="sub num" id="my-holding-label">—</span></h2>
-      <ul class="watch" style="padding:0 18px 16px" id="my-holdings"><!-- 스크립트가 채운다 --></ul>
-    </section>
+    <div>
+      <section class="card">
+        <h2 class="card-head">보유 요약 <span class="sub num" id="my-holding-label">—</span></h2>
+        <ul class="watch" style="padding:0 18px 16px" id="my-holdings"><!-- 스크립트가 채운다 --></ul>
+      </section>
+
+      <section class="card">
+        <h2 class="card-head">최근 매매 <span class="sub num" id="my-trades-label">—</span></h2>
+        <ul class="list my-writing" id="my-trades"><!-- 스크립트가 채운다 --></ul>
+        <a class="watch-more" id="my-trades-more" th:href="@{/record-list}" hidden>전체 기록 보기</a>
+      </section>
+    </div>
 
     <div>
       <section class="card">
@@ -212,9 +220,49 @@
     });
   });
 
-  /* 매매 기록 건수는 목록 API 의 총건수를 쓴다. 한 건만 받아 와도 총계는 온다 */
-  api("/api/transactions?page=0&size=1").then(function (page) {
-    if (page) put("my-tx", (page.totalElements || 0) + "건");
+  /* 최근 매매. 헤더의 매매 기록 건수도 이 응답의 총건수로 채운다 — 한 번만 부른다 */
+  api("/api/transactions?page=0&size=" + PREVIEW).then(function (page) {
+    if (!page) return;
+    var total = page.totalElements || 0;
+    put("my-tx", total + "건");
+    put("my-trades-label", total + "건");
+
+    var box = document.getElementById("my-trades");
+    if (!box) return;
+    box.replaceChildren();
+    if (total === 0) {
+      box.appendChild(emptyRow("아직 매매 기록이 없습니다"));
+      return;
+    }
+    (page.content || []).forEach(function (tx) {
+      var buy = tx.side === "BUY";
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.href = "/record-list";
+      a.className = "row";
+
+      var head = document.createElement("span");
+      head.className = "ttl";
+      var badge = document.createElement("span");
+      badge.className = "badge " + (buy ? "badge-rise" : "badge-fall");
+      badge.style.marginRight = "8px";
+      badge.textContent = buy ? "매수" : "매도";
+      head.appendChild(badge);
+      head.appendChild(document.createTextNode(tx.symbol));
+
+      /* 원화 환산 = 수량 × 체결가 × 환율. 기록 화면과 같은 식이다 */
+      var amount = (tx.price == null || tx.quantity == null || tx.fxRate == null) ? DASH
+        : krw(Number(tx.price) * Number(tx.quantity) * Number(tx.fxRate));
+      var sub = document.createElement("span");
+      sub.className = "sub";
+      sub.textContent = amount + " · " + when(tx.tradedAt);
+
+      a.append(head, sub);
+      li.appendChild(a);
+      box.appendChild(li);
+    });
+    var more = document.getElementById("my-trades-more");
+    if (more) more.hidden = total <= PREVIEW;
   });
 
   api("/api/users/me/holdings").then(function (list) {
