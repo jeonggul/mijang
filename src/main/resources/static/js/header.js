@@ -76,7 +76,16 @@
         if (notificationAnchor) notificationAnchor.closest(".menu-anchor").hidden = true;
         return null;
       }
-      header.querySelector("[data-header-nickname]").textContent = me.nickname || "";
+      var nickEl = header.querySelector("[data-header-nickname]");
+      var nickname = me.nickname || "";
+      nickEl.textContent = nickname;
+      nickEl.removeAttribute("title");
+      /* 닉네임이 칸을 넘치면("둘러보기" 같은 긴 이름) 앞 두 글자만 남긴다.
+         전체 이름은 title 로 남겨 올려 두면 확인할 수 있다 */
+      if (nickEl.scrollWidth > nickEl.clientWidth) {
+        nickEl.textContent = nickname.slice(0, 2);
+        nickEl.title = nickname;
+      }
       header.querySelector("[data-header-email]").textContent = me.email || "";
       var baseCurrency = me.baseCurrency === "USD" ? "USD" : "KRW";
       localStorage.setItem("mijang-base-currency", baseCurrency);
