@@ -45,8 +45,19 @@ public class SocialAuthHandlers {
     private final AuthService authService;
     private final TokenCookies cookies;
 
-    /** 연결을 기다리는 소셜 신원. 비밀번호를 맞히면 이 값으로 잇는다. */
-    public record Pending(String provider, String providerUserId, String email) {
+    /**
+     * 화면 하나를 사이에 끼우는 동안 들고 있는 소셜 신원.
+     *
+     * <p>이 값은 <b>세션에만</b> 둔다. 화면이 돌려보내는 본문으로 받으면 아무
+     * {@code providerUserId} 나 적어 남의 소셜 계정을 자기 것으로 붙일 수 있다.
+     *
+     * @param kind     비밀번호 확인(LINK)인지 새 가입(SIGNUP)인지
+     * @param nickname 가입 화면에 미리 채울 추천 닉네임. LINK 에서는 null
+     */
+    public record Pending(Kind kind, String provider, String providerUserId,
+                          String email, String nickname) {
+
+        public enum Kind { LINK, SIGNUP }
     }
 
     public AuthenticationSuccessHandler success() {
@@ -54,10 +65,18 @@ public class SocialAuthHandlers {
             SocialProfile profile = profileOf(authentication);
             try {
                 SocialLoginService.Result result = socialLoginService.resolve(profile);
-                if (result.needsLink()) {
-                    holdForLink(request, profile);
-                    redirect(response, "/social-link");
-                    return;
+                switch (result.kind()) {
+                    case NEEDS_LINK -> {
+                        hold(request, Pending.Kind.LINK, profile, null);
+                        redirect(response, "/social-link");
+                        return;
+                    }
+                    case NEEDS_SIGNUP -> {
+                        hold(request, Pending.Kind.SIGNUP, profile, result.nickname());
+                        redirect(response, "/social-signup");
+                        return;
+                    }
+                    case LOGGED_IN -> { /* 아래로 흘러간다 */ }
                 }
                 issueCookies(response, result.user());
                 redirect(response, "ADMIN".equals(result.user().role()) ? "/admin" : "/dashboard");
@@ -93,9 +112,11 @@ public class SocialAuthHandlers {
         return session == null ? null : (Pending) session.getAttribute(PENDING_KEY);
     }
 
-    private void holdForLink(HttpServletRequest request, SocialProfile profile) {
-        request.getSession(true).setAttribute(PENDING_KEY,
-                new Pending(profile.provider(), profile.providerUserId(), profile.email()));
+    /** 갈래와 신원을 세션에 담는다. 다음 화면이 꺼내 쓰고, 끝나면 지운다. */
+    private void hold(HttpServletRequest request, Pending.Kind kind,
+                      SocialProfile profile, String nickname) {
+        request.getSession(true).setAttribute(PENDING_KEY, new Pending(
+                kind, profile.provider(), profile.providerUserId(), profile.email(), nickname));
     }
 
     private void issueCookies(HttpServletResponse response, User user) {

@@ -114,8 +114,8 @@ public class PageController {
     @GetMapping("/social-link")
     public String socialLink(HttpServletRequest request, Model model) {
         var pending = SocialAuthHandlers.pendingOf(request);
-        if (pending == null) {
-            return "redirect:/login";   // 직접 주소를 친 경우다. 보여 줄 것이 없다
+        if (pending == null || pending.kind() != SocialAuthHandlers.Pending.Kind.LINK) {
+            return "redirect:/login";   // 직접 주소를 쳤거나 가입 보류(SIGNUP)다. 여기서 보여 줄 것이 없다
         }
         model.addAttribute("linkEmail", pending.email());
         model.addAttribute("linkProvider", "GOOGLE".equals(pending.provider()) ? "구글" : "카카오");
