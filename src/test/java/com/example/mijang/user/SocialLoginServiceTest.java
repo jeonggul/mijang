@@ -125,5 +125,9 @@ class SocialLoginServiceTest {
         @Override public int insert(Long userId, String provider, String providerUserId) {
             inserted.add(provider); return 1;
         }
+        @Override public List<com.example.mijang.user.dto.SocialAccountResponse> findByUser(Long userId) {
+            return List.of();
+        }
+        @Override public int deleteByUserAndProvider(Long userId, String provider) { return 0; }
     }
 }
