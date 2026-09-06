@@ -35,6 +35,9 @@
             <span class="txt"><b>비밀번호</b><small id="password-changed-at">—</small></span>
             <span class="val"><button class="btn btn-sm" type="button" data-open="pw-modal">변경</button></span>
           </div>
+          <!-- 연동한 것이 없으면 이 자리는 비어 있다. 빈 상태 문구를 두지 않는 이유 —
+               연동은 선택이라 없는 것이 정상이고, "없습니다" 는 결핍처럼 읽힌다 -->
+          <div id="social-rows"></div>
         </section>
         <section class="card"><h2 class="card-head">계정 정리</h2>
           <div class="setting-row">
@@ -107,6 +110,20 @@
     <div class="field"><label for="qm-pw">비밀번호</label><input id="qm-pw" type="password" autocomplete="current-password"></div>
     <p class="msg err" id="qm-msg" hidden></p>
     <div class="modal-actions"><button class="btn" type="button" data-close>취소</button><button class="btn btn-danger" type="button" id="qm-submit">탈퇴</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="unlink-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="um-t">
+    <h3 id="um-t">연동 해제</h3>
+    <p class="note" id="um-desc" style="line-height:1.7">
+      계정 연결을 끊습니다.
+    </p>
+    <p class="msg err" id="um-msg" hidden></p>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-danger" type="button" id="um-submit">해제</button>
+    </div>
   </div>
 </div>
 

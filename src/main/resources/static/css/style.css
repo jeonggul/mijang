@@ -479,6 +479,20 @@ table.holdings .stack { display: grid; gap: 3px; }
 .setting-row .val { flex: none; display: flex; align-items: center; gap: 8px;
                     font-family: var(--font-mono); font-size: var(--fs-num-sm); }
 
+/* 연결된 계정 — 한 줄짜리 설정이 아니라 목록이라, 라벨 아래에 항목을 쌓는다.
+   가로로 늘어놓으면 제공자가 늘 때마다 좁아지고, 형제 행으로 흩으면
+   이메일·비밀번호와 같은 층위로 읽혀 무엇이 묶음인지 사라진다 */
+.setting-row.stack { flex-direction: column; align-items: stretch; gap: 10px; }
+.social-list { display: flex; flex-direction: column; gap: 8px; }
+.social-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface-soft);
+}
+.social-item .who { flex: 1; }
+.social-item .who b { display: block; font-size: var(--fs-body); font-weight: 400; }
+.social-item .who small { font-size: var(--fs-label); color: var(--text-sub); }
+
 /* ── 배지 ──────────────────────────────────────────────────── */
 .badge {
   display: inline-block; padding: 3px 8px; border-radius: 5px;

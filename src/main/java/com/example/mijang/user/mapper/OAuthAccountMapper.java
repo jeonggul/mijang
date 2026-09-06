@@ -26,4 +26,16 @@ public interface OAuthAccountMapper {
     int insert(@Param("userId") Long userId,
                @Param("provider") String provider,
                @Param("providerUserId") String providerUserId);
+
+    /** 이 회원이 연동한 것들. 설정 화면이 목록으로 그린다. */
+    java.util.List<com.example.mijang.user.dto.SocialAccountResponse> findByUser(
+            @Param("userId") Long userId);
+
+    /**
+     * 연동 해제. <b>회원은 지우지 않는다</b> — oauth_accounts 한 행만 지운다.
+     *
+     * @return 지운 행 수. 연동돼 있지 않았으면 0 이다
+     */
+    int deleteByUserAndProvider(@Param("userId") Long userId,
+                                @Param("provider") String provider);
 }

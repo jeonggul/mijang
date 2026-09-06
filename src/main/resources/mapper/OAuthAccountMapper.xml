@@ -24,4 +24,20 @@
         INSERT INTO oauth_accounts (user_id, provider, provider_user_id)
         VALUES (#{userId}, #{provider}, #{providerUserId})
     </insert>
+
+    <!-- 붙인 순서대로 보여 준다. 설정 화면이 다시 정렬하지 않아도 되게 -->
+    <select id="findByUser"
+            resultType="com.example.mijang.user.dto.SocialAccountResponse">
+        SELECT provider, created_at AS linkedAt
+          FROM oauth_accounts
+         WHERE user_id = #{userId}
+         ORDER BY created_at
+    </select>
+
+    <!-- user_id 를 반드시 함께 건다. provider 만으로 지우면 남의 연동이 사라진다 -->
+    <delete id="deleteByUserAndProvider">
+        DELETE FROM oauth_accounts
+         WHERE user_id  = #{userId}
+           AND provider = #{provider}
+    </delete>
 </mapper>

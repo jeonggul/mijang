@@ -114,12 +114,30 @@ public class PageController {
     @GetMapping("/social-link")
     public String socialLink(HttpServletRequest request, Model model) {
         var pending = SocialAuthHandlers.pendingOf(request);
-        if (pending == null) {
-            return "redirect:/login";   // 직접 주소를 친 경우다. 보여 줄 것이 없다
+        if (pending == null || pending.kind() != SocialAuthHandlers.Pending.Kind.LINK) {
+            return "redirect:/login";   // 직접 주소를 쳤거나 가입 보류(SIGNUP)다. 여기서 보여 줄 것이 없다
         }
         model.addAttribute("linkEmail", pending.email());
         model.addAttribute("linkProvider", "GOOGLE".equals(pending.provider()) ? "구글" : "카카오");
         return "social-link";
+    }
+
+    /**
+     * 소셜 첫 가입. {@code AUTH-07}
+     *
+     * <p>제공자에게서 받은 이메일·닉네임을 채워 두고 비밀번호를 받는다.
+     * 비밀번호 없이 계정을 만들면 연동을 끊는 순간 들어올 문이 사라진다.
+     */
+    @GetMapping("/social-signup")
+    public String socialSignup(HttpServletRequest request) {
+        var pending = SocialAuthHandlers.pendingOf(request);
+        if (pending == null
+                || pending.kind() != SocialAuthHandlers.Pending.Kind.SIGNUP) {
+            return "redirect:/login";   // 직접 주소를 친 경우다. 보여 줄 것이 없다
+        }
+        /* 값은 화면이 /api/auth/social/pending 으로 받아 간다. 여기서 모델에 담지
+           않는 이유 — 닉네임 중복 확인 뒤 다시 그리는 흐름이 있어 어차피 JS 가 필요하다 */
+        return "social-signup";
     }
 
     /** 이용약관. 가입 화면에서 새 탭으로 연다. 비로그인도 볼 수 있어야 한다. */

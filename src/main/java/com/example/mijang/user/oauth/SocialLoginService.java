@@ -4,11 +4,17 @@
  * 이 파일이 하는 일
  *   제공자가 준 신원 하나를 받아, 세 갈래 중 하나로 답한다.
  *
- *     이미 연결돼 있다        → 그 회원으로 로그인
- *     처음이고 이메일도 처음  → 회원을 만들고 연결
+ *     이미 연결돼 있다            → 그 회원으로 로그인
+ *     처음이고 이메일도 처음      → 계정을 만들지 않고 가입 화면으로 보류한다
  *     처음인데 이메일이 이미 있다 → 연결하지 않고 "비밀번호로 확인해 달라" 고 돌려보낸다
  *
- *   왜 마지막을 자동으로 잇지 않는가
+ *   왜 처음 보는 사람에게 계정을 바로 만들어 주지 않는가
+ *     비밀번호 없이 계정을 만들면 편하긴 하지만, 그 계정은 소셜 연동이 유일한 문이 된다.
+ *     연동을 끊는 순간 들어올 방법이 없어지고, 비밀번호 찾기로도 복구되지 않는다 —
+ *     {@code PasswordService.reset()} 은 {@code hasPassword()} 가 false 면 토큰 자체를
+ *     무효로 본다. 그래서 가입 화면에서 비밀번호를 직접 받은 뒤에만 계정을 만든다.
+ *
+ *   왜 이메일이 겹치는 경우를 자동으로 잇지 않는가
  *     제공자가 이메일을 검증하지 않으면, 남의 주소를 적은 소셜 계정으로 그 사람의
  *     기록에 들어갈 수 있다. 여기는 매매 원장이 들어 있는 곳이라 그 길을 열지 않는다.
  *     한 단계 번거롭더라도 기존 비밀번호를 한 번 받는다.
@@ -21,8 +27,10 @@ package com.example.mijang.user.oauth;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.user.domain.User;
+import com.example.mijang.user.dto.SignupForm;
 import com.example.mijang.user.mapper.OAuthAccountMapper;
 import com.example.mijang.user.mapper.UserMapper;
+import com.example.mijang.user.service.AuthService;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,25 +48,39 @@ public class SocialLoginService {
 
     private final UserMapper userMapper;
     private final OAuthAccountMapper oauthMapper;
+    private final AuthService authService;
 
     /**
      * 결과 세 갈래.
      *
-     * @param user      로그인시킬 회원. 연결이 필요하면 null
-     * @param linkEmail 연결을 기다리는 이메일. 로그인되면 null
+     * <p>{@code boolean needsLink()} 하나로는 갈래가 셋이 된 지금을 담지 못한다.
+     * 갈래를 이름으로 두면 부르는 쪽이 빠뜨린 경우를 컴파일러가 짚어 준다.
+     *
+     * @param user     로그인시킬 회원. 보류 갈래에서는 null
+     * @param email    보류 중인 이메일. 로그인 갈래에서는 null
+     * @param nickname 가입 화면에 미리 채울 추천 닉네임. 가입 보류에서만 채운다
      */
-    public record Result(User user, String linkEmail, String provider) {
+    public record Result(Kind kind, User user, String email, String provider, String nickname) {
 
-        public boolean needsLink() {
-            return user == null;
+        public enum Kind {
+            /** 이미 이어져 있다 */
+            LOGGED_IN,
+            /** 같은 이메일로 이미 가입돼 있다 — 비밀번호 확인이 필요하다 */
+            NEEDS_LINK,
+            /** 처음 보는 사람이다 — 가입 화면에서 비밀번호를 받아야 한다 */
+            NEEDS_SIGNUP
         }
 
         static Result loggedIn(User user) {
-            return new Result(user, null, null);
+            return new Result(Kind.LOGGED_IN, user, null, null, null);
         }
 
         static Result needsLink(String email, String provider) {
-            return new Result(null, email, provider);
+            return new Result(Kind.NEEDS_LINK, null, email, provider, null);
+        }
+
+        static Result needsSignup(String email, String provider, String nickname) {
+            return new Result(Kind.NEEDS_SIGNUP, null, email, provider, nickname);
         }
     }
 
@@ -89,10 +111,13 @@ public class SocialLoginService {
             return Result.needsLink(email, profile.provider());
         }
 
-        Long userId = createUser(email, profile.nickname());
-        oauthMapper.insert(userId, profile.provider(), profile.providerUserId());
-        log.info("[소셜] 새 회원 생성·연결 — {} {}", profile.provider(), mask(email));
-        return Result.loggedIn(userMapper.findById(userId));
+        /* 여기서 계정을 만들지 않는다. 비밀번호 없이 만들면 연동을 끊는 순간
+           들어올 문이 사라지고, 비밀번호 찾기로도 복구되지 않는다(PasswordService.reset
+           은 hasPassword() 가 false 면 토큰을 무효로 본다). 가입 화면에서 비밀번호를
+           받은 뒤에 만든다 */
+        log.info("[소셜] 새 회원 — 가입 화면으로 보류 {} {}", profile.provider(), mask(email));
+        return Result.needsSignup(email, profile.provider(),
+                uniqueNickname(profile.nickname(), email));
     }
 
     /**
@@ -111,17 +136,33 @@ public class SocialLoginService {
     }
 
     /**
-     * 소셜 전용 회원을 만든다. 비밀번호는 없다(스키마가 NULL 을 허용한다).
+     * 소셜로 처음 온 사람의 가입을 확정하고 그 자리에서 잇는다.
      *
-     * <p>닉네임이 겹치면 뒤에 숫자를 붙인다. 제공자가 준 이름은 남과 겹치기 쉬운데,
-     * 거기서 가입을 막으면 사용자는 이유를 알 수 없다.
+     * <p>가입 검사를 여기서 새로 짜지 않고 {@code AuthService.signup()} 을 그대로 쓴다.
+     * 그쪽에는 가입 잠금(SIGNUP_ENABLED)·이메일 중복·닉네임 금지어·닉네임 중복·
+     * 추측 가능한 비밀번호 검사가 이미 모여 있다. 여기에 따로 두면 언젠가 한쪽만
+     * 느슨해진다 — 그리고 느슨해지는 쪽은 늘 나중에 만든 쪽이다.
+     *
+     * <p>한 트랜잭션으로 묶는 이유 — 계정만 생기고 연결이 빠지면 사용자는 방금 만든
+     * 소셜로 다시 들어왔을 때 비밀번호 확인 화면을 만난다. 틀린 상태는 아니지만 놀란다.
+     *
+     * @return 만들어진 회원 id
      */
-    private Long createUser(String email, String rawNickname) {
-        var insert = new UserMapper.UserInsert(email, null, uniqueNickname(rawNickname, email));
-        userMapper.insert(insert);
-        return insert.getId();
+    @Transactional
+    public Long signupAndLink(SignupForm form, String provider, String providerUserId) {
+        Long userId = authService.signup(form);
+        link(userId, provider, providerUserId);
+        log.info("[소셜] 새 회원 가입·연결 — {} userId={}", provider, userId);
+        return userId;
     }
 
+    /**
+     * 겹치지 않는 닉네임을 고른다. 가입 화면에 <b>미리 채워 줄 추천값</b>이다.
+     *
+     * <p>확정이 아니다 — 사용자가 화면에서 고칠 수 있고, 최종 판정은 가입 시
+     * {@code AuthService.signup()} 이 한다. 여기서 겹치지 않는 값을 주는 이유는
+     * 화면을 열자마자 "이미 사용 중" 이 떠 있는 상태를 피하기 위해서다.
+     */
     private String uniqueNickname(String rawNickname, String email) {
         String base = sanitize(rawNickname);
         if (base.isBlank()) {
