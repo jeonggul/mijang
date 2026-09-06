@@ -124,7 +124,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .avatar-btn .ava { width: 26px; height: 26px; border-radius: 50%; background: var(--btn); flex: none;
                     transition: width .24s, height .24s; }
 .avatar-btn .who { min-width: 0; text-align: left; }
-.avatar-btn .who b { display: block; font-weight: 500; white-space: nowrap; }
+/* 닉네임 칸의 최대 폭. 이보다 길면 스크립트가 앞 두 글자만 남긴다 —
+   말줄임(…)이 아니라 잘라내기라, 넘침 판정만 여기서 하고 자르기는 저쪽이 한다 */
+.avatar-btn .who b { display: block; font-weight: 500; white-space: nowrap;
+                     max-width: 3.5em; overflow: hidden; }
 .avatar-btn .who small { display: none; }          /* 펼쳤을 때만 나온다 */
 .avatar-btn .chev { flex: none; transition: transform .24s; }
 
