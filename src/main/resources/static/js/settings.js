@@ -37,23 +37,16 @@
       .format(new Date(value + "Z")) + " 연동";
   }
 
-  /* 제공자 이름이 곧 이 행의 이름이다. 위의 이메일·비밀번호 행과 같은
-     "굵은 이름 + 작은 설명" 모양을 그대로 쓴다 */
-  function socialRow(account) {
+  /* 목록 안의 한 항목. 제공자 이름과 연동일, 그리고 해제 버튼 */
+  function socialItem(account) {
     var name = PROVIDER_NAMES[account.provider] || account.provider;
 
-    var row = document.createElement("div");
-    row.className = "setting-row";
+    var who = el("span", "who");
+    who.appendChild(el("b", null, name));
+    who.appendChild(el("small", null, formatLinkedAt(account.linkedAt)));
 
-    var txt = document.createElement("span");
-    txt.className = "txt";
-    txt.appendChild(el("b", null, name));
-    txt.appendChild(el("small", null, formatLinkedAt(account.linkedAt)));
-
-    var button = document.createElement("button");
-    button.className = "btn btn-sm";
+    var button = el("button", "btn btn-sm", "해제");
     button.type = "button";
-    button.textContent = "해제";
     button.addEventListener("click", function () {
       unlinkTarget = account.provider;
       document.getElementById("um-t").textContent = name + " 연동 해제";
@@ -63,13 +56,10 @@
       document.getElementById("unlink-modal").hidden = false;
     });
 
-    var val = document.createElement("span");
-    val.className = "val";
-    val.appendChild(button);
-
-    row.appendChild(txt);
-    row.appendChild(val);
-    return row;
+    var item = el("div", "social-item");
+    item.appendChild(who);
+    item.appendChild(button);
+    return item;
   }
 
   function el(tag, className, text) {
@@ -85,9 +75,20 @@
     host.replaceChildren();
     if (!accounts || !accounts.length) return;
 
+    /* 라벨은 묶음에 하나. 항목마다 붙이면 반복되고, 아예 없으면
+       이 목록이 무엇의 목록인지 알 수 없다 */
+    var block = el("div", "setting-row stack");
+    var txt = el("span", "txt");
+    txt.appendChild(el("b", null, "연결된 계정"));
+    block.appendChild(txt);
+
+    var list = el("div", "social-list");
     accounts.forEach(function (account) {
-      host.appendChild(socialRow(account));
+      list.appendChild(socialItem(account));
     });
+    block.appendChild(list);
+
+    host.appendChild(block);
   }
 
   function loadSocialAccounts() {
