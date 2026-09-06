@@ -5,7 +5,9 @@ import java.time.LocalDateTime;
 /**
  * users 테이블 한 행.
  *
- * <p>소셜 전용 계정은 passwordHash 가 null 이다 (스키마 주석).
+ * <p>passwordHash 는 항상 있다 — 스키마가 NOT NULL 이고, 소셜 가입도 비밀번호를
+ * 함께 받는다. hasPassword() 는 그래도 남긴다. AuthService 가 "없는 이메일" 과
+ * 한데 묶어 쓰고, 스키마를 되돌렸을 때 조용히 뚫리는 자리가 되지 않게 한다.
  */
 public record User(
         Long id,

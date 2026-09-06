@@ -138,6 +138,8 @@ public class PasswordService {
             throw new BusinessException(ErrorCode.AUTH_RESET_TOKEN_INVALID, "token");
         }
 
+        /* hasPassword() 는 스키마가 NOT NULL 이라 지금은 항상 참이다. 남겨 두는 이유 —
+           지우면 스키마를 되돌렸을 때 아무도 눈치채지 못한 채 뚫린다 */
         User user = userMapper.findById(row.userId());
         if (user == null || !user.isActive() || !user.hasPassword()) {
             throw new BusinessException(ErrorCode.AUTH_RESET_TOKEN_INVALID, "token");
