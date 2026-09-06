@@ -37,47 +37,56 @@
       .format(new Date(value + "Z")) + " 연동";
   }
 
+  /* 제공자 이름이 곧 이 행의 이름이다. 위의 이메일·비밀번호 행과 같은
+     "굵은 이름 + 작은 설명" 모양을 그대로 쓴다 */
+  function socialRow(account) {
+    var name = PROVIDER_NAMES[account.provider] || account.provider;
+
+    var row = document.createElement("div");
+    row.className = "setting-row";
+
+    var txt = document.createElement("span");
+    txt.className = "txt";
+    txt.appendChild(el("b", null, name));
+    txt.appendChild(el("small", null, formatLinkedAt(account.linkedAt)));
+
+    var button = document.createElement("button");
+    button.className = "btn btn-sm";
+    button.type = "button";
+    button.textContent = "해제";
+    button.addEventListener("click", function () {
+      unlinkTarget = account.provider;
+      document.getElementById("um-t").textContent = name + " 연동 해제";
+      document.getElementById("um-desc").textContent =
+        name + " 계정 연결을 끊습니다. 계정과 기록은 그대로 남고, 언제든 다시 연동할 수 있습니다.";
+      document.getElementById("um-msg").hidden = true;
+      document.getElementById("unlink-modal").hidden = false;
+    });
+
+    var val = document.createElement("span");
+    val.className = "val";
+    val.appendChild(button);
+
+    row.appendChild(txt);
+    row.appendChild(val);
+    return row;
+  }
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
   function paintSocialAccounts(accounts) {
     var host = document.getElementById("social-rows");
     if (!host) return;
     host.replaceChildren();
     if (!accounts || !accounts.length) return;
 
-    accounts.forEach(function (account, index) {
-      var row = document.createElement("div");
-      row.className = "setting-row";
-
-      var txt = document.createElement("span");
-      txt.className = "txt";
-      var label = document.createElement("b");
-      /* 라벨은 첫 줄에만 둔다. 줄마다 "연결된 계정" 이 반복되면 목록으로 읽히지 않는다 */
-      label.textContent = index === 0 ? "연결된 계정" : "";
-      var detail = document.createElement("small");
-      detail.textContent = (PROVIDER_NAMES[account.provider] || account.provider)
-        + " · " + formatLinkedAt(account.linkedAt);
-      txt.appendChild(label);
-      txt.appendChild(detail);
-
-      var val = document.createElement("span");
-      val.className = "val";
-      var button = document.createElement("button");
-      button.className = "btn btn-sm";
-      button.type = "button";
-      button.textContent = "해제";
-      button.addEventListener("click", function () {
-        unlinkTarget = account.provider;
-        var name = PROVIDER_NAMES[account.provider] || account.provider;
-        document.getElementById("um-t").textContent = name + " 연동 해제";
-        document.getElementById("um-desc").textContent =
-          name + " 계정 연결을 끊습니다. 계정과 기록은 그대로 남고, 언제든 다시 연동할 수 있습니다.";
-        document.getElementById("um-msg").hidden = true;
-        document.getElementById("unlink-modal").hidden = false;
-      });
-      val.appendChild(button);
-
-      row.appendChild(txt);
-      row.appendChild(val);
-      host.appendChild(row);
+    accounts.forEach(function (account) {
+      host.appendChild(socialRow(account));
     });
   }
 
