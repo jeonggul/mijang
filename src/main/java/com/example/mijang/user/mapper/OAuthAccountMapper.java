@@ -38,4 +38,12 @@ public interface OAuthAccountMapper {
      */
     int deleteByUserAndProvider(@Param("userId") Long userId,
                                 @Param("provider") String provider);
+
+    /**
+     * 이 회원의 소셜 연동을 모두 지운다. 탈퇴 때 부른다 —
+     * 죽은 계정의 연동을 남겨 두면 같은 소셜로 재가입할 때 uk_oauth_provider_user 에 막힌다.
+     *
+     * @return 지운 행 수
+     */
+    int deleteByUser(@Param("userId") Long userId);
 }

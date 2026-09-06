@@ -114,6 +114,7 @@ class LoginHintServiceTest {
                                                String baseCurrency, String theme) { return 0; }
             @Override public com.example.mijang.user.dto.UserResponse findProfile(Long id) { return null; }
             @Override public int withdraw(Long id) { return 0; }
+            @Override public String findWithdrawnEmailForTest(Long id) { return null; }
             @Override public int updatePassword(Long id, String passwordHash, String expectedHash) { return 0; }
         };
     }

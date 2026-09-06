@@ -49,6 +49,14 @@ public interface UserMapper {
     /** 탈퇴 처리. 지우지 않고 상태와 시각만 바꾼다. */
     int withdraw(@Param("id") Long id);
 
+    /**
+     * 테스트 전용 — 탈퇴 행의 이메일(표식 포함)을 그대로 읽는다.
+     *
+     * <p>{@code findById}·{@code findByEmail} 은 status 로 탈퇴 행을 걸러 내므로
+     * 표식이 제대로 붙었는지 확인할 길이 없다. 그 확인만을 위한 조회다.
+     */
+    String findWithdrawnEmailForTest(@Param("id") Long id);
+
 
     /**
      * 닉네임 중복 확인 — <b>자기 자신은 뺀다</b>(2.2).
