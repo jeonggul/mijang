@@ -6,9 +6,10 @@
  *   로그인 화면은 비로그인 공개 화면이고, 말풍선 값은 hidden 이어도
  *   페이지 소스에 그대로 실린다. 즉 여기 실린 계정은 공개된 계정이다.
  *
- *   그래서 관리자 계정은 무슨 일이 있어도 통과시키지 않는다.
+ *   그래서 관리자 계정은 기본적으로 통과시키지 않는다.
  *   설정 파일은 사람이 손으로 고치는 곳이라 언젠가 다시 관리자 계정이
  *   적힌다 — 그때 막을 곳이 코드 쪽에 하나 있어야 한다.
+ *   배포 전 로컬 확인용으로만 allow-admin 스위치(미추적 설정)로 열 수 있다.
  */
 package com.example.mijang.user.service;
 
@@ -67,6 +68,13 @@ public class LoginHintService {
             return false;
         }
         if (ADMIN.equals(user.role())) {
+            if (props.isAllowAdmin()) {
+                /* 배포 전 로컬 확인용 옵트인. 조용히 내보내면 켜 둔 사실을 잊는다 —
+                   서버를 띄울 때마다 눈에 걸리게 남긴다 */
+                log.warn("allow-admin 이 켜져 있어 관리자 계정을 로그인 안내에 내보낸다: {}."
+                        + " 운영 설정에는 절대 켜지 않는다.", account.getEmail());
+                return true;
+            }
             log.error("로그인 안내에 관리자 계정이 적혀 있어 뺀다: {}."
                     + " 로그인 화면은 공개 화면이라 이 값은 누구나 읽을 수 있다.",
                     account.getEmail());

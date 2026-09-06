@@ -62,9 +62,25 @@ class LoginHintServiceTest {
         assertThat(service.visibleAccounts()).isEmpty();
     }
 
+    @Test
+    @DisplayName("allow-admin 을 켠 곳에서만 관리자 계정이 실린다 — 배포 전 로컬 확인용")
+    void showsAdminOnlyWhenOptedIn() {
+        var service = service(true, Map.of("admin@mijang.app", "ADMIN"), "admin@mijang.app");
+
+        assertThat(service.visibleAccounts())
+                .extracting(DemoAccountProperties.Account::getEmail)
+                .containsExactly("admin@mijang.app");
+    }
+
     /** 설정에 {@code emails} 를 적어 두고, DB 에는 {@code roles} 만 있다고 친다. */
     private LoginHintService service(Map<String, String> roles, String... emails) {
+        return service(false, roles, emails);
+    }
+
+    private LoginHintService service(boolean allowAdmin, Map<String, String> roles,
+                                     String... emails) {
         var props = new DemoAccountProperties();
+        props.setAllowAdmin(allowAdmin);
         props.setAccounts(List.of(emails).stream().map(email -> {
             var account = new DemoAccountProperties.Account();
             account.setEmail(email);
