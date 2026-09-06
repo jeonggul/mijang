@@ -80,11 +80,18 @@
       var nickname = me.nickname || "";
       nickEl.textContent = nickname;
       nickEl.removeAttribute("title");
-      /* 닉네임이 칸을 넘치면("둘러보기" 같은 긴 이름) 앞 두 글자만 남긴다.
-         전체 이름은 title 로 남겨 올려 두면 확인할 수 있다 */
+      /* 닉네임이 칸을 넘치면("둘러보기" 같은 긴 이름) 접힌 상태에서만 앞 두 글자로
+         줄인다. 메뉴를 열면 이메일까지 보여 주는 자리라 전체 이름으로 되돌린다 */
       if (nickEl.scrollWidth > nickEl.clientWidth) {
-        nickEl.textContent = nickname.slice(0, 2);
         nickEl.title = nickname;
+        var userMenu = header.querySelector("#user-menu");
+        var paintNick = function () {
+          var open = userMenu && !userMenu.hidden;
+          nickEl.textContent = open ? nickname : nickname.slice(0, 2);
+        };
+        paintNick();
+        if (userMenu) new MutationObserver(paintNick)
+            .observe(userMenu, { attributes: true, attributeFilter: ["hidden"] });
       }
       header.querySelector("[data-header-email]").textContent = me.email || "";
       var baseCurrency = me.baseCurrency === "USD" ? "USD" : "KRW";
