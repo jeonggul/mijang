@@ -126,7 +126,8 @@ public class SecurityConfig {
                 // 비로그인도 볼 수 있는 화면
                 .requestMatchers("/search", "/stock", "/error", "/maintenance").permitAll()
                 /* 소셜 로그인이 오가는 길. 여기가 막히면 제공자에서 돌아오지 못한다 */
-                .requestMatchers("/oauth2/**", "/login/oauth2/**", "/social-link").permitAll()
+                .requestMatchers("/oauth2/**", "/login/oauth2/**",
+                                 "/social-link", "/social-signup").permitAll()
                 .requestMatchers("/admin").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e
