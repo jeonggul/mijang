@@ -31,7 +31,9 @@ class SocialLoginServiceTest {
     void setUp() {
         users = new StubUserMapper();
         oauth = new StubOAuthMapper();
-        service = new SocialLoginService(users, oauth);
+        /* resolve() 는 AuthService 를 쓰지 않는다. 가입 확정(signupAndLink)만 쓰는데
+           이 테스트는 갈래 판정만 본다 — 가짜를 세우면 무엇을 검증하는지 흐려진다 */
+        service = new SocialLoginService(users, oauth, null);
     }
 
     @Test

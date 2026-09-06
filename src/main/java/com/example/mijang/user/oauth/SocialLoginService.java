@@ -27,8 +27,10 @@ package com.example.mijang.user.oauth;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.user.domain.User;
+import com.example.mijang.user.dto.SignupForm;
 import com.example.mijang.user.mapper.OAuthAccountMapper;
 import com.example.mijang.user.mapper.UserMapper;
+import com.example.mijang.user.service.AuthService;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,7 @@ public class SocialLoginService {
 
     private final UserMapper userMapper;
     private final OAuthAccountMapper oauthMapper;
+    private final AuthService authService;
 
     /**
      * 결과 세 갈래.
@@ -130,6 +133,27 @@ public class SocialLoginService {
         }
         oauthMapper.insert(userId, provider, providerUserId);
         log.info("[소셜] 기존 회원에 연결 — {} userId={}", provider, userId);
+    }
+
+    /**
+     * 소셜로 처음 온 사람의 가입을 확정하고 그 자리에서 잇는다.
+     *
+     * <p>가입 검사를 여기서 새로 짜지 않고 {@code AuthService.signup()} 을 그대로 쓴다.
+     * 그쪽에는 가입 잠금(SIGNUP_ENABLED)·이메일 중복·닉네임 금지어·닉네임 중복·
+     * 추측 가능한 비밀번호 검사가 이미 모여 있다. 여기에 따로 두면 언젠가 한쪽만
+     * 느슨해진다 — 그리고 느슨해지는 쪽은 늘 나중에 만든 쪽이다.
+     *
+     * <p>한 트랜잭션으로 묶는 이유 — 계정만 생기고 연결이 빠지면 사용자는 방금 만든
+     * 소셜로 다시 들어왔을 때 비밀번호 확인 화면을 만난다. 틀린 상태는 아니지만 놀란다.
+     *
+     * @return 만들어진 회원 id
+     */
+    @Transactional
+    public Long signupAndLink(SignupForm form, String provider, String providerUserId) {
+        Long userId = authService.signup(form);
+        link(userId, provider, providerUserId);
+        log.info("[소셜] 새 회원 가입·연결 — {} userId={}", provider, userId);
+        return userId;
     }
 
     /**
