@@ -13,11 +13,21 @@
 </head>
 <body>
 <header th:replace="~{fragments/header :: siteHeader}"></header>
-<main class="page narrow">
-  <div class="page-head"><div><h1>공지사항</h1></div><a class="btn btn-sm" th:href="@{/settings}">목록</a></div>
-  <article class="card" th:attr="data-notice-id=${noticeId}" id="notice-detail">
-    <header class="row-between"><div><span class="badge badge-line" id="notice-pinned" hidden>고정</span><h2 id="notice-title">불러오는 중입니다</h2></div><time class="note" id="notice-date"></time></header>
-    <div class="legal-body" id="notice-content"></div>
+<main class="page notice-page">
+  <div class="page-head">
+    <h1>공지사항</h1>
+    <span class="grow"></span>
+    <a class="btn btn-sm" th:href="@{/settings}">목록으로</a>
+  </div>
+  <article class="card notice-detail" th:attr="data-notice-id=${noticeId}" id="notice-detail">
+    <header class="notice-head">
+      <h2 id="notice-title">불러오는 중입니다</h2>
+      <p class="notice-meta">
+        <span class="badge badge-line" id="notice-pinned" hidden>고정</span>
+        <time class="note" id="notice-date"></time>
+      </p>
+    </header>
+    <div class="legal-body notice-body" id="notice-content"></div>
   </article>
 </main>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
