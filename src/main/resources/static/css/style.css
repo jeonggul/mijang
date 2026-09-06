@@ -1443,7 +1443,8 @@ body.landing .card {
 }
 .menu-anchor:has(> .user-menu:not([hidden])) .ava { width: 34px; height: 34px; }
 .menu-anchor:has(> .user-menu:not([hidden])) .who { flex: 1; }
-.menu-anchor:has(> .user-menu:not([hidden])) .who b { font-size: var(--fs-card); font-weight: 600; }
+.menu-anchor:has(> .user-menu:not([hidden])) .who b { font-size: var(--fs-card); font-weight: 600;
+                                                      max-width: none; }
 .menu-anchor:has(> .user-menu:not([hidden])) .who small {
   display: block; margin-top: 1px;
   font-size: var(--fs-label); font-weight: 400; color: var(--text-sub);
