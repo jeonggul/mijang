@@ -67,9 +67,6 @@
       <a class="btn btn-primary" id="empty-write"
          th:href="${symbol} != null ? @{/community-write/{s}(s=${symbol})} : @{/community-write}">글쓰기</a>
     </div>
-
-    <p class="note" style="margin-top:14px" th:if="${symbol} != null">
-      작성 시점 주가는 글이 등록될 때 저장되며 수정되지 않습니다</p>
   </main>
 </div>
 

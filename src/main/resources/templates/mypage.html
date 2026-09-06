@@ -38,21 +38,19 @@
       <ul class="watch" style="padding:0 18px 16px" id="my-holdings"><!-- 스크립트가 채운다 --></ul>
     </section>
 
-    <section class="card">
-      <h2 class="card-head">작성 글 <span class="sub num" id="my-post-label">—</span></h2>
-      <ul class="list my-writing" id="my-posts"><!-- 스크립트가 채운다 --></ul>
-      <a class="watch-more" id="my-posts-more" th:href="@{/community}" hidden>커뮤니티에서 보기</a>
-    </section>
-  </div>
+    <div>
+      <section class="card">
+        <h2 class="card-head">작성 글 <span class="sub num" id="my-post-label">—</span></h2>
+        <ul class="list my-writing" id="my-posts"><!-- 스크립트가 채운다 --></ul>
+        <a class="watch-more" id="my-posts-more" th:href="@{/community}" hidden>커뮤니티에서 보기</a>
+      </section>
 
-  <div class="grid-2" style="margin-top:14px">
-    <section class="card">
-      <h2 class="card-head">작성 댓글 <span class="sub num" id="my-comments-label">—</span></h2>
-      <ul class="list my-writing" id="my-comments"><!-- 스크립트가 채운다 --></ul>
-    </section>
+      <section class="card">
+        <h2 class="card-head">작성 댓글 <span class="sub num" id="my-comments-label">—</span></h2>
+        <ul class="list my-writing" id="my-comments"><!-- 스크립트가 채운다 --></ul>
+      </section>
+    </div>
   </div>
-
-  <p class="note" style="margin-top:14px">계정·알림 설정은 설정 화면에서 관리합니다</p>
 </div>
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>

@@ -994,8 +994,14 @@ body.landing .card {
   gap: 12px; margin: 0; padding: 16px 22px; border: 0; background: none;
   text-align: left; font-weight: 500;
 }
-.faq .q::after { content: "⌄"; color: var(--text-sub); transition: transform .18s ease; }
-.faq .q[aria-expanded="true"]::after { transform: rotate(180deg); }
+/* 화살표는 글자 대신 선으로 그린다. 글리프(⌄)는 잉크가 글자 칸 위쪽에 몰려 있어
+   180도 돌리면 축 중심과 어긋나 자리가 튀었다 — 선 화살표는 제자리에서 돈다 */
+.faq .q::after {
+  content: ""; width: 7px; height: 7px; justify-self: center; margin-top: -2px;
+  border-right: 1.5px solid var(--text-sub); border-bottom: 1.5px solid var(--text-sub);
+  transform: rotate(45deg); transform-origin: center; transition: transform .18s ease;
+}
+.faq .q[aria-expanded="true"]::after { transform: rotate(225deg); }
 .faq .a {
   display: grid; grid-template-columns: 22px 1fr; gap: 12px;
   margin: 0; padding: 0 22px 18px; font-size: var(--fs-label);
@@ -1481,6 +1487,15 @@ body.landing .card {
 
 /* ── 약관·개인정보 문서 (SR-002-1 에서 새 탭으로 연다) ────────── */
 .legal { max-width: 860px; }
+/* ── 공지 상세 ────────────────────────────────────────────
+   제목 아래 고정 배지·날짜를 메타 한 줄로 모으고, 본문은 괘선으로 구분한다 */
+.notice-page { max-width: 860px; }
+.notice-detail { padding: 26px 30px 30px; }
+.notice-head { margin: 0 0 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.notice-head h2 { margin: 0 0 8px; font-size: var(--fs-section); }
+.notice-meta { display: flex; align-items: center; gap: 8px; margin: 0; }
+.notice-body { white-space: pre-line; line-height: 1.9; }
+
 .legal-body h2 { margin: 26px 0 10px; font-size: var(--fs-card); }
 .legal-body h2:first-of-type { margin-top: 18px; }
 .legal-body p, .legal-body li { line-height: 1.9; }
