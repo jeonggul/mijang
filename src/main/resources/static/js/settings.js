@@ -27,6 +27,96 @@
     choose(document.querySelector("[data-theme-pref]"), me.theme);
   });
 
+  /* 소셜 연동 — 연동한 것만 행으로 그린다.
+     하나도 없으면 아무것도 그리지 않는다. 연동은 선택이라 없는 것이 정상이다. */
+  var PROVIDER_NAMES = { GOOGLE: "구글", KAKAO: "카카오" };
+  var unlinkTarget = null;
+
+  function formatLinkedAt(value) {
+    return new Intl.DateTimeFormat("ko-KR", { dateStyle: "long" })
+      .format(new Date(value + "Z")) + " 연동";
+  }
+
+  function paintSocialAccounts(accounts) {
+    var host = document.getElementById("social-rows");
+    if (!host) return;
+    host.replaceChildren();
+    if (!accounts || !accounts.length) return;
+
+    accounts.forEach(function (account, index) {
+      var row = document.createElement("div");
+      row.className = "setting-row";
+
+      var txt = document.createElement("span");
+      txt.className = "txt";
+      var label = document.createElement("b");
+      /* 라벨은 첫 줄에만 둔다. 줄마다 "연결된 계정" 이 반복되면 목록으로 읽히지 않는다 */
+      label.textContent = index === 0 ? "연결된 계정" : "";
+      var detail = document.createElement("small");
+      detail.textContent = (PROVIDER_NAMES[account.provider] || account.provider)
+        + " · " + formatLinkedAt(account.linkedAt);
+      txt.appendChild(label);
+      txt.appendChild(detail);
+
+      var val = document.createElement("span");
+      val.className = "val";
+      var button = document.createElement("button");
+      button.className = "btn btn-sm";
+      button.type = "button";
+      button.textContent = "해제";
+      button.addEventListener("click", function () {
+        unlinkTarget = account.provider;
+        var name = PROVIDER_NAMES[account.provider] || account.provider;
+        document.getElementById("um-t").textContent = name + " 연동 해제";
+        document.getElementById("um-desc").textContent =
+          name + " 계정 연결을 끊습니다. 계정과 기록은 그대로 남고, 언제든 다시 연동할 수 있습니다.";
+        document.getElementById("um-msg").hidden = true;
+        document.getElementById("unlink-modal").hidden = false;
+      });
+      val.appendChild(button);
+
+      row.appendChild(txt);
+      row.appendChild(val);
+      host.appendChild(row);
+    });
+  }
+
+  function loadSocialAccounts() {
+    api("/api/users/me/social").then(function (accounts) {
+      if (accounts) paintSocialAccounts(accounts);
+    });
+  }
+  loadSocialAccounts();
+
+  /* 해제만 api() 를 쓰지 않고 fetch 를 직접 쓴다. api() 는 실패도 null 로 돌려주는데
+     이 API 는 성공해도 data 가 null 이라, 둘을 구분할 수 없다.
+     커뮤니티의 신고 버튼이 같은 이유로 fetch 를 직접 쓴다(community.js) */
+  document.getElementById("um-submit").addEventListener("click", function () {
+    if (!unlinkTarget) return;
+    var button = this;
+    button.disabled = true;
+    fetch("/api/users/me/social/" + unlinkTarget, { method: "DELETE" })
+      .then(function (res) {
+        button.disabled = false;
+        if (res.status === 401) { location.href = "/login"; return; }
+        if (!res.ok) {
+          var msg = document.getElementById("um-msg");
+          msg.textContent = "해제에 실패했습니다";
+          msg.hidden = false;
+          return;
+        }
+        unlinkTarget = null;
+        document.querySelector("#unlink-modal [data-close]").click();
+        loadSocialAccounts();
+      })
+      .catch(function () {
+        button.disabled = false;
+        var msg = document.getElementById("um-msg");
+        msg.textContent = "일시적인 오류가 발생했습니다";
+        msg.hidden = false;
+      });
+  });
+
   [{ selector: "[data-base-currency]", field: "baseCurrency" }, { selector: "[data-theme-pref]", field: "theme" }]
     .forEach(function (item) {
       var group = document.querySelector(item.selector);
