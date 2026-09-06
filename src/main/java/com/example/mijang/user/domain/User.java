@@ -35,8 +35,10 @@ public record User(
     /**
      * 비밀번호 로그인이 가능한 계정인지.
      *
-     * <p>소셜 전용 계정은 password_hash 가 null 이다(스키마 주석).
-     * 이 검사를 빠뜨리면 BCrypt matches 에 null 이 들어가 NPE 가 난다.
+     * <p>지금은 스키마가 NOT NULL 이라 항상 참이다. 그래도 남기는 이유 —
+     * {@code AuthService} 가 "없는 이메일" 과 이 경우를 한데 묶어 타이밍에 안전한
+     * 하나의 실패 경로로 쓰고, 스키마를 되돌렸을 때 이 검사가 없으면 BCrypt
+     * matches 에 null 이 들어가 NPE 가 나거나 아무도 모르게 뚫리는 자리가 된다.
      */
     public boolean hasPassword() {
         return passwordHash != null && !passwordHash.isBlank();
