@@ -32,6 +32,15 @@ public class DemoAccountProperties {
 
     private List<Account> accounts = new ArrayList<>();
 
+    /**
+     * 관리자 계정도 안내에 내보낼지. 기본은 끔.
+     *
+     * <p>배포 전 로컬 확인용 스위치다. 로그인 화면은 공개 화면이라 여기 실린 관리자
+     * 자격은 곧 운영 콘솔 전체다(2026-09-03 점검) — 운영 설정에는 절대 켜지 않는다.
+     * 값이 미추적 설정 파일에만 있으므로 켠 사실 자체가 저장소에 남지 않는다.
+     */
+    private boolean allowAdmin = false;
+
     /** 이메일이 있는 것만 내보낸다. 이메일 없는 줄은 눌러도 채울 것이 없다. */
     public List<Account> usable() {
         return accounts.stream().filter(Account::hasEmail).toList();
@@ -43,6 +52,14 @@ public class DemoAccountProperties {
 
     public void setAccounts(List<Account> accounts) {
         this.accounts = accounts == null ? new ArrayList<>() : accounts;
+    }
+
+    public boolean isAllowAdmin() {
+        return allowAdmin;
+    }
+
+    public void setAllowAdmin(boolean allowAdmin) {
+        this.allowAdmin = allowAdmin;
     }
 
     /**
