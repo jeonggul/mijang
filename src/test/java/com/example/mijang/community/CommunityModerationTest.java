@@ -59,6 +59,9 @@ class CommunityModerationTest {
                 Long userId, int limit, int offset) { return java.util.List.of(); }
 
         @Override public long countByUser(Long userId) { return 0; }
+        @Override public java.util.List<com.example.mijang.community.domain.PostRow> findScrappedByUser(
+                Long userId, int limit, int offset) { return java.util.List.of(); }
+        @Override public long countScrappedByUser(Long userId) { return 0; }
 
         PostRow found = post(1L);
         String updatedTitle;

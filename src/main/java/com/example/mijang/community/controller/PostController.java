@@ -121,6 +121,17 @@ public class PostController {
                 PageResponse.of(content, page, size, postService.countByUser(me.userId())));
     }
 
+    /** MY-03 내가 스크랩한 글. 위와 같은 이유로 내 것만 준다. */
+    @GetMapping("/api/users/me/scraps")
+    public ApiResponse<PageResponse<PostSummary>> myScraps(
+            @LoginUser SessionUser me,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<PostSummary> content = postService.listScrappedByUser(me.userId(), page, size);
+        return ApiResponse.ok(
+                PageResponse.of(content, page, size, postService.countScrappedByUser(me.userId())));
+    }
+
     /** MY-03 내가 쓴 댓글. 위와 같은 이유로 내 것만 준다. */
     @GetMapping("/api/users/me/comments")
     public ApiResponse<PageResponse<MyCommentResponse>> myComments(

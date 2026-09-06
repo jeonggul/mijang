@@ -153,6 +153,8 @@ class PostVisibilityTest {
         @Override public long countBySymbol(String symbol) { return 0; }
         @Override public List<PostRow> findByUser(Long userId, int limit, int offset) { return List.of(); }
         @Override public long countByUser(Long userId) { return 0; }
+        @Override public List<PostRow> findScrappedByUser(Long userId, int limit, int offset) { return List.of(); }
+        @Override public long countScrappedByUser(Long userId) { return 0; }
         @Override public int updateContent(Long postId, String title, String content) { return 0; }
         @Override public int updateStatus(Long postId, String status) { return 0; }
         @Override public int updateStatusIfPublished(Long postId, String status) { return 0; }

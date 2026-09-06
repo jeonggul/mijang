@@ -85,6 +85,29 @@
         SELECT COUNT(*) FROM posts WHERE user_id = #{userId}
     </select>
 
+    <!-- ix_reactions_user_type 을 탄다. 스크랩한 시각의 역순 —
+         글이 쓰인 순서가 아니라 내가 담은 순서가 이 목록의 시간축이다 -->
+    <select id="findScrappedByUser" resultType="com.example.mijang.community.domain.PostRow">
+        SELECT <include refid="cols"/>
+          FROM post_reactions r
+          JOIN posts p ON p.id = r.post_id
+          JOIN users u ON u.id = p.user_id
+         WHERE r.user_id = #{userId}
+           AND r.type    = 'SCRAP'
+           AND p.status  = 'PUBLISHED'
+         ORDER BY r.created_at DESC, p.id DESC
+         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countScrappedByUser" resultType="long">
+        SELECT COUNT(*)
+          FROM post_reactions r
+          JOIN posts p ON p.id = r.post_id
+         WHERE r.user_id = #{userId}
+           AND r.type    = 'SCRAP'
+           AND p.status  = 'PUBLISHED'
+    </select>
+
     <select id="countByBoard" resultType="long">
         SELECT COUNT(*)
           FROM posts

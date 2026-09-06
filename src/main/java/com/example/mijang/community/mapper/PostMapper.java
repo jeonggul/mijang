@@ -76,6 +76,18 @@ public interface PostMapper {
 
     long countByUser(@Param("userId") Long userId);
 
+    /**
+     * 내가 스크랩한 글. 스크랩한 순서(최신 먼저)로 돌려준다.
+     *
+     * <p>내 글 목록과 달리 공개된 글만 준다 — 남의 글이 숨김·삭제되면
+     * 상세를 열 수 없으니 목록에 남겨 둬도 눌러서 갈 곳이 없다.
+     */
+    List<PostRow> findScrappedByUser(@Param("userId") Long userId,
+                                     @Param("limit") int limit,
+                                     @Param("offset") int offset);
+
+    long countScrappedByUser(@Param("userId") Long userId);
+
     /** 종목별 게시판 목록. {@code COM-001} */
     List<PostRow> findBySymbol(@Param("symbol") String symbol,
                                @Param("sort") String sort,
