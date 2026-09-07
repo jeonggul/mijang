@@ -46,7 +46,12 @@ public interface UserMapper {
                        @Param("passwordHash") String passwordHash,
                        @Param("expectedHash") String expectedHash);
 
-    /** 탈퇴 처리. 지우지 않고 상태와 시각만 바꾼다. */
+    /**
+     * 탈퇴 처리. 행을 지우지 않고 상태·시각을 바꾸며, 이메일을 {id}.withdrawn.{원본}
+     * 표식으로 바꾼다 — uk_users_email 이 UNIQUE 라 원본을 붙들고 있으면 그 이메일로
+     * 다시 가입할 수 없기 때문이다. status 가드가 재탈퇴 때 이중표식을 막는다.
+     * 소셜 연동 삭제는 호출부(AuthService.withdraw)가 같은 트랜잭션에서 함께 한다.
+     */
     int withdraw(@Param("id") Long id);
 
     /**
