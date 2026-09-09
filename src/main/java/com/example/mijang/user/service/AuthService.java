@@ -97,6 +97,11 @@ public class AuthService {
         if (userMapper.countByEmail(form.getEmail()) > 0) {
             throw new BusinessException(ErrorCode.AUTH_EMAIL_DUPLICATED, "email");
         }
+        /* 소셜 가입 경로는 @Valid 를 거치지 않으므로 여기서 길이를 다시 본다.
+           @Size 는 수동 가입(AUTH-001) 입력 검증에만 쓰인다. 이곳이 진짜 보장이다 */
+        if (form.getEmail() != null && form.getEmail().length() > SignupPolicy.EMAIL_MAX_LENGTH) {
+            throw new BusinessException(ErrorCode.COMMON_INVALID_REQUEST, "email");
+        }
         // 형식은 @Pattern 이 걸렀다. 여기서는 금지어만 본다
         if (SignupPolicy.containsForbiddenWord(form.getNickname())) {
             throw new BusinessException(ErrorCode.AUTH_NICKNAME_FORBIDDEN, "nickname");

@@ -4,6 +4,7 @@ import com.example.mijang.user.policy.SignupPolicy;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,9 @@ public class SignupForm {
 
     @NotBlank(message = "이메일을 입력해주세요")
     @Email(message = "이메일 형식이 올바르지 않습니다")
+    /* 탈퇴 시 "{id}.withdrawn." 접두(최대 약 30자)를 붙여도 users.email VARCHAR(255) 를
+       넘지 않게 가입 단계에서 막는다(4.13 #5). 실무 이메일은 이 한도에 한참 못 미친다 */
+    @Size(max = SignupPolicy.EMAIL_MAX_LENGTH, message = "이메일이 너무 깁니다")
     private String email;
 
     @NotBlank(message = "비밀번호를 입력해주세요")
