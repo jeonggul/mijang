@@ -285,6 +285,8 @@
           <li><span class="k">PER</span><span class="v num" id="m-per">—</span></li>
           <li><span class="k">PBR</span><span class="v num" id="m-pbr">—</span></li>
           <li><span class="k">EPS</span><span class="v num" id="m-eps">—</span></li>
+          <li><span class="k">52주 최고</span><span class="v num" id="m-w52h">—</span></li>
+          <li><span class="k">52주 최저</span><span class="v num" id="m-w52l">—</span></li>
           <li><span class="k">배당수익률</span><span class="v num" id="m-div">—</span></li>
           <li><span class="k">산업</span><span class="v" id="m-industry">—</span></li>
         </ul>
@@ -903,6 +905,9 @@
     text("m-per", m.per == null ? "—" : Number(m.per).toFixed(2));
     text("m-pbr", m.pbr == null ? "—" : Number(m.pbr).toFixed(2));
     text("m-eps", m.eps == null ? "—" : money(m.eps));
+    /* 52주 최고·최저 (PRICE-04). 같은 metrics 응답에 이미 실려 온다 */
+    text("m-w52h", m.week52High == null ? "—" : money(m.week52High));
+    text("m-w52l", m.week52Low == null ? "—" : money(m.week52Low));
     text("m-div", m.dividendYield == null ? "—" : Number(m.dividendYield).toFixed(2) + "%");
     text("m-industry", m.industry || "—");
     fillCompany(m);

@@ -314,6 +314,13 @@ table.holdings .stack { display: grid; gap: 3px; }
 .watch-more:hover { color: var(--record); }
 /* display 를 block 으로 잡았으니 hidden 을 다시 눌러 줘야 한다 */
 .watch-more[hidden] { display: none; }
+/* 스크랩 더보기는 <a> 가 아니라 <button> 이다 — 네이티브 버튼 테두리·배경·폰트를 지우고
+   .watch-more 의 상단 구분선과 가운데 정렬만 남긴다 */
+button.watch-more {
+  width: 100%; appearance: none; background: none;
+  border: 0; border-top: 1px solid var(--line);
+  font-family: inherit; cursor: pointer;
+}
 
 .tag {
   display: inline-block; margin-top: 10px;

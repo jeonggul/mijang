@@ -61,6 +61,7 @@
       <section class="card">
         <h2 class="card-head">스크랩한 글 <span class="sub num" id="my-scraps-label">—</span></h2>
         <ul class="list my-writing" id="my-scraps"><!-- 스크립트가 채운다 --></ul>
+        <button class="watch-more" id="my-scraps-more" type="button" hidden>더보기</button>
       </section>
     </div>
   </div>
@@ -179,25 +180,46 @@
     if (more) more.hidden = total <= PREVIEW;
   });
 
-  api("/api/users/me/scraps?page=0&size=" + PREVIEW).then(function (page) {
-    if (!page) return;
-    var total = page.totalElements || 0;
-    put("my-scraps-label", total + "건");
-
+  /* 스크랩은 전용 목록 페이지가 없어, 카드 안에서 "더보기" 로 다음 쪽을 이어 붙인다.
+     작성 글·매매는 갈 곳(/community·/record-list)이 있어 링크로 보내지만 여기는 없다 */
+  (function () {
     var box = document.getElementById("my-scraps");
+    var more = document.getElementById("my-scraps-more");
     if (!box) return;
-    box.replaceChildren();
-    if (total === 0) {
-      box.appendChild(emptyRow("스크랩한 글이 없습니다"));
-      return;
+    var loaded = 0;
+
+    function render(page) {
+      if (!page) return;
+      var total = page.totalElements || 0;
+      put("my-scraps-label", total + "건");
+      if (loaded === 0 && total === 0) {
+        box.appendChild(emptyRow("스크랩한 글이 없습니다"));
+        return;
+      }
+      (page.content || []).forEach(function (post) {
+        var where = post.symbol ? post.symbol
+                  : post.board === "QNA" ? "질문" : "자유";
+        box.appendChild(writingRow("/community-post/" + post.id, post.title,
+                                   where + " · " + when(post.createdAt), post.status));
+        loaded += 1;
+      });
+      /* 아직 더 남았을 때만 버튼을 보여 준다 */
+      if (more) more.hidden = loaded >= total;
     }
-    (page.content || []).forEach(function (post) {
-      var where = post.symbol ? post.symbol
-                : post.board === "QNA" ? "질문" : "자유";
-      box.appendChild(writingRow("/community-post/" + post.id, post.title,
-                                 where + " · " + when(post.createdAt), post.status));
-    });
-  });
+
+    function load(pageIndex) {
+      return api("/api/users/me/scraps?page=" + pageIndex + "&size=" + PREVIEW).then(render);
+    }
+
+    if (more) {
+      more.addEventListener("click", function () {
+        more.disabled = true;
+        /* 실패해도 버튼을 되살린다 — 안 그러면 네트워크 오류 한 번에 영영 눌리지 않는다 */
+        load(Math.floor(loaded / PREVIEW))["finally"](function () { more.disabled = false; });
+      });
+    }
+    load(0);
+  })();
 
   api("/api/users/me/comments?page=0&size=" + PREVIEW).then(function (page) {
     if (!page) return;
