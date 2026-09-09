@@ -131,7 +131,21 @@ public class SocialLoginService {
         if (oauthMapper.existsByUserAndProvider(userId, provider)) {
             return;   // 이미 이어져 있다. 두 번 눌러도 같은 결과여야 한다
         }
-        oauthMapper.insert(userId, provider, providerUserId);
+        /* 위 existsByUserAndProvider 가 이미 이 트랜잭션의 읽기 스냅샷을 잡아 버린다.
+           그 뒤 다른 트랜잭션이 탈퇴를 커밋해도 일반 SELECT 로는 못 본다 — FOR UPDATE 로
+           행을 잠그고 최신 커밋 상태를 읽어야 withdraw 와 순서가 맞물린다 */
+        String status = userMapper.lockUserStatusForUpdate(userId);   // 최신 커밋 상태를 잠그고 읽는다
+        if (!"ACTIVE".equals(status)) {
+            log.warn("[소셜] 비활성 사용자라 연동을 건너뜀 — {} userId={}", provider, userId);
+            return;
+        }
+        // insert 의 WHERE status='ACTIVE' 는 위 잠금과 같은 문장 안이라 방어적 여분일 뿐,
+        // 진짜 경합 차단은 FOR UPDATE 잠금이 한다 — 0행은 이제 사실상 나오지 않는다
+        int inserted = oauthMapper.insert(userId, provider, providerUserId);
+        if (inserted == 0) {
+            log.warn("[소셜] 비활성 사용자라 연동을 건너뜀 — {} userId={}", provider, userId);
+            return;
+        }
         log.info("[소셜] 기존 회원에 연결 — {} userId={}", provider, userId);
     }
 

@@ -34,6 +34,10 @@ public final class SignupPolicy {
     public static final Pattern NICKNAME = Pattern.compile(NICKNAME_REGEX);
     public static final String NICKNAME_GUIDE = "한글·영문·숫자 2~10자";
 
+    /** 이메일 길이 상한. 탈퇴 시 "{id}.withdrawn." 접두(최대 약 30자)를 붙여도
+        users.email VARCHAR(255) 를 넘지 않게 한다(4.13 #5). */
+    public static final int EMAIL_MAX_LENGTH = 225;
+
     /**
      * 닉네임 금지어.
      *

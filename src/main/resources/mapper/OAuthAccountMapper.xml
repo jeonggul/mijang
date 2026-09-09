@@ -20,9 +20,18 @@
         )
     </select>
 
+    <!-- 대상이 ACTIVE 일 때만 넣는다(4.13 #4). 다만 REPEATABLE READ 아래 SELECT 는 트랜잭션의
+         읽기 스냅샷을 보므로, 이 문장 하나만으로는 동시 탈퇴에 대한 원자성을 보장하지 못한다
+         (TOCTOU 는 여전히 열려 있다) — 진짜 경합 차단은 SocialLoginService.link 의
+         lockUserStatusForUpdate(FOR UPDATE) 가 한다. 여기는 그 잠금이 이미 막은 경우를
+         한 번 더 거르는 방어적 여분이자, 나중에 잠금 없이 이 메서드를 직접 부르는
+         실수를 대비한 마지막 방어선이다 -->
     <insert id="insert">
         INSERT INTO oauth_accounts (user_id, provider, provider_user_id)
-        VALUES (#{userId}, #{provider}, #{providerUserId})
+        SELECT #{userId}, #{provider}, #{providerUserId}
+          FROM users
+         WHERE id = #{userId}
+           AND status = 'ACTIVE'
     </insert>
 
     <!-- 붙인 순서대로 보여 준다. 설정 화면이 다시 정렬하지 않아도 되게 -->

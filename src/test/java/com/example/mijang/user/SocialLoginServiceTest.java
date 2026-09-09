@@ -87,6 +87,19 @@ class SocialLoginServiceTest {
         assertThat(result.user().id()).isEqualTo(7L);
     }
 
+    @Test
+    @DisplayName("link() 는 잠금으로 읽은 상태가 ACTIVE 가 아니면 연동을 만들지 않는다")
+    void linkSkipsWhenLockedStatusNotActive() {
+        // existsByUserAndProvider 는 false(스텁 고정), lockUserStatusForUpdate 는 WITHDRAWN —
+        // 그 사이 탈퇴가 커밋된 경합 상황을 흉내낸다
+        users.lockedStatus = "WITHDRAWN";
+
+        service.link(7L, "GOOGLE", "google-1");
+
+        assertThat(oauth.inserted).isEmpty();   // insert 까지 가지 않았다
+        assertThat(users.lockedStatusQueriedFor).isEqualTo(7L);   // FOR UPDATE 잠금 경로를 실제로 탔다
+    }
+
     /** User 는 필드 11개다 — id·email·passwordHash·passwordVersion·nickname·
      *  profileImageUrl·role·baseCurrency·theme·status·createdAt 순서. */
     private static User user(Long id, String email) {
@@ -98,6 +111,9 @@ class SocialLoginServiceTest {
     private static class StubUserMapper implements UserMapper {
         User byEmail;
         User byId;
+        /** lockUserStatusForUpdate 가 돌려줄 값. 기본은 ACTIVE — 대부분의 테스트는 잠금 경로를 신경 쓰지 않는다 */
+        String lockedStatus = "ACTIVE";
+        Long lockedStatusQueriedFor;
         final List<String> takenNicknames = new ArrayList<>();
         final List<UserInsert> inserted = new ArrayList<>();
 
@@ -108,13 +124,19 @@ class SocialLoginServiceTest {
         @Override public User findByEmail(String email) { return byEmail; }
         @Override public User findById(Long id) { return byId; }
         @Override public int updatePassword(Long id, String passwordHash, String expectedHash) { return 1; }
-        @Override public int withdraw(Long id) { return 1; }
+        @Override public int withdraw(Long id, String expectedHash) { return 1; }
+        @Override public int findPasswordVersion(Long id) { return 0; }
+        @Override public void promoteToAdminForTest(Long id) { }
         @Override public String findWithdrawnEmailForTest(Long id) { return null; }
         @Override public int countByNicknameExcluding(String nickname, Long excludeUserId) { return 0; }
         @Override public int updateProfile(Long id, String nickname, String profileImageUrl,
                                            String baseCurrency, String theme) { return 1; }
         @Override public UserResponse findProfile(Long id) { return null; }
         @Override public int insert(UserInsert param) { inserted.add(param); return 1; }
+        @Override public String lockUserStatusForUpdate(Long id) {
+            lockedStatusQueriedFor = id;
+            return lockedStatus;
+        }
     }
 
     private static class StubOAuthMapper implements OAuthAccountMapper {

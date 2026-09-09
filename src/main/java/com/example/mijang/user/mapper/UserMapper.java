@@ -47,12 +47,42 @@ public interface UserMapper {
                        @Param("expectedHash") String expectedHash);
 
     /**
-     * 탈퇴 처리. 행을 지우지 않고 상태·시각을 바꾸며, 이메일을 {id}.withdrawn.{원본}
-     * 표식으로 바꾼다 — uk_users_email 이 UNIQUE 라 원본을 붙들고 있으면 그 이메일로
-     * 다시 가입할 수 없기 때문이다. status 가드가 재탈퇴 때 이중표식을 막는다.
-     * 소셜 연동 삭제는 호출부(AuthService.withdraw)가 같은 트랜잭션에서 함께 한다.
+     * 탈퇴 처리. 비밀번호 변경과 같은 급의 상태 전이다(4.13).
+     *
+     * <p>status='ACTIVE' 이고 password_hash 가 {@code expectedHash} 와 같을 때만 바꾼다.
+     * 확인과 실행 사이에 상태·비밀번호가 바뀌면 0행이 되어 서비스가 거절한다. 이메일을
+     * {id}.withdrawn.{원본} 표식으로 바꿔 재가입을 열고, password_version 을 올려 옛 토큰을
+     * 무효로 만든다. 소셜 연동 삭제·토큰 세대 기록은 호출부(AuthService.withdraw)의 몫이다.
+     *
+     * @return 바뀐 행 수. 0이면 상태·비밀번호가 어긋난 것이다
      */
-    int withdraw(@Param("id") Long id);
+    int withdraw(@Param("id") Long id, @Param("expectedHash") String expectedHash);
+
+    /**
+     * 지금 저장된 password_version 을 그대로 읽는다.
+     *
+     * <p>탈퇴 뒤 registry 에 기록할 세대는 호출 전 스냅샷(+1)이 아니라 <b>이 값</b>이어야
+     * 한다. {@code updateRole} 같은 다른 경로도 password_version 을 올릴 수 있어, 스냅샷+1은
+     * withdraw 의 CAS UPDATE 가 실제로 만든 값과 어긋날 수 있다. withdraw 가 쥔 행 잠금이
+     * 같은 트랜잭션 안에서는 이 읽기를 그대로 신뢰할 수 있게 해 준다.
+     */
+    int findPasswordVersion(@Param("id") Long id);
+
+    /**
+     * 사용자 행을 잠그고 최신 커밋 상태를 읽는다({@code FOR UPDATE}).
+     *
+     * <p>REPEATABLE READ 의 일반 SELECT 는 트랜잭션이 잡아 둔 스냅샷을 읽어, 그 사이 다른
+     * 트랜잭션이 커밋한 탈퇴를 못 볼 수 있다({@code SocialLoginService.link} 는 앞서
+     * {@code existsByUserAndProvider} 로 이미 스냅샷을 잡는다). {@code FOR UPDATE} 는 잠금을
+     * 걸어 최신 커밋 값을 읽고, 동시에 진행 중인 {@code withdraw} 의 행 잠금과 서로 기다리게
+     * 만들어 두 트랜잭션이 순서대로 풀린다 — 소셜 연동을 죽은 계정에 잇는 경합을 막는다.
+     *
+     * @return 사용자 상태(ACTIVE/WITHDRAWN 등). 행이 없으면 null
+     */
+    String lockUserStatusForUpdate(@Param("id") Long id);
+
+    /** 테스트 전용 — 이 사용자를 ADMIN 으로 올린다. 마지막 관리자 가드를 검증하는 데만 쓴다. */
+    void promoteToAdminForTest(@Param("id") Long id);
 
     /**
      * 테스트 전용 — 탈퇴 행의 이메일(표식 포함)을 그대로 읽는다.

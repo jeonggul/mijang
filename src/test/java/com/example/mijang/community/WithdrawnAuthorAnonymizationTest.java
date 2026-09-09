@@ -36,7 +36,7 @@ class WithdrawnAuthorAnonymizationTest {
         long activePost = newGeneralPost(activeId, "활성 글");
         long gonePost = newGeneralPost(goneId, "탈퇴 글");
 
-        userMapper.withdraw(goneId);
+        userMapper.withdraw(goneId, "$2a$10$x");
 
         PostRow active = postMapper.findAnyById(activePost);
         PostRow gone = postMapper.findAnyById(gonePost);
@@ -52,7 +52,7 @@ class WithdrawnAuthorAnonymizationTest {
         long postId = newGeneralPost(postOwner, "댓글 달릴 글");
         newComment(postId, commenter, "댓글 내용");
 
-        userMapper.withdraw(commenter);
+        userMapper.withdraw(commenter, "$2a$10$x");
 
         List<CommentResponse> comments = commentMapper.findByPost(postId);
         assertThat(comments).hasSize(1);
