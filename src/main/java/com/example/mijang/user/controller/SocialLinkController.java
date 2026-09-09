@@ -52,7 +52,11 @@ public class SocialLinkController {
     public ResponseEntity<ApiResponse<LoginResponse>> link(HttpServletRequest request,
                                                            @Valid @RequestBody LinkForm form) {
         var pending = SocialAuthHandlers.pendingOf(request);
-        if (pending == null) {
+        /* 비밀번호 확인 연결(LINK) 대기 상태일 때만 받는다. 가입 대기(SIGNUP) 세션이
+           이 경로로 들어오면 안 된다 — 세 소비자 중 이 컨트롤러만 갈래를 안 보고 있었다.
+           SIGNUP 세션의 이메일은 아직 회원이 아니라 login 이 자격 오류로 떨어지지만,
+           갈래를 명시해 다른 소비자(PageController·SocialSignupController)와 대칭을 맞춘다 */
+        if (pending == null || pending.kind() != SocialAuthHandlers.Pending.Kind.LINK) {
             /* 세션이 끊겼거나 곧바로 이 API 를 부른 경우다. 다시 소셜 로그인부터 해야 한다 */
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
