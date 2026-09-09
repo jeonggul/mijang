@@ -197,6 +197,10 @@ class AuthServiceTest {
             return stored == null ? 0 : stored.passwordVersion();
         }
 
+        @Override public String lockUserStatusForUpdate(Long id) {
+            return stored == null ? null : stored.status();
+        }
+
         @Override public void promoteToAdminForTest(Long id) { }
 
         @Override public String findWithdrawnEmailForTest(Long id) {

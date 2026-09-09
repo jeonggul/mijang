@@ -20,9 +20,12 @@
         )
     </select>
 
-    <!-- 대상이 ACTIVE 일 때만 넣는다(4.13 #4). 탈퇴가 사용자 행을 잠근 사이 시작된 연동이
-         탈퇴 커밋 뒤 죽은 계정에 붙는 경합을 막는다 — INSERT…SELECT 로 상태 검사와 삽입을
-         한 문장에 묶어 원자적으로 만든다 -->
+    <!-- 대상이 ACTIVE 일 때만 넣는다(4.13 #4). 다만 REPEATABLE READ 아래 SELECT 는 트랜잭션의
+         읽기 스냅샷을 보므로, 이 문장 하나만으로는 동시 탈퇴에 대한 원자성을 보장하지 못한다
+         (TOCTOU 는 여전히 열려 있다) — 진짜 경합 차단은 SocialLoginService.link 의
+         lockUserStatusForUpdate(FOR UPDATE) 가 한다. 여기는 그 잠금이 이미 막은 경우를
+         한 번 더 거르는 방어적 여분이자, 나중에 잠금 없이 이 메서드를 직접 부르는
+         실수를 대비한 마지막 방어선이다 -->
     <insert id="insert">
         INSERT INTO oauth_accounts (user_id, provider, provider_user_id)
         SELECT #{userId}, #{provider}, #{providerUserId}

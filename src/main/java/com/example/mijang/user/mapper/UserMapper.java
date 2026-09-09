@@ -68,6 +68,19 @@ public interface UserMapper {
      */
     int findPasswordVersion(@Param("id") Long id);
 
+    /**
+     * 사용자 행을 잠그고 최신 커밋 상태를 읽는다({@code FOR UPDATE}).
+     *
+     * <p>REPEATABLE READ 의 일반 SELECT 는 트랜잭션이 잡아 둔 스냅샷을 읽어, 그 사이 다른
+     * 트랜잭션이 커밋한 탈퇴를 못 볼 수 있다({@code SocialLoginService.link} 는 앞서
+     * {@code existsByUserAndProvider} 로 이미 스냅샷을 잡는다). {@code FOR UPDATE} 는 잠금을
+     * 걸어 최신 커밋 값을 읽고, 동시에 진행 중인 {@code withdraw} 의 행 잠금과 서로 기다리게
+     * 만들어 두 트랜잭션이 순서대로 풀린다 — 소셜 연동을 죽은 계정에 잇는 경합을 막는다.
+     *
+     * @return 사용자 상태(ACTIVE/WITHDRAWN 등). 행이 없으면 null
+     */
+    String lockUserStatusForUpdate(@Param("id") Long id);
+
     /** 테스트 전용 — 이 사용자를 ADMIN 으로 올린다. 마지막 관리자 가드를 검증하는 데만 쓴다. */
     void promoteToAdminForTest(@Param("id") Long id);
 
