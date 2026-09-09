@@ -215,8 +215,18 @@ public class PageController {
         return "search";
     }
 
+    /**
+     * 종목 상세. 심볼이 없으면 검색으로 보낸다.
+     *
+     * <p>예전에는 심볼이 없으면 화면 JS 가 AAPL 로 폴백해, 맨몸 {@code /stock} 이 특정
+     * 종목을 기본으로 띄웠다 — 투자 자문을 하지 않는 서비스에서 특정 종목을 미는 모양이라
+     * 맞지 않는다. 종목이 정해지지 않았으면 고르는 자리(검색)로 돌려보낸다.
+     */
     @GetMapping("/stock")
-    public String stock() {
+    public String stock(@RequestParam(required = false) String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            return "redirect:/search";
+        }
         return "stock";
     }
 
