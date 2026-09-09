@@ -47,12 +47,19 @@ public interface UserMapper {
                        @Param("expectedHash") String expectedHash);
 
     /**
-     * 탈퇴 처리. 행을 지우지 않고 상태·시각을 바꾸며, 이메일을 {id}.withdrawn.{원본}
-     * 표식으로 바꾼다 — uk_users_email 이 UNIQUE 라 원본을 붙들고 있으면 그 이메일로
-     * 다시 가입할 수 없기 때문이다. status 가드가 재탈퇴 때 이중표식을 막는다.
-     * 소셜 연동 삭제는 호출부(AuthService.withdraw)가 같은 트랜잭션에서 함께 한다.
+     * 탈퇴 처리. 비밀번호 변경과 같은 급의 상태 전이다(4.13).
+     *
+     * <p>status='ACTIVE' 이고 password_hash 가 {@code expectedHash} 와 같을 때만 바꾼다.
+     * 확인과 실행 사이에 상태·비밀번호가 바뀌면 0행이 되어 서비스가 거절한다. 이메일을
+     * {id}.withdrawn.{원본} 표식으로 바꿔 재가입을 열고, password_version 을 올려 옛 토큰을
+     * 무효로 만든다. 소셜 연동 삭제·토큰 세대 기록은 호출부(AuthService.withdraw)의 몫이다.
+     *
+     * @return 바뀐 행 수. 0이면 상태·비밀번호가 어긋난 것이다
      */
-    int withdraw(@Param("id") Long id);
+    int withdraw(@Param("id") Long id, @Param("expectedHash") String expectedHash);
+
+    /** 테스트 전용 — 이 사용자를 ADMIN 으로 올린다. 마지막 관리자 가드를 검증하는 데만 쓴다. */
+    void promoteToAdminForTest(@Param("id") Long id);
 
     /**
      * 테스트 전용 — 탈퇴 행의 이메일(표식 포함)을 그대로 읽는다.

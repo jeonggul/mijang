@@ -57,10 +57,10 @@ class WithdrawReleaseTest {
         userMapper.insert(insert);
         Long id = insert.getId();
 
-        assertThat(userMapper.withdraw(id)).isEqualTo(1);
+        assertThat(userMapper.withdraw(id, insert.getPasswordHash())).isEqualTo(1);
         String afterFirst = userMapper.findWithdrawnEmailForTest(id);
         // 두 번째 호출은 status 가드에 걸려 0 행
-        assertThat(userMapper.withdraw(id)).isZero();
+        assertThat(userMapper.withdraw(id, insert.getPasswordHash())).isZero();
         assertThat(userMapper.findWithdrawnEmailForTest(id)).isEqualTo(afterFirst);
     }
 
@@ -72,7 +72,7 @@ class WithdrawReleaseTest {
         Long id = insert.getId();
         assertThat(userMapper.countByNickname("재사용닉")).isEqualTo(1);
 
-        userMapper.withdraw(id);
+        userMapper.withdraw(id, insert.getPasswordHash());
 
         assertThat(userMapper.countByNickname("재사용닉")).isZero();
     }

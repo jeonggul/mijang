@@ -1,10 +1,12 @@
 package com.example.mijang.user.service;
 
 import com.example.mijang.admin.domain.AdminSettingKey;
+import com.example.mijang.admin.mapper.AdminUserMapper;
 import com.example.mijang.admin.service.AdminSettingService;
 import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.security.JwtProvider;
+import com.example.mijang.security.PasswordVersionRegistry;
 import com.example.mijang.user.domain.User;
 import com.example.mijang.user.dto.LoginForm;
 import com.example.mijang.user.dto.LoginResponse;
@@ -15,6 +17,7 @@ import com.example.mijang.user.mapper.UserMapper;
 import com.example.mijang.user.policy.SignupPolicy;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,6 +48,8 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final AdminSettingService settingService;
     private final LoginAttemptService loginAttemptService;
+    private final AdminUserMapper adminUserMapper;
+    private final PasswordVersionRegistry versions;
 
     /**
      * 가입 전 닉네임 사용 가능 확인. 형식 → 금지어 → 중복 순으로 본다.
@@ -264,10 +269,27 @@ public class AuthService {
         if (!passwordEncoder.matches(password, user.passwordHash())) {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_MISMATCH, "password");
         }
-        /* 한 트랜잭션이다(@Transactional). 상태·이메일 표식(withdraw)과 소셜 반납이
-           함께 끝나거나 함께 롤백된다 — 이메일만 풀리고 연동이 남는 어긋남이 없다 */
-        userMapper.withdraw(userId);
+
+        /* 유일한 활성 관리자는 탈퇴할 수 없다(4.13 #3). 관리자 정지에서 쓰는 잠금 조회를
+           그대로 써 동시 탈퇴·정지와도 직렬화한다 — 관리자가 0명이 되는 창을 막는다 */
+        if ("ADMIN".equals(user.role())) {
+            List<Long> activeAdminIds = adminUserMapper.lockActiveAdminIds();
+            if (activeAdminIds.size() <= 1 && activeAdminIds.contains(userId)) {
+                throw new BusinessException(ErrorCode.ADMIN_LAST_ACTIVE);
+            }
+        }
+
+        /* CAS: 확인한 비밀번호 그대로여야 바뀐다. 그 사이 비밀번호 변경·정지가 끼면 0행이
+           되고, 아래에서 충돌로 돌려보낸다. 이미 나간 요청이 낡은 상태를 덮어쓰지 못한다 */
+        int changed = userMapper.withdraw(userId, user.passwordHash());
+        if (changed != 1) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
         oauthMapper.deleteByUser(userId);
+
+        /* 옛 access 토큰을 죽인다. 비밀번호 변경(PasswordService)과 같은 장치다 —
+           탈퇴 뒤 최대 30분간 살아 있던 토큰을 다음 요청에서 거부한다 */
+        versions.record(userId, user.passwordVersion() + 1);
     }
 
     /** 컨트롤러가 쿠키를 구울 수 있도록 refresh 까지 함께 넘긴다. */

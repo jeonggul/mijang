@@ -37,7 +37,8 @@ class UserServiceTest {
         @Override public User findByEmail(String email) { return null; }
         @Override public User findById(Long id) { return null; }
         @Override public int updatePassword(Long id, String passwordHash, String expectedHash) { return 1; }
-        @Override public int withdraw(Long id) { return 1; }
+        @Override public int withdraw(Long id, String expectedHash) { return 1; }
+        @Override public void promoteToAdminForTest(Long id) { }
         @Override public String findWithdrawnEmailForTest(Long id) { return null; }
         @Override public int insert(UserMapper.UserInsert p) { return 1; }
 

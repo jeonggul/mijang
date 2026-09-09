@@ -43,9 +43,9 @@ class AuthServiceTest {
         var props = new JwtProperties();
         props.setSecret("test-secret-key-for-mijang-authentication-32+");
         mapper = new StubUserMapper();
-        // oauthMapper 는 withdraw 전용 — 이 테스트는 withdraw 를 부르지 않아 null 로 충분하다
+        // oauthMapper·adminUserMapper·versions 는 withdraw 전용 — 이 테스트는 withdraw 를 부르지 않아 null 로 충분하다
         authService = new AuthService(mapper, null, encoder, new JwtProvider(props), new FixedSettings(),
-                new LoginAttemptService());
+                new LoginAttemptService(), null, null);
     }
 
     @Test
@@ -183,7 +183,7 @@ class AuthServiceTest {
         }
 
         /** 지우지 않고 상태만 바꾼다. 이후 findById·findByEmail 은 null 을 돌려준다. */
-        @Override public int withdraw(Long id) {
+        @Override public int withdraw(Long id, String expectedHash) {
             if (stored == null) {
                 return 0;
             }
@@ -192,6 +192,8 @@ class AuthServiceTest {
                     stored.baseCurrency(), stored.theme(), "WITHDRAWN", stored.createdAt());
             return 1;
         }
+
+        @Override public void promoteToAdminForTest(Long id) { }
 
         @Override public String findWithdrawnEmailForTest(Long id) {
             return stored == null ? null : stored.email();
