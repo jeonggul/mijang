@@ -8,6 +8,7 @@ import com.example.mijang.common.exception.BusinessException;
 import com.example.mijang.common.exception.ErrorCode;
 import com.example.mijang.security.PasswordVersionRegistry;
 import com.example.mijang.user.domain.User;
+import com.example.mijang.user.mapper.OAuthAccountMapper;
 import com.example.mijang.user.mapper.UserMapper;
 import com.example.mijang.user.service.AuthService;
 import java.util.List;
@@ -31,6 +32,7 @@ class WithdrawHardeningTest {
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired PasswordVersionRegistry versions;
     @Autowired AdminUserMapper adminUserMapper;
+    @Autowired OAuthAccountMapper oauthMapper;
 
     private Long newUser(String email, String rawPw) {
         var insert = new UserMapper.UserInsert(email, passwordEncoder.encode(rawPw), "탈퇴보강테스트");
@@ -61,6 +63,47 @@ class WithdrawHardeningTest {
         assertThat(changed).isZero();
         // 계정은 그대로 ACTIVE
         assertThat(userMapper.findById(id).status()).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    @DisplayName("서비스 계층에서 비밀번호가 틀리면 CAS UPDATE 까지 가지 않고 소셜 연동도 그대로 남는다")
+    void withdrawServiceLayerRejectsBeforeTouchingOauth() {
+        Long id = newUser("service-cas@mijang.app", "pass1234");
+        oauthMapper.insert(id, "GOOGLE", "gid-service-cas-1");
+
+        // AuthService.withdraw 는 비밀번호 확인에서 먼저 걸린다 — CAS UPDATE·oauth 삭제
+        // 어느 쪽도 실행되지 않아야 한다. withdrawRequiresMatchingHashInUpdate 는 매퍼를
+        // 직접 불러 CAS 만 보므로, 여기서는 서비스 진입점을 그대로 탄다
+        assertThatThrownBy(() -> authService.withdraw(id, "wrong-password"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).errorCode())
+                .isEqualTo(ErrorCode.AUTH_PASSWORD_MISMATCH);
+
+        assertThat(userMapper.findById(id).status()).isEqualTo("ACTIVE");
+        // 소셜 연동이 지워지지 않고 그대로 남아 있다 — CAS 실패 뒤 oauth 삭제로 넘어가지 않았다
+        assertThat(oauthMapper.findByUser(id)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("다른 활성 관리자가 있으면 관리자도 탈퇴할 수 있다")
+    void adminCanWithdrawWhenOtherActiveAdminsExist() {
+        Long id = newUser("admin-not-last@mijang.app", "pass1234");
+        userMapper.promoteToAdminForTest(id);
+
+        /* 이 테스트는 "유일한 활성 관리자가 아니다" 를 전제한다. 실제 DB 에 이미 다른
+           활성 관리자가 있어야 하고, lastActiveAdminCannotWithdraw 와 달리 여기서는
+           그들을 정지시키지 않는다 — 오히려 그대로 둬야 검증하려는 상황(다른 관리자가
+           있을 때는 막지 않는다)이 만들어진다. 전제가 깨지면(활성 관리자가 이 사용자
+           하나뿐이면) 통과가 아니라 실패로 드러나야 하므로 스킵 대신 명시적으로 확인한다 */
+        List<Long> activeAdminIds = adminUserMapper.lockActiveAdminIds();
+        assertThat(activeAdminIds)
+                .as("이 테스트는 실제 DB 에 이 사용자 말고도 활성 관리자가 있어야 전제가 선다")
+                .hasSizeGreaterThan(1);
+
+        authService.withdraw(id, "pass1234");
+
+        // 예외 없이 끝났고, 실제로 탈퇴됐다 — findById 는 WITHDRAWN 을 걸러 내므로 null 이면 확인된 것
+        assertThat(userMapper.findById(id)).isNull();
     }
 
     @Test

@@ -288,8 +288,15 @@ public class AuthService {
         oauthMapper.deleteByUser(userId);
 
         /* 옛 access 토큰을 죽인다. 비밀번호 변경(PasswordService)과 같은 장치다 —
-           탈퇴 뒤 최대 30분간 살아 있던 토큰을 다음 요청에서 거부한다 */
-        versions.record(userId, user.passwordVersion() + 1);
+           탈퇴 뒤 최대 30분간 살아 있던 토큰을 다음 요청에서 거부한다.
+           스냅샷(user.passwordVersion()+1)을 그대로 쓰지 않는다 — updateRole 같은 다른 경로도
+           password_version 을 올릴 수 있어, findById 를 읽은 뒤 이 UPDATE 사이에 세대가
+           한 번 더 올라가 있으면 스냅샷+1은 실제 결과보다 낮은 값이 된다. 그 값을 registry
+           에 기록하면 그 사이 세대로 발급된 토큰이 낡지 않은 것으로 통과해 탈퇴한 계정을
+           계속 인증시킨다. withdraw 의 행 잠금이 걸린 같은 트랜잭션 안이라 방금 확정된
+           값을 그대로 읽어도 안전하다 */
+        int newVersion = userMapper.findPasswordVersion(userId);
+        versions.record(userId, newVersion);
     }
 
     /** 컨트롤러가 쿠키를 구울 수 있도록 refresh 까지 함께 넘긴다. */

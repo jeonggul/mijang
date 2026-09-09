@@ -58,6 +58,16 @@ public interface UserMapper {
      */
     int withdraw(@Param("id") Long id, @Param("expectedHash") String expectedHash);
 
+    /**
+     * 지금 저장된 password_version 을 그대로 읽는다.
+     *
+     * <p>탈퇴 뒤 registry 에 기록할 세대는 호출 전 스냅샷(+1)이 아니라 <b>이 값</b>이어야
+     * 한다. {@code updateRole} 같은 다른 경로도 password_version 을 올릴 수 있어, 스냅샷+1은
+     * withdraw 의 CAS UPDATE 가 실제로 만든 값과 어긋날 수 있다. withdraw 가 쥔 행 잠금이
+     * 같은 트랜잭션 안에서는 이 읽기를 그대로 신뢰할 수 있게 해 준다.
+     */
+    int findPasswordVersion(@Param("id") Long id);
+
     /** 테스트 전용 — 이 사용자를 ADMIN 으로 올린다. 마지막 관리자 가드를 검증하는 데만 쓴다. */
     void promoteToAdminForTest(@Param("id") Long id);
 

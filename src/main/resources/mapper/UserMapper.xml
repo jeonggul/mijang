@@ -117,6 +117,13 @@
            AND password_hash = #{expectedHash}
     </update>
 
+    <!-- withdraw 뒤 registry 에 기록할 세대를 그대로 읽는다. updateRole 도 password_version 을
+         올릴 수 있어, 호출 전 스냅샷+1로는 CAS UPDATE 가 실제로 만든 값과 어긋날 수 있다.
+         withdraw 의 행 잠금이 걸린 같은 트랜잭션 안에서 읽으므로 이 값을 그대로 믿는다 -->
+    <select id="findPasswordVersion" resultType="int">
+        SELECT password_version FROM users WHERE id = #{id}
+    </select>
+
     <!-- 테스트 전용 — 마지막 관리자 가드를 검증하는 데만 쓴다 -->
     <update id="promoteToAdminForTest">
         UPDATE users SET role = 'ADMIN' WHERE id = #{id}
