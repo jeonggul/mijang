@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>미장 — AAPL</title>
+<title>미장 — 종목</title>
 <link rel="icon" th:href="@{/img/favicon.png}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -309,9 +309,11 @@
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}">
 /* 종목 상세 (PRICE-02·04) · 일봉 차트 (PRICE-05) · 관심종목 토글 (WATCH-01)
-   티커는 주소의 ?symbol= 에서 읽는다. 없으면 AAPL 을 보여준다. */
+   티커는 주소의 ?symbol= 에서 읽는다. 서버가 심볼 없는 진입을 검색으로 돌려보내므로
+   여기 오면 심볼이 있다. 그래도 없으면(직접 조작 등) 검색으로 보낸다 — 기본 종목은 없다. */
 (function () {
-  var symbol = (new URLSearchParams(location.search).get("symbol") || "AAPL").toUpperCase();
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "").toUpperCase();
+  if (!symbol) { location.replace("/search"); return; }
   var chart = document.getElementById("candle-body");
   var star = document.getElementById("sym-star");
   var watchId = null;
@@ -1511,7 +1513,7 @@
 (function () {
   var rows = document.getElementById("filings-rows");
   if (!rows) return;
-  var symbol = (new URLSearchParams(location.search).get("symbol") || "AAPL").toUpperCase();
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "").toUpperCase();
 
   /* SEC 양식 번호는 아는 사람만 안다. 자주 나오는 것만 한국어로 풀고 나머지는 그대로 둔다 —
      모르는 양식을 어설프게 번역하면 틀린 설명이 붙는다 */
@@ -1588,7 +1590,7 @@
 (function () {
   var rows = document.getElementById("dvh-rows");
   if (!rows) return;
-  var symbol = (new URLSearchParams(location.search).get("symbol") || "AAPL").toUpperCase();
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "").toUpperCase();
   var DASH = "—";
 
   function usd(v, digits) {
