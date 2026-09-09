@@ -22,9 +22,14 @@
         SELECT LAST_INSERT_ID()
     </select>
 
+    <!-- 탈퇴한 작성자는 이름을 가린다(4.12). PostMapper 와 같은 규칙 -->
+    <sql id="authorName">
+        CASE WHEN u.status = 'WITHDRAWN' THEN '탈퇴한 사용자' ELSE u.nickname END
+    </sql>
+
     <!-- record 는 선언 순서로 매핑된다. CommentResponse 순서와 같아야 한다 -->
     <select id="findByPost" resultType="com.example.mijang.community.dto.CommentResponse">
-        SELECT c.id, c.parent_id, u.nickname, c.content, c.created_at
+        SELECT c.id, c.parent_id, <include refid="authorName"/> AS nickname, c.content, c.created_at
           FROM comments c
           JOIN users u ON u.id = c.user_id
          WHERE c.post_id = #{postId}

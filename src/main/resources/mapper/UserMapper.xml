@@ -37,8 +37,8 @@
         role, base_currency, theme, status, created_at
     </sql>
 
-    <!-- AUTH-001 이메일 중복 판정. 탈퇴 계정도 세는 것이 맞다.
-         uk_users_email 이 UNIQUE 라 탈퇴자 이메일도 재사용할 수 없다 -->
+    <!-- AUTH-001 이메일 중복 판정. 모든 행을 세지만, 탈퇴 시 이메일이 표식으로
+         바뀌므로(4.12) 원본 이메일로는 자연히 안 잡힌다 — 탈퇴자 이메일은 재가입 가능하다 -->
     <select id="countByEmail" parameterType="string" resultType="int">
         SELECT COUNT(*)
           FROM users
@@ -91,15 +91,26 @@
            AND password_hash = #{expectedHash}
     </update>
 
-    <!-- 물리 삭제는 30일 뒤 배치가 한다(schema.sql users 주석).
-         이미 탈퇴한 계정을 다시 눌러도 deleted_at 이 뒤로 밀리지 않도록 조건을 건다 -->
+    <!-- 탈퇴는 행을 지우지 않고 상태만 바꾼다. 게시글·댓글은 그대로 남아
+         화면에서 "탈퇴한 사용자" 로 보인다(4.12).
+
+         이메일을 {id}.withdrawn.{원본} 표식으로 바꾼다 — uk_users_email 이 UNIQUE 라
+         원본을 붙들고 있으면 그 이메일로 다시 가입할 수 없다. 표식은 슬롯을 비우면서
+         원본을 복원 가능한 형태로 남긴다. id 접두라 두 탈퇴 행이 겹치지 않는다.
+
+         status 가드가 재탈퇴 때 이중표식(89.withdrawn.89.withdrawn....)을 막는다 -->
     <update id="withdraw">
         UPDATE users
            SET status = 'WITHDRAWN',
-               deleted_at = CURRENT_TIMESTAMP(3)
+               deleted_at = CURRENT_TIMESTAMP(3),
+               email = CONCAT(id, '.withdrawn.', email)
          WHERE id = #{id}
            AND status &lt;&gt; 'WITHDRAWN'
     </update>
+
+    <select id="findWithdrawnEmailForTest" resultType="string">
+        SELECT email FROM users WHERE id = #{id}
+    </select>
 
     <!-- 자기 자신을 빼고 센다(2.2) -->
     <select id="countByNicknameExcluding" resultType="int">

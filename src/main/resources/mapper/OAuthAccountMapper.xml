@@ -40,4 +40,8 @@
          WHERE user_id  = #{userId}
            AND provider = #{provider}
     </delete>
+
+    <delete id="deleteByUser">
+        DELETE FROM oauth_accounts WHERE user_id = #{userId}
+    </delete>
 </mapper>

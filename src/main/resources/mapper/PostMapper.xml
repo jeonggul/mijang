@@ -13,11 +13,17 @@
 -->
 <mapper namespace="com.example.mijang.community.mapper.PostMapper">
 
+    <!-- 탈퇴한 작성자는 이름을 가린다(4.12). 글은 남기되 개인 식별만 지운다.
+         u.status 를 보므로 users 를 JOIN 하는 모든 쿼리에 그대로 적용된다 -->
+    <sql id="authorName">
+        CASE WHEN u.status = 'WITHDRAWN' THEN '탈퇴한 사용자' ELSE u.nickname END
+    </sql>
+
     <!-- record 는 생성자로 매핑되고 MyBatis 가 이름이 아니라 순서로 맞춘다.
          아래 컬럼 순서가 PostRow 선언 순서와 정확히 같아야 한다 -->
     <sql id="cols">
         p.id, p.board, p.symbol, p.title, p.content,
-        p.user_id, u.nickname,
+        p.user_id, <include refid="authorName"/> AS nickname,
         <!-- 배지는 "켰고, 실제로 들고 있었다" 일 때만 붙는다. 수량은 꺼내지 않는다 —
              화면에 안 쓰는 값을 응답에 실으면 언젠가 화면이 쓰게 된다 -->
         (p.show_holding_badge = 1 AND COALESCE(p.holding_qty_at_write, 0) > 0) AS shareholder,

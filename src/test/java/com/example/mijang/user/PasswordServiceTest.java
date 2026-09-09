@@ -139,6 +139,7 @@ class PasswordServiceTest {
         @Override public int countByEmail(String email) { return 0; }
         @Override public int countByNickname(String nickname) { return 0; }
         @Override public int withdraw(Long id) { return 1; }
+        @Override public String findWithdrawnEmailForTest(Long id) { return null; }
         @Override public int countByNicknameExcluding(String n, Long id) { return 0; }
         @Override public int updateProfile(Long id, String n, String img, String cur, String th) {
             return 1;

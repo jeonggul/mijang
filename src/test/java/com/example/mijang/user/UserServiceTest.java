@@ -38,6 +38,7 @@ class UserServiceTest {
         @Override public User findById(Long id) { return null; }
         @Override public int updatePassword(Long id, String passwordHash, String expectedHash) { return 1; }
         @Override public int withdraw(Long id) { return 1; }
+        @Override public String findWithdrawnEmailForTest(Long id) { return null; }
         @Override public int insert(UserMapper.UserInsert p) { return 1; }
 
         @Override public int countByNicknameExcluding(String n, Long excludeId) {

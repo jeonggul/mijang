@@ -43,7 +43,8 @@ class AuthServiceTest {
         var props = new JwtProperties();
         props.setSecret("test-secret-key-for-mijang-authentication-32+");
         mapper = new StubUserMapper();
-        authService = new AuthService(mapper, encoder, new JwtProvider(props), new FixedSettings(),
+        // oauthMapper 는 withdraw 전용 — 이 테스트는 withdraw 를 부르지 않아 null 로 충분하다
+        authService = new AuthService(mapper, null, encoder, new JwtProvider(props), new FixedSettings(),
                 new LoginAttemptService());
     }
 
@@ -190,6 +191,10 @@ class AuthServiceTest {
                     stored.nickname(), stored.profileImageUrl(), stored.role(),
                     stored.baseCurrency(), stored.theme(), "WITHDRAWN", stored.createdAt());
             return 1;
+        }
+
+        @Override public String findWithdrawnEmailForTest(Long id) {
+            return stored == null ? null : stored.email();
         }
     }
 }

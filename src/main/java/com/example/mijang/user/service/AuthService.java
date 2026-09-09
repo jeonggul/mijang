@@ -10,6 +10,7 @@ import com.example.mijang.user.dto.LoginForm;
 import com.example.mijang.user.dto.LoginResponse;
 import com.example.mijang.user.dto.AvailabilityResponse;
 import com.example.mijang.user.dto.SignupForm;
+import com.example.mijang.user.mapper.OAuthAccountMapper;
 import com.example.mijang.user.mapper.UserMapper;
 import com.example.mijang.user.policy.SignupPolicy;
 import io.jsonwebtoken.Claims;
@@ -39,6 +40,7 @@ public class AuthService {
             "$2a$10$ZZZZZZZZZZZZZZZZZZZZZeS7Z5nQ0Xk8Yq9Q0Yq9Q0Yq9Q0Yq9Q0y";
 
     private final UserMapper userMapper;
+    private final OAuthAccountMapper oauthMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final AdminSettingService settingService;
@@ -262,7 +264,10 @@ public class AuthService {
         if (!passwordEncoder.matches(password, user.passwordHash())) {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_MISMATCH, "password");
         }
+        /* 한 트랜잭션이다(@Transactional). 상태·이메일 표식(withdraw)과 소셜 반납이
+           함께 끝나거나 함께 롤백된다 — 이메일만 풀리고 연동이 남는 어긋남이 없다 */
         userMapper.withdraw(userId);
+        oauthMapper.deleteByUser(userId);
     }
 
     /** 컨트롤러가 쿠키를 구울 수 있도록 refresh 까지 함께 넘긴다. */
