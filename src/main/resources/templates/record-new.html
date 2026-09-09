@@ -416,6 +416,9 @@
       document.getElementById("fx").value = trimZero(tx.fxRate);
       document.getElementById("fee").value = tx.fee == null ? "" : trimZero(tx.fee);
       document.getElementById("dt").value = tx.tradeDate;
+      /* 저장된 체결 시각을 시각칸에 되돌린다. 안 넣으면 수정 저장 때 빈 칸이 16:00 으로
+         떨어져 원래 시각을 조용히 덮어쓴다. tradedAt 은 "…T14:30:00" 꼴이라 HH:MM 만 뗀다 */
+      document.getElementById("tm").value = tx.tradedAt ? tx.tradedAt.slice(11, 16) : "";
       document.getElementById("why").value = tx.buyReason || "";
       document.getElementById("tgt").value = tx.targetPrice == null ? "" : trimZero(tx.targetPrice);
       form.dispatchEvent(new CustomEvent("mj:refresh"));
