@@ -131,7 +131,12 @@ public class SocialLoginService {
         if (oauthMapper.existsByUserAndProvider(userId, provider)) {
             return;   // 이미 이어져 있다. 두 번 눌러도 같은 결과여야 한다
         }
-        oauthMapper.insert(userId, provider, providerUserId);
+        int inserted = oauthMapper.insert(userId, provider, providerUserId);
+        if (inserted == 0) {
+            // 대상이 그 사이 비활성이 됐다. 죽은 계정에 붙이지 않는다 — 정상 흐름은 아니지만 안전하다
+            log.warn("[소셜] 비활성 사용자라 연동을 건너뜀 — {} userId={}", provider, userId);
+            return;
+        }
         log.info("[소셜] 기존 회원에 연결 — {} userId={}", provider, userId);
     }
 

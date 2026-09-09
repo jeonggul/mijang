@@ -20,9 +20,15 @@
         )
     </select>
 
+    <!-- 대상이 ACTIVE 일 때만 넣는다(4.13 #4). 탈퇴가 사용자 행을 잠근 사이 시작된 연동이
+         탈퇴 커밋 뒤 죽은 계정에 붙는 경합을 막는다 — INSERT…SELECT 로 상태 검사와 삽입을
+         한 문장에 묶어 원자적으로 만든다 -->
     <insert id="insert">
         INSERT INTO oauth_accounts (user_id, provider, provider_user_id)
-        VALUES (#{userId}, #{provider}, #{providerUserId})
+        SELECT #{userId}, #{provider}, #{providerUserId}
+          FROM users
+         WHERE id = #{userId}
+           AND status = 'ACTIVE'
     </insert>
 
     <!-- 붙인 순서대로 보여 준다. 설정 화면이 다시 정렬하지 않아도 되게 -->
