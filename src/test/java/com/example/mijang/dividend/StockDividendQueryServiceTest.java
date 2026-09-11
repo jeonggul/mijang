@@ -37,6 +37,7 @@ class StockDividendQueryServiceTest {
         @Override public List<StockDividend> findByExDateBetween(LocalDate f, LocalDate t) { return List.of(); }
         @Override public List<HolderAtExDate> findHoldersAtExDate(String s, LocalDate e) { return List.of(); }
         @Override public List<String> findHeldSymbols() { return List.of(); }
+        @Override public StockDividend findNextExDateBySymbol(String symbol, LocalDate onOrAfter) { return null; }
     }
 
     /** 수집을 건너뛰는 가짜 — 신선하다고 답한다. */

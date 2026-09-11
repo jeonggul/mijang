@@ -49,6 +49,7 @@ class DividendEstimateServiceTest {
             return holders.getOrDefault(symbol, List.of());
         }
         @Override public List<String> findHeldSymbols() { return List.of(); }
+        @Override public StockDividend findNextExDateBySymbol(String symbol, LocalDate onOrAfter) { return null; }
     }
 
     /** 넣은 것을 들고 있는 가짜. duplicate 면 INSERT IGNORE 처럼 0을 답한다. */

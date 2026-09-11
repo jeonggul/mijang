@@ -48,4 +48,8 @@ public interface StockDividendMapper {
 
     /** 지금 보유 중인 종목 티커 전부(사용자 무관). 수집 배치의 대상이다. */
     List<String> findHeldSymbols();
+
+    /** 이 종목의 기준일 이후 첫 배당락. 종목 상세가 쓴다. 없으면 null. */
+    StockDividend findNextExDateBySymbol(@Param("symbol") String symbol,
+                                         @Param("onOrAfter") LocalDate onOrAfter);
 }

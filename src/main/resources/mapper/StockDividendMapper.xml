@@ -70,4 +70,15 @@
      WHERE quantity &gt; 0
   </select>
 
+  <!-- 종목 상세의 "다음 배당락" -->
+  <select id="findNextExDateBySymbol" resultType="com.example.mijang.dividend.domain.StockDividend">
+    SELECT symbol, ex_date, dividend_type, amount_per_share, record_date, payable_date,
+           process_date, is_special AS special, is_foreign AS `foreign`, cusip, vendor_id
+      FROM stock_dividends
+     WHERE symbol = #{symbol}
+       AND ex_date &gt;= #{onOrAfter}
+     ORDER BY ex_date
+     LIMIT 1
+  </select>
+
 </mapper>

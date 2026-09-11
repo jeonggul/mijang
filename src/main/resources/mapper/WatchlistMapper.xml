@@ -67,4 +67,12 @@
                        WHERE user_id = #{userId} AND symbol = #{symbol})
     </select>
 
+    <!-- 캘린더 "내 종목" 필터가 쓴다. 그룹을 거쳐 사용자 것만 -->
+    <select id="findSymbolsByUser" resultType="string">
+        SELECT DISTINCT w.symbol
+          FROM watchlists w
+          JOIN watchlist_groups g ON g.id = w.group_id
+         WHERE g.user_id = #{userId}
+    </select>
+
 </mapper>

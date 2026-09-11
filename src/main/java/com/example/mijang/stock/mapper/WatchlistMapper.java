@@ -58,4 +58,7 @@ public interface WatchlistMapper {
 
     /** 이미 담은 종목인지. 상세 화면의 별표 상태를 그리는 데 쓴다. */
     boolean existsByUserAndSymbol(@Param("userId") Long userId, @Param("symbol") String symbol);
+
+    /** 이 사용자가 관심등록한 종목 심볼. 캘린더 "내 종목" 판정에 보유 심볼과 합친다. */
+    List<String> findSymbolsByUser(@Param("userId") Long userId);
 }
