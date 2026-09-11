@@ -235,6 +235,12 @@ public class PageController {
         return "watchlist";
     }
 
+    /** 실적·배당·거시 일정 캘린더 (INFO-05·INFO-07). 지금은 하드코딩 샘플로 UI 확정 단계다(4.14). */
+    @GetMapping("/calendar")
+    public String calendar() {
+        return "calendar";
+    }
+
     /* ── 커뮤니티 ────────────────────────────────────────────── */
 
     /**

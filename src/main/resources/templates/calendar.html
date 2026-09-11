@@ -1,0 +1,200 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 일정</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<style th:attr="nonce=${cspNonce}">
+  /* 캘린더 — UI 확정용. 확정되면 style.css 로 옮긴다(4.14 단계 0) */
+  .cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .cal-head h1 { margin: 0; font-size: var(--fs-h1); }
+  .cal-nav { display: flex; align-items: center; gap: 6px; }
+  .cal-nav button { appearance: none; background: none; border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: var(--fs-label);
+    color: var(--text); cursor: pointer; }
+  .cal-nav button:hover { background: var(--surface-soft); }
+  .cal-month { font-size: var(--fs-card); font-weight: 600; min-width: 130px; text-align: center; }
+  .cal-tools { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+  .cal-legend { display: flex; gap: 14px; font-size: var(--fs-label); color: var(--text-sub); }
+  .cal-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px;
+    margin-right: 5px; vertical-align: middle; }
+  .lg-eco { background: var(--record); }
+  .lg-earn { background: var(--surface-soft); border: 1px solid var(--line); }
+  .lg-div { background: var(--line); }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-left: 1px solid var(--line);
+    border-top: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .cal-dow { padding: 8px; text-align: center; font-size: var(--fs-label); color: var(--text-sub);
+    background: var(--surface-soft); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .cal-cell { min-height: 108px; padding: 6px; border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line); background: var(--surface); }
+  .cal-cell.other { background: var(--surface-soft); opacity: .55; }
+  .cal-cell.today .daynum { background: var(--record); color: #fff; border-radius: 50%;
+    width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; }
+  .daynum { font-size: var(--fs-label); color: var(--text-sub); }
+  .cal-cell .events { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+  .chip { font-size: var(--fs-badge); padding: 2px 6px; border-radius: 5px; line-height: 1.35;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
+  .chip.eco { background: var(--record); color: #fff; }
+  .chip.earn { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text); }
+  .chip.div { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text-sub); }
+  .chip .tk { font-family: var(--font-mono); font-weight: 600; }
+  .cal-note { margin-top: 12px; font-size: var(--fs-label); color: var(--text-sub); }
+</style>
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <div class="cal-head">
+    <h1>일정</h1>
+    <div class="cal-nav">
+      <button type="button" id="cal-prev" aria-label="이전 달">‹</button>
+      <span class="cal-month" id="cal-month">—</span>
+      <button type="button" id="cal-next" aria-label="다음 달">›</button>
+      <button type="button" id="cal-today">오늘</button>
+    </div>
+    <div class="cal-tools">
+      <div class="pills" data-toggle-group id="cal-scope">
+        <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+        <button type="button" data-value="MINE" aria-pressed="false">내 종목만</button>
+      </div>
+      <div class="cal-legend">
+        <span><i class="lg-eco"></i>거시 지표</span>
+        <span><i class="lg-earn"></i>실적</span>
+        <span><i class="lg-div"></i>배당</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cal-grid" id="cal-grid"><!-- 스크립트가 채운다 --></div>
+
+  <p class="cal-note">※ 하드코딩 샘플입니다(UI 확정용). 배당은 수집된 종목만 표시됩니다.</p>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 실적·배당·거시 일정 캘린더 — 하드코딩 샘플 (4.14 단계 0).
+   날짜는 "오늘 기준 상대"로 만들어, 언제 열어도 이번 달에 이벤트가 보이게 한다.
+   확정되면 이 SAMPLE 배열을 /api/calendar/* 호출로 교체한다. */
+(function () {
+  var MINE = { AAPL: 1, TSLA: 1, MSFT: 1, QQQ: 1 };   // 하드코딩 "내 종목"
+  var PROVIDER = { EARN: "earn", DIV: "div", ECO: "eco" };
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  /* offset = 오늘로부터 며칠 뒤. 이번 달 여기저기에 뿌린다 */
+  function rel(offset) {
+    var d = new Date(today);
+    d.setDate(d.getDate() + offset);
+    return d;
+  }
+  function key(d) { return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+
+  var SAMPLE = [
+    { d: rel(-3), type: "ECO",  title: "고용지표 (BLS)", note: "8:30 ET" },
+    { d: rel(1),  type: "EARN", sym: "AAPL", title: "실적 발표", note: "장후 · EPS 2.35" },
+    { d: rel(1),  type: "EARN", sym: "NKE",  title: "실적 발표", note: "장후" },
+    { d: rel(2),  type: "DIV",  sym: "MSFT", title: "배당락", note: "$0.83" },
+    { d: rel(4),  type: "ECO",  title: "CPI (BLS)", note: "8:30 ET" },
+    { d: rel(4),  type: "EARN", sym: "TSLA", title: "실적 발표", note: "장후 · EPS 0.62" },
+    { d: rel(6),  type: "DIV",  sym: "AAPL", title: "배당 지급", note: "$0.25" },
+    { d: rel(7),  type: "EARN", sym: "MSFT", title: "실적 발표", note: "장후" },
+    { d: rel(9),  type: "ECO",  title: "FOMC 성명", note: "14:00 ET" },
+    { d: rel(11), type: "EARN", sym: "AMZN", title: "실적 발표", note: "장후" },
+    { d: rel(12), type: "DIV",  sym: "QQQ",  title: "배당락", note: "$0.71" },
+    { d: rel(14), type: "EARN", sym: "GOOGL", title: "실적 발표", note: "장전" },
+    { d: rel(18), type: "EARN", sym: "TSLA", title: "실적 발표(추정)", note: "미정" },
+    { d: rel(20), type: "ECO",  title: "PPI (BLS)", note: "8:30 ET" }
+  ];
+
+  var view = new Date(today.getFullYear(), today.getMonth(), 1);
+  var scope = "ALL";
+
+  function visible(ev) {
+    if (ev.type === "ECO") return true;                 // 거시는 항상
+    if (scope === "ALL") return true;
+    return ev.sym && MINE[ev.sym];                       // 내 종목만
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function render() {
+    var y = view.getFullYear(), m = view.getMonth();
+    document.getElementById("cal-month").textContent = y + "년 " + (m + 1) + "월";
+
+    var grid = document.getElementById("cal-grid");
+    grid.replaceChildren();
+    ["일", "월", "화", "수", "목", "금", "토"].forEach(function (w) {
+      grid.appendChild(el("div", "cal-dow", w));
+    });
+
+    /* 이벤트를 날짜키로 묶는다 */
+    var byDay = {};
+    SAMPLE.filter(visible).forEach(function (ev) {
+      (byDay[key(ev.d)] = byDay[key(ev.d)] || []).push(ev);
+    });
+
+    var first = new Date(y, m, 1);
+    var start = new Date(first);
+    start.setDate(1 - first.getDay());                   // 그 주 일요일부터
+    for (var i = 0; i < 42; i++) {
+      var day = new Date(start);
+      day.setDate(start.getDate() + i);
+      var cell = el("div", "cal-cell");
+      if (day.getMonth() !== m) cell.classList.add("other");
+      if (day.getTime() === today.getTime()) cell.classList.add("today");
+      cell.appendChild(el("span", "daynum", String(day.getDate())));
+
+      var evs = byDay[key(day)] || [];
+      if (evs.length) {
+        var box = el("div", "events");
+        evs.forEach(function (ev) {
+          var chip = el("div", "chip " + PROVIDER[ev.type === "ECO" ? "ECO" : ev.type]);
+          if (ev.sym) chip.appendChild(el("span", "tk", ev.sym + " "));
+          chip.appendChild(document.createTextNode(ev.title));
+          chip.title = (ev.sym ? ev.sym + " · " : "") + ev.title + (ev.note ? " · " + ev.note : "");
+          box.appendChild(chip);
+        });
+        cell.appendChild(box);
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  document.getElementById("cal-prev").addEventListener("click", function () {
+    view.setMonth(view.getMonth() - 1); render();
+  });
+  document.getElementById("cal-next").addEventListener("click", function () {
+    view.setMonth(view.getMonth() + 1); render();
+  });
+  document.getElementById("cal-today").addEventListener("click", function () {
+    view = new Date(today.getFullYear(), today.getMonth(), 1); render();
+  });
+  document.getElementById("cal-scope").addEventListener("mj:change", function (e) {
+    scope = e.detail; render();
+  });
+  /* pills 토글이 mj:change 를 안 쏘는 환경 대비 — 클릭도 직접 듣는다 */
+  document.getElementById("cal-scope").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-value]");
+    if (b) { scope = b.dataset.value; render(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
