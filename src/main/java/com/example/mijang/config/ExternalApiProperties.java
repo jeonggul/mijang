@@ -16,6 +16,7 @@ public record ExternalApiProperties(
         Alpaca alpaca,
         Finnhub finnhub,
         Bls bls,
+        Alphavantage alphavantage,
         int connectTimeoutMs,
         int readTimeoutMs) {
 
@@ -54,6 +55,14 @@ public record ExternalApiProperties(
 
     /** Finnhub — 뉴스·기업정보·투자지표·경제캘린더. 토큰 하나가 전부다. */
     public record Finnhub(String baseUrl, String apiKey) {
+
+        public boolean configured() {
+            return hasText(apiKey);
+        }
+    }
+
+    /** Alpha Vantage — 실적 발표 일정(EARNINGS_CALENDAR). 무료 키 하나. */
+    public record Alphavantage(String baseUrl, String apiKey) {
 
         public boolean configured() {
             return hasText(apiKey);
