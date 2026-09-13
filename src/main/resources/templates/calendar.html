@@ -28,11 +28,14 @@
   .lg-earn { background: var(--surface-soft); border: 1px solid var(--line); }
   .lg-div { background: var(--line); }
 
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-left: 1px solid var(--line);
+  /* minmax(0,1fr): 1fr 만 쓰면 긴 칩이 열을 밀어 칸 너비가 요일마다 달라진다 */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-left: 1px solid var(--line);
     border-top: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .cal-dow { padding: 8px; text-align: center; font-size: var(--fs-label); color: var(--text-sub);
     background: var(--surface-soft); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .cal-cell { min-height: 108px; padding: 6px; border-right: 1px solid var(--line);
+  .cal-dow.sun { color: var(--rise); }
+  .cal-dow.sat { color: var(--fall); }
+  .cal-cell { min-height: 108px; min-width: 0; padding: 6px; border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line); background: var(--surface); }
   .cal-cell.other { background: var(--surface-soft); opacity: .55; }
   .cal-cell.today .daynum { background: var(--record); color: #fff; border-radius: 50%;
@@ -45,6 +48,9 @@
   .chip.earn { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text); }
   .chip.div { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text-sub); }
   .chip .tk { font-family: var(--font-mono); font-weight: 600; }
+  .chip-more { appearance: none; border: none; background: none; padding: 2px 6px; text-align: left;
+    font-family: inherit; font-size: var(--fs-badge); color: var(--text-sub); cursor: pointer; }
+  .chip-more:hover { color: var(--text); text-decoration: underline; }
   .cal-note { margin-top: 12px; font-size: var(--fs-label); color: var(--text-sub); }
 </style>
 </head>
@@ -99,6 +105,7 @@
   var scope = "ALL";
   var events = [];        // 이번 달치 {d,type,sym,title,note}
   var loadSeq = 0;        // 빠른 달 넘김 때 늦게 온 응답이 덮어쓰지 않게
+  var expanded = {};      // "더보기"로 펼친 칸 (날짜키 → true)
 
   /* 401(비로그인 등)·실패는 빈 배열 — 거시만이라도 보여준다 */
   function call(url) {
@@ -134,6 +141,7 @@
         return { d: new Date(ev.date + "T00:00:00"), type: ev.type,
                  sym: ev.symbol, title: ev.title, note: ev.note };
       });
+      expanded = {};
       render();
     });
   }
@@ -151,8 +159,11 @@
 
     var grid = document.getElementById("cal-grid");
     grid.replaceChildren();
-    ["일", "월", "화", "수", "목", "금", "토"].forEach(function (w) {
-      grid.appendChild(el("div", "cal-dow", w));
+    ["일", "월", "화", "수", "목", "금", "토"].forEach(function (w, i) {
+      var dow = el("div", "cal-dow", w);
+      if (i === 0) dow.classList.add("sun");
+      if (i === 6) dow.classList.add("sat");
+      grid.appendChild(dow);
     });
 
     /* 이벤트를 날짜키로 묶는다 */
@@ -175,13 +186,26 @@
       var evs = byDay[key(day)] || [];
       if (evs.length) {
         var box = el("div", "events");
-        evs.forEach(function (ev) {
+        var k = key(day);
+        /* 5개 이상이면 4개만 + "더보기" — 칸이 무한정 길어지지 않게 */
+        var open = !!expanded[k];
+        var shown = open || evs.length <= 4 ? evs : evs.slice(0, 4);
+        shown.forEach(function (ev) {
           var chip = el("div", "chip " + (CHIP[ev.type] || "eco"));
           if (ev.sym) chip.appendChild(el("span", "tk", ev.sym + " "));
           chip.appendChild(document.createTextNode(ev.title));
           chip.title = (ev.sym ? ev.sym + " · " : "") + ev.title + (ev.note ? " · " + ev.note : "");
           box.appendChild(chip);
         });
+        if (evs.length > 4) {
+          var more = el("button", "chip-more", open ? "접기" : "+" + (evs.length - 4) + "건 더보기");
+          more.type = "button";
+          more.addEventListener("click", function () {
+            expanded[k] = !open;
+            render();
+          });
+          box.appendChild(more);
+        }
         cell.appendChild(box);
       }
       grid.appendChild(cell);
