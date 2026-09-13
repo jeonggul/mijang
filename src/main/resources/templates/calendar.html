@@ -105,7 +105,6 @@
   var scope = "ALL";
   var events = [];        // 이번 달치 {d,type,sym,title,note}
   var loadSeq = 0;        // 빠른 달 넘김 때 늦게 온 응답이 덮어쓰지 않게
-  var expanded = {};      // "더보기"로 펼친 칸 (날짜키 → true)
 
   /* 401(비로그인 등)·실패는 빈 배열 — 거시만이라도 보여준다 */
   function call(url) {
@@ -141,9 +140,13 @@
         return { d: new Date(ev.date + "T00:00:00"), type: ev.type,
                  sym: ev.symbol, title: ev.title, note: ev.note };
       });
-      expanded = {};
       render();
     });
+  }
+
+  /* "더보기" — 그 날 전체 목록 페이지로. 토글 상태(내 종목만)도 같이 넘긴다 */
+  function goDay(dateStr) {
+    location.href = "/calendar/day?date=" + dateStr + (scope === "MINE" ? "&mine=1" : "");
   }
 
   function el(tag, cls, text) {
@@ -186,10 +189,8 @@
       var evs = byDay[key(day)] || [];
       if (evs.length) {
         var box = el("div", "events");
-        var k = key(day);
-        /* 5개 이상이면 4개만 + "더보기" — 칸이 무한정 길어지지 않게 */
-        var open = !!expanded[k];
-        var shown = open || evs.length <= 4 ? evs : evs.slice(0, 4);
+        /* 5개 이상이면 4개만 + "더보기" — 나머지는 하루 일정 페이지에서 본다 */
+        var shown = evs.length <= 4 ? evs : evs.slice(0, 4);
         shown.forEach(function (ev) {
           var chip = el("div", "chip " + (CHIP[ev.type] || "eco"));
           if (ev.sym) chip.appendChild(el("span", "tk", ev.sym + " "));
@@ -198,12 +199,9 @@
           box.appendChild(chip);
         });
         if (evs.length > 4) {
-          var more = el("button", "chip-more", open ? "접기" : "+" + (evs.length - 4) + "건 더보기");
+          var more = el("button", "chip-more", "+" + (evs.length - 4) + "건 더보기");
           more.type = "button";
-          more.addEventListener("click", function () {
-            expanded[k] = !open;
-            render();
-          });
+          more.addEventListener("click", goDay.bind(null, iso(day)));
           box.appendChild(more);
         }
         cell.appendChild(box);

@@ -235,10 +235,19 @@ public class PageController {
         return "watchlist";
     }
 
-    /** 실적·배당·거시 일정 캘린더 (INFO-05·INFO-07). 지금은 하드코딩 샘플로 UI 확정 단계다(4.14). */
+    /** 실적·배당·거시 일정 캘린더 (INFO-05·INFO-07, 4.14). */
     @GetMapping("/calendar")
     public String calendar() {
         return "calendar";
+    }
+
+    /** 하루치 일정 전체 목록. 캘린더 칸의 "더보기"가 여기로 온다. */
+    @GetMapping("/calendar/day")
+    public String calendarDay(@RequestParam(required = false) String date) {
+        if (date == null || !date.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return "redirect:/calendar";
+        }
+        return "calendar-day";
     }
 
     /* ── 커뮤니티 ────────────────────────────────────────────── */
