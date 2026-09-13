@@ -61,8 +61,10 @@ public class EconomicCalendarController {
     /**
      * 기간별 실적 발표 일정(4.14).
      *
-     * <p>{@code mineOnly} 가 true 이고 비로그인이면 내 종목이 빈 집합이라 결과도 빈 목록이다
-     * — 거시 일정과 달리 실적·배당은 종목 종속이라 비로그인 "내 종목만" 은 의미가 없다.
+     * <p>{@code mineOnly} 가 false 면 전체(필터 없음). true 면 내 종목(보유 ∪ 관심)으로
+     * 거른다 — 비로그인이거나 로그인했어도 보유·관심이 하나도 없으면 내 종목 집합이
+     * 빈 집합이라 결과도 빈 목록이다. 거시 일정과 달리 실적·배당은 종목 종속이라
+     * "내 종목만" 인데 종목이 없으면 보여줄 것이 없다.
      */
     @GetMapping("/earnings")
     public ApiResponse<List<CalendarEventResponse>> earnings(
@@ -70,7 +72,7 @@ public class EconomicCalendarController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "false") boolean mineOnly) {
-        Set<String> mine = mineOnly ? calendarService.mySymbols(me == null ? null : me.userId()) : Set.of();
+        Set<String> mine = mineOnly ? calendarService.mySymbols(me == null ? null : me.userId()) : null;
         return ApiResponse.ok(calendarService.earnings(from, to, mine));
     }
 
@@ -81,7 +83,7 @@ public class EconomicCalendarController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "false") boolean mineOnly) {
-        Set<String> mine = mineOnly ? calendarService.mySymbols(me == null ? null : me.userId()) : Set.of();
+        Set<String> mine = mineOnly ? calendarService.mySymbols(me == null ? null : me.userId()) : null;
         return ApiResponse.ok(calendarService.dividends(from, to, mine));
     }
 
@@ -100,7 +102,7 @@ public class EconomicCalendarController {
             @RequestParam(defaultValue = "false") boolean highOnly) {
         LocalDate today = LocalDate.now();
         LocalDate end = today.plusMonths(1);
-        Set<String> mine = mineOnly ? calendarService.mySymbols(me == null ? null : me.userId()) : Set.of();
+        Set<String> mine = mineOnly ? calendarService.mySymbols(me == null ? null : me.userId()) : null;
 
         List<CalendarEventResponse> merged = new ArrayList<>();
         for (EconomicEventResponse e : economicCalendarService.events(today, end, highOnly)) {

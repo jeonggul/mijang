@@ -45,10 +45,17 @@ public class CalendarService {
         return s;
     }
 
+    /**
+     * 기간 내 실적 발표.
+     *
+     * @param mine null 이면 전체(필터 없음). 비어 있지 않은 집합이면 그 심볼만.
+     *             <b>빈 집합이면 전부 걸러져 빈 목록</b> — "내 종목"인데 종목이 하나도
+     *             없다는 뜻이라, null(전체)과 같이 취급하면 안 된다.
+     */
     public List<CalendarEventResponse> earnings(LocalDate from, LocalDate to, Set<String> mine) {
         List<CalendarEventResponse> out = new ArrayList<>();
         for (StockEarnings e : earningsMapper.findByReportDateBetween(from, to)) {
-            if (!mine.isEmpty() && !mine.contains(e.symbol().toUpperCase(Locale.ROOT))) {
+            if (mine != null && !mine.contains(e.symbol().toUpperCase(Locale.ROOT))) {
                 continue;
             }
             out.add(new CalendarEventResponse(e.reportDate(), CalendarEventResponse.TYPE_EARNINGS,
@@ -57,10 +64,16 @@ public class CalendarService {
         return out;
     }
 
+    /**
+     * 기간 내 배당(락일·지급일).
+     *
+     * @param mine null 이면 전체(필터 없음). 비어 있지 않은 집합이면 그 심볼만.
+     *             <b>빈 집합이면 전부 걸러져 빈 목록</b> — earnings 와 같은 규칙.
+     */
     public List<CalendarEventResponse> dividends(LocalDate from, LocalDate to, Set<String> mine) {
         List<CalendarEventResponse> out = new ArrayList<>();
         for (StockDividend d : dividendMapper.findByExDateBetween(from, to)) {
-            if (!mine.isEmpty() && !mine.contains(d.symbol().toUpperCase(Locale.ROOT))) {
+            if (mine != null && !mine.contains(d.symbol().toUpperCase(Locale.ROOT))) {
                 continue;
             }
             String amount = d.amountPerShare() == null ? null

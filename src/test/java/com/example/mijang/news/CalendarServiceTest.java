@@ -35,15 +35,19 @@ class CalendarServiceTest {
         StockEarningsMapper em = stubEarnings(List.of(earnings, other));
         CalendarService svc = new CalendarService(em, null, null, null);
 
-        // 전체
-        List<CalendarEventResponse> all = svc.earnings(from, to, Set.of());
+        // null = 필터 없음(전체)
+        List<CalendarEventResponse> all = svc.earnings(from, to, null);
         assertThat(all).extracting(CalendarEventResponse::symbol)
                 .containsExactlyInAnyOrder("AAPL", "ZZZ");
         assertThat(all).allMatch(e -> e.type().equals("EARNINGS"));
 
-        // 내 종목만
+        // 내 종목만 — 비어 있지 않은 집합이면 그 심볼만
         List<CalendarEventResponse> mine = svc.earnings(from, to, Set.of("AAPL"));
         assertThat(mine).extracting(CalendarEventResponse::symbol).containsExactly("AAPL");
+
+        // 빈 집합(내 종목이 하나도 없음)이면 전부 걸러져 빈 목록 — null(전체)과 다르다
+        List<CalendarEventResponse> none = svc.earnings(from, to, Set.of());
+        assertThat(none).isEmpty();
     }
 
     @Test
@@ -53,7 +57,7 @@ class CalendarServiceTest {
         StockEarningsMapper em = stubEarnings(List.of(earnings));
         CalendarService svc = new CalendarService(em, null, null, null);
 
-        List<CalendarEventResponse> all = svc.earnings(from, to, Set.of());
+        List<CalendarEventResponse> all = svc.earnings(from, to, null);
         assertThat(all).hasSize(1);
         assertThat(all.get(0).note()).isEqualTo("장후 · EPS 2.35");
         assertThat(all.get(0).title()).isEqualTo("실적 발표");
@@ -74,7 +78,7 @@ class CalendarServiceTest {
         when(dm.findByExDateBetween(from, to)).thenReturn(List.of(d1, d2, d3));
         CalendarService svc = new CalendarService(null, dm, null, null);
 
-        List<CalendarEventResponse> events = svc.dividends(from, to, Set.of());
+        List<CalendarEventResponse> events = svc.dividends(from, to, null);
 
         assertThat(events).hasSize(4); // AAPL 락일, MSFT 락일+지급, KO 락일
         assertThat(events).allMatch(e -> e.type().equals("DIVIDEND"));
@@ -100,6 +104,10 @@ class CalendarServiceTest {
 
         List<CalendarEventResponse> mine = svc.dividends(from, to, Set.of("AAPL"));
         assertThat(mine).extracting(CalendarEventResponse::symbol).containsExactly("AAPL");
+
+        // 빈 집합이면 전부 걸러져 빈 목록 — mineOnly=true 인데 내 종목이 없는 경우
+        List<CalendarEventResponse> none = svc.dividends(from, to, Set.of());
+        assertThat(none).isEmpty();
     }
 
     @Test
