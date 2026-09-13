@@ -93,6 +93,18 @@ public class ExternalApiConfig {
     }
 
     /**
+     * Alpha Vantage — 실적 발표 일정. 키는 쿼리 파라미터로만 받는다(헤더 방식이 없다).
+     * CSV 를 돌려주므로 본문은 문자열로 받아 클라이언트가 파싱한다.
+     */
+    @Bean
+    public RestClient alphaVantageClient() {
+        return RestClient.builder()
+                .baseUrl(props.alphavantage().baseUrl())
+                .requestFactory(requestFactory())
+                .build();
+    }
+
+    /**
      * BLS 발표 일정 — 인증이 없다. 정부 사이트라 SEC 와 마찬가지로 연락처가 담긴 User-Agent 를 붙인다.
      */
     @Bean

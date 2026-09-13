@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.dividend.mapper.StockEarningsMapper">
+
+  <!-- 벤더가 estimate·time 을 정정해 다시 보낼 수 있어 upsert 다 -->
+  <insert id="upsert">
+    INSERT INTO stock_earnings
+      (symbol, report_date, fiscal_date_ending, estimate_eps, time_of_day, synced_at)
+    VALUES
+      (#{symbol}, #{reportDate}, #{fiscalDateEnding}, #{estimateEps}, #{timeOfDay}, CURRENT_TIMESTAMP(3))
+    ON DUPLICATE KEY UPDATE
+      fiscal_date_ending = VALUES(fiscal_date_ending),
+      estimate_eps       = VALUES(estimate_eps),
+      time_of_day        = VALUES(time_of_day),
+      synced_at          = VALUES(synced_at)
+  </insert>
+
+  <select id="findByReportDateBetween"
+          resultType="com.example.mijang.dividend.domain.StockEarnings">
+    SELECT symbol, report_date AS reportDate, fiscal_date_ending AS fiscalDateEnding,
+           estimate_eps AS estimateEps, time_of_day AS timeOfDay
+      FROM stock_earnings
+     WHERE report_date BETWEEN #{from} AND #{to}
+     ORDER BY report_date, symbol
+  </select>
+
+  <select id="findNextBySymbol"
+          resultType="com.example.mijang.dividend.domain.StockEarnings">
+    SELECT symbol, report_date AS reportDate, fiscal_date_ending AS fiscalDateEnding,
+           estimate_eps AS estimateEps, time_of_day AS timeOfDay
+      FROM stock_earnings
+     WHERE symbol = #{symbol} AND report_date &gt;= #{onOrAfter}
+     ORDER BY report_date
+     LIMIT 1
+  </select>
+</mapper>

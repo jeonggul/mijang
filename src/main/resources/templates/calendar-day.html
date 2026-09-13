@@ -1,0 +1,122 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 하루 일정</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<style th:attr="nonce=${cspNonce}">
+  /* 하루 일정 목록 — 캘린더 "더보기"의 목적지 (4.14) */
+  .day-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .day-head h1 { margin: 0; font-size: var(--fs-h1); }
+  .day-back { appearance: none; background: none; border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: var(--fs-label);
+    color: var(--text); cursor: pointer; }
+  .day-back:hover { background: var(--surface-soft); }
+  .day-list { display: flex; flex-direction: column; border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .day-row { display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+  .day-row:last-child { border-bottom: none; }
+  a.day-row { cursor: pointer; }
+  a.day-row:hover { background: var(--surface-soft); }
+  .day-row .tag { font-size: var(--fs-badge); padding: 2px 8px; border-radius: 5px; flex: none; }
+  .tag.eco { background: var(--record); color: #fff; }
+  .tag.earn { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text); }
+  .tag.div { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text-sub); }
+  .day-row .tk { font-family: var(--font-mono); font-weight: 600; flex: none; }
+  .day-row .tt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .day-row .nt { margin-left: auto; flex: none; font-size: var(--fs-label); color: var(--text-sub); }
+  .day-empty { padding: 28px 16px; text-align: center; color: var(--text-sub); font-size: var(--fs-label); }
+</style>
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <div class="day-head">
+    <button type="button" class="day-back" id="day-back">‹ 이전으로</button>
+    <h1 id="day-title">일정</h1>
+  </div>
+
+  <div class="day-list" id="day-list"><!-- 스크립트가 채운다 --></div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 하루치 거시·실적·배당을 한 목록으로. 종목 이벤트는 누르면 종목 상세로 간다. */
+(function () {
+  var q = new URLSearchParams(location.search);
+  var date = q.get("date");
+  var mineOnly = q.get("mine") === "1";
+  var CHIP = { ECONOMIC: "eco", EARNINGS: "earn", DIVIDEND: "div" };
+
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) { location.replace("/calendar"); return; }
+
+  var d = new Date(date + "T00:00:00");
+  document.getElementById("day-title").textContent =
+      new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "short" }).format(d)
+      + " 일정" + (mineOnly ? " · 내 종목만" : "");
+
+  document.getElementById("day-back").addEventListener("click", function () {
+    if (history.length > 1) history.back();
+    else location.href = "/calendar";
+  });
+
+  function call(url) {
+    return fetch(url)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (body) { return body && body.success && body.data ? body.data : []; })
+        .catch(function () { return []; });
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  var range = "from=" + date + "&to=" + date;
+  var list = document.getElementById("day-list");
+  list.appendChild(el("div", "day-empty", "불러오는 중…"));
+
+  Promise.all([
+    call("/api/calendar/economic?" + range),
+    call("/api/calendar/earnings?" + range + "&mineOnly=" + mineOnly),
+    call("/api/calendar/dividends?" + range + "&mineOnly=" + mineOnly)
+  ]).then(function (res) {
+    var rows = res[0].map(function (ev) {
+      return { type: "ECONOMIC", title: ev.name,
+               note: [ev.timeEt ? ev.timeEt + " ET" : "", ev.note || ""].filter(Boolean).join(" · ") };
+    }).concat(res[1], res[2]);
+
+    list.replaceChildren();
+    if (!rows.length) {
+      list.appendChild(el("div", "day-empty", "이 날에는 일정이 없습니다"));
+      return;
+    }
+    rows.forEach(function (ev) {
+      /* 종목 이벤트만 링크 — 거시 지표는 갈 종목 상세가 없다 */
+      var row = ev.symbol
+          ? el("a", "day-row")
+          : el("div", "day-row");
+      if (ev.symbol) row.href = "/stock?symbol=" + encodeURIComponent(ev.symbol);
+      var label = ev.type === "ECONOMIC" ? "거시" : ev.type === "EARNINGS" ? "실적" : "배당";
+      row.appendChild(el("span", "tag " + (CHIP[ev.type] || "eco"), label));
+      if (ev.symbol) row.appendChild(el("span", "tk", ev.symbol));
+      row.appendChild(el("span", "tt", ev.title));
+      if (ev.note) row.appendChild(el("span", "nt", ev.note));
+      list.appendChild(row);
+    });
+  });
+})();
+</script>
+</body>
+</html>

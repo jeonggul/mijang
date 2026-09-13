@@ -1,0 +1,235 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 일정</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<style th:attr="nonce=${cspNonce}">
+  /* 캘린더 — UI 확정용. 확정되면 style.css 로 옮긴다(4.14 단계 0) */
+  .cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .cal-head h1 { margin: 0; font-size: var(--fs-h1); }
+  .cal-nav { display: flex; align-items: center; gap: 6px; }
+  .cal-nav button { appearance: none; background: none; border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: var(--fs-label);
+    color: var(--text); cursor: pointer; }
+  .cal-nav button:hover { background: var(--surface-soft); }
+  .cal-month { font-size: var(--fs-card); font-weight: 600; min-width: 130px; text-align: center; }
+  .cal-tools { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+  .cal-legend { display: flex; gap: 14px; font-size: var(--fs-label); color: var(--text-sub); }
+  .cal-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px;
+    margin-right: 5px; vertical-align: middle; }
+  .lg-eco { background: var(--record); }
+  .lg-earn { background: var(--surface-soft); border: 1px solid var(--line); }
+  .lg-div { background: var(--line); }
+
+  /* minmax(0,1fr): 1fr 만 쓰면 긴 칩이 열을 밀어 칸 너비가 요일마다 달라진다 */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-left: 1px solid var(--line);
+    border-top: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .cal-dow { padding: 8px; text-align: center; font-size: var(--fs-label); color: var(--text-sub);
+    background: var(--surface-soft); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .cal-dow.sun { color: var(--rise); }
+  .cal-dow.sat { color: var(--fall); }
+  .cal-cell { min-height: 108px; min-width: 0; padding: 6px; border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line); background: var(--surface); }
+  .cal-cell.other { background: var(--surface-soft); opacity: .55; }
+  .cal-cell.today .daynum { background: var(--record); color: #fff; border-radius: 50%;
+    width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; }
+  .daynum { font-size: var(--fs-label); color: var(--text-sub); }
+  .cal-cell .events { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+  .chip { font-size: var(--fs-badge); padding: 2px 6px; border-radius: 5px; line-height: 1.35;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
+  .chip.eco { background: var(--record); color: #fff; }
+  .chip.earn { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text); }
+  .chip.div { background: var(--surface-soft); border: 1px solid var(--line); color: var(--text-sub); }
+  .chip .tk { font-family: var(--font-mono); font-weight: 600; }
+  .chip-more { appearance: none; border: none; background: none; padding: 2px 6px; text-align: left;
+    font-family: inherit; font-size: var(--fs-badge); color: var(--text-sub); cursor: pointer; }
+  .chip-more:hover { color: var(--text); text-decoration: underline; }
+  .cal-note { margin-top: 12px; font-size: var(--fs-label); color: var(--text-sub); }
+</style>
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <div class="cal-head">
+    <h1>일정</h1>
+    <div class="cal-nav">
+      <button type="button" id="cal-prev" aria-label="이전 달">‹</button>
+      <span class="cal-month" id="cal-month">—</span>
+      <button type="button" id="cal-next" aria-label="다음 달">›</button>
+      <button type="button" id="cal-today">오늘</button>
+    </div>
+    <div class="cal-tools">
+      <div class="pills" data-toggle-group id="cal-scope">
+        <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+        <button type="button" data-value="MINE" aria-pressed="false">내 종목만</button>
+      </div>
+      <div class="cal-legend">
+        <span><i class="lg-eco"></i>거시 지표</span>
+        <span><i class="lg-earn"></i>실적</span>
+        <span><i class="lg-div"></i>배당</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cal-grid" id="cal-grid"><!-- 스크립트가 채운다 --></div>
+
+  <p class="cal-note">※ 실적·배당은 수집된 종목만 표시됩니다.</p>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 실적·배당·거시 일정 캘린더 (4.14). 월별로 /api/calendar/economic·earnings·dividends 를
+   조회해 한 달력에 합쳐 그린다. "내 종목만"은 실적·배당에만 적용(mineOnly), 거시는 전체 공통. */
+(function () {
+  var CHIP = { ECONOMIC: "eco", EARNINGS: "earn", DIVIDEND: "div" };
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  function key(d) { return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+  function iso(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
+        + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  var view = new Date(today.getFullYear(), today.getMonth(), 1);
+  var scope = "ALL";
+  var events = [];        // 이번 달치 {d,type,sym,title,note}
+  var loadSeq = 0;        // 빠른 달 넘김 때 늦게 온 응답이 덮어쓰지 않게
+
+  /* 401(비로그인 등)·실패는 빈 배열 — 거시만이라도 보여준다 */
+  function call(url) {
+    return fetch(url)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (body) { return body && body.success && body.data ? body.data : []; })
+        .catch(function () { return []; });
+  }
+
+  function load() {
+    var y = view.getFullYear(), m = view.getMonth();
+    var from = iso(new Date(y, m, 1));
+    var to = iso(new Date(y, m + 1, 0));
+    var range = "from=" + from + "&to=" + to;
+    var mineOnly = "&mineOnly=" + (scope === "MINE");
+    var seq = ++loadSeq;
+
+    document.getElementById("cal-month").textContent = y + "년 " + (m + 1) + "월";
+    var grid = document.getElementById("cal-grid");
+    grid.replaceChildren(el("div", "cal-note", "불러오는 중…"));
+
+    Promise.all([
+      call("/api/calendar/economic?" + range),
+      call("/api/calendar/earnings?" + range + mineOnly),
+      call("/api/calendar/dividends?" + range + mineOnly)
+    ]).then(function (res) {
+      if (seq !== loadSeq) return;                       // 더 새 요청이 이미 나갔다
+      var eco = res[0].map(function (ev) {
+        return { date: ev.date, type: "ECONOMIC", title: ev.name,
+                 note: [ev.timeEt ? ev.timeEt + " ET" : "", ev.note || ""].filter(Boolean).join(" · ") };
+      });
+      events = eco.concat(res[1], res[2]).map(function (ev) {
+        return { d: new Date(ev.date + "T00:00:00"), type: ev.type,
+                 sym: ev.symbol, title: ev.title, note: ev.note };
+      });
+      render();
+    });
+  }
+
+  /* "더보기" — 그 날 전체 목록 페이지로. 토글 상태(내 종목만)도 같이 넘긴다 */
+  function goDay(dateStr) {
+    location.href = "/calendar/day?date=" + dateStr + (scope === "MINE" ? "&mine=1" : "");
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function render() {
+    var y = view.getFullYear(), m = view.getMonth();
+    document.getElementById("cal-month").textContent = y + "년 " + (m + 1) + "월";
+
+    var grid = document.getElementById("cal-grid");
+    grid.replaceChildren();
+    ["일", "월", "화", "수", "목", "금", "토"].forEach(function (w, i) {
+      var dow = el("div", "cal-dow", w);
+      if (i === 0) dow.classList.add("sun");
+      if (i === 6) dow.classList.add("sat");
+      grid.appendChild(dow);
+    });
+
+    /* 이벤트를 날짜키로 묶는다 */
+    var byDay = {};
+    events.forEach(function (ev) {
+      (byDay[key(ev.d)] = byDay[key(ev.d)] || []).push(ev);
+    });
+
+    var first = new Date(y, m, 1);
+    var start = new Date(first);
+    start.setDate(1 - first.getDay());                   // 그 주 일요일부터
+    for (var i = 0; i < 42; i++) {
+      var day = new Date(start);
+      day.setDate(start.getDate() + i);
+      var cell = el("div", "cal-cell");
+      if (day.getMonth() !== m) cell.classList.add("other");
+      if (day.getTime() === today.getTime()) cell.classList.add("today");
+      cell.appendChild(el("span", "daynum", String(day.getDate())));
+
+      var evs = byDay[key(day)] || [];
+      if (evs.length) {
+        var box = el("div", "events");
+        /* 5개 이상이면 4개만 + "더보기" — 나머지는 하루 일정 페이지에서 본다 */
+        var shown = evs.length <= 4 ? evs : evs.slice(0, 4);
+        shown.forEach(function (ev) {
+          var chip = el("div", "chip " + (CHIP[ev.type] || "eco"));
+          if (ev.sym) chip.appendChild(el("span", "tk", ev.sym + " "));
+          chip.appendChild(document.createTextNode(ev.title));
+          chip.title = (ev.sym ? ev.sym + " · " : "") + ev.title + (ev.note ? " · " + ev.note : "");
+          box.appendChild(chip);
+        });
+        if (evs.length > 4) {
+          var more = el("button", "chip-more", "+" + (evs.length - 4) + "건 더보기");
+          more.type = "button";
+          more.addEventListener("click", goDay.bind(null, iso(day)));
+          box.appendChild(more);
+        }
+        cell.appendChild(box);
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  document.getElementById("cal-prev").addEventListener("click", function () {
+    view.setMonth(view.getMonth() - 1); load();
+  });
+  document.getElementById("cal-next").addEventListener("click", function () {
+    view.setMonth(view.getMonth() + 1); load();
+  });
+  document.getElementById("cal-today").addEventListener("click", function () {
+    view = new Date(today.getFullYear(), today.getMonth(), 1); load();
+  });
+  document.getElementById("cal-scope").addEventListener("mj:change", function (e) {
+    scope = e.detail; load();
+  });
+  /* pills 토글이 mj:change 를 안 쏘는 환경 대비 — 클릭도 직접 듣는다 */
+  document.getElementById("cal-scope").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-value]");
+    if (b) { scope = b.dataset.value; load(); }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

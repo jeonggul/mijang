@@ -41,6 +41,7 @@
     var path = location.pathname;
     var key = path.startsWith("/portfolio") || path.startsWith("/record") || path.startsWith("/report") || path.startsWith("/retrospect") ? "portfolio"
       : path.startsWith("/search") || path.startsWith("/stock") || path.startsWith("/watchlist") ? "search"
+      : path.startsWith("/calendar") ? "calendar"
       : path.startsWith("/community") ? "community" : path.startsWith("/dashboard") ? "dashboard" : "";
     header.querySelectorAll("[data-nav]").forEach(function (a) {
       if (a.dataset.nav === key) a.setAttribute("aria-current", "page");

@@ -7,6 +7,7 @@ import com.example.mijang.stock.dto.ChartResponse;
 import com.example.mijang.stock.dto.StockMetricsResponse;
 import com.example.mijang.stock.dto.StockDetailResponse;
 import com.example.mijang.stock.dto.StockSearchResponse;
+import com.example.mijang.news.service.CalendarService;
 import com.example.mijang.stock.service.ChartService;
 import com.example.mijang.stock.service.StockMetricsService;
 import com.example.mijang.stock.service.DailyPriceService;
@@ -37,6 +38,7 @@ public class StockController {
     private final DailyPriceService dailyPriceService;
     private final ChartService chartService;
     private final StockMetricsService stockMetricsService;
+    private final CalendarService calendarService;
 
     /**
      * 종목 검색. {@code SEARCH-01}·{@code SEARCH-02}
@@ -109,5 +111,11 @@ public class StockController {
             @PathVariable String symbol,
             @RequestParam(defaultValue = "1M") String range) {
         return ApiResponse.ok(dailyPriceService.candles(symbol, range));
+    }
+
+    /** 이 종목의 다음 실적·배당락(4.14). 둘 다 없으면 필드가 null 이다. */
+    @GetMapping("/{symbol}/next-events")
+    public ApiResponse<CalendarService.NextEvents> nextEvents(@PathVariable String symbol) {
+        return ApiResponse.ok(calendarService.nextEvents(symbol));
     }
 }
