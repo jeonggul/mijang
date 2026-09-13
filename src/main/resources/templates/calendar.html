@@ -76,53 +76,66 @@
 
   <div class="cal-grid" id="cal-grid"><!-- 스크립트가 채운다 --></div>
 
-  <p class="cal-note">※ 하드코딩 샘플입니다(UI 확정용). 배당은 수집된 종목만 표시됩니다.</p>
+  <p class="cal-note">※ 실적·배당은 수집된 종목만 표시됩니다.</p>
 </div>
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}">
-/* 실적·배당·거시 일정 캘린더 — 하드코딩 샘플 (4.14 단계 0).
-   날짜는 "오늘 기준 상대"로 만들어, 언제 열어도 이번 달에 이벤트가 보이게 한다.
-   확정되면 이 SAMPLE 배열을 /api/calendar/* 호출로 교체한다. */
+/* 실적·배당·거시 일정 캘린더 (4.14). 월별로 /api/calendar/economic·earnings·dividends 를
+   조회해 한 달력에 합쳐 그린다. "내 종목만"은 실적·배당에만 적용(mineOnly), 거시는 전체 공통. */
 (function () {
-  var MINE = { AAPL: 1, TSLA: 1, MSFT: 1, QQQ: 1 };   // 하드코딩 "내 종목"
-  var PROVIDER = { EARN: "earn", DIV: "div", ECO: "eco" };
+  var CHIP = { ECONOMIC: "eco", EARNINGS: "earn", DIVIDEND: "div" };
 
   var today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  /* offset = 오늘로부터 며칠 뒤. 이번 달 여기저기에 뿌린다 */
-  function rel(offset) {
-    var d = new Date(today);
-    d.setDate(d.getDate() + offset);
-    return d;
-  }
   function key(d) { return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
-
-  var SAMPLE = [
-    { d: rel(-3), type: "ECO",  title: "고용지표 (BLS)", note: "8:30 ET" },
-    { d: rel(1),  type: "EARN", sym: "AAPL", title: "실적 발표", note: "장후 · EPS 2.35" },
-    { d: rel(1),  type: "EARN", sym: "NKE",  title: "실적 발표", note: "장후" },
-    { d: rel(2),  type: "DIV",  sym: "MSFT", title: "배당락", note: "$0.83" },
-    { d: rel(4),  type: "ECO",  title: "CPI (BLS)", note: "8:30 ET" },
-    { d: rel(4),  type: "EARN", sym: "TSLA", title: "실적 발표", note: "장후 · EPS 0.62" },
-    { d: rel(6),  type: "DIV",  sym: "AAPL", title: "배당 지급", note: "$0.25" },
-    { d: rel(7),  type: "EARN", sym: "MSFT", title: "실적 발표", note: "장후" },
-    { d: rel(9),  type: "ECO",  title: "FOMC 성명", note: "14:00 ET" },
-    { d: rel(11), type: "EARN", sym: "AMZN", title: "실적 발표", note: "장후" },
-    { d: rel(12), type: "DIV",  sym: "QQQ",  title: "배당락", note: "$0.71" },
-    { d: rel(14), type: "EARN", sym: "GOOGL", title: "실적 발표", note: "장전" },
-    { d: rel(18), type: "EARN", sym: "TSLA", title: "실적 발표(추정)", note: "미정" },
-    { d: rel(20), type: "ECO",  title: "PPI (BLS)", note: "8:30 ET" }
-  ];
+  function iso(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
+        + "-" + String(d.getDate()).padStart(2, "0");
+  }
 
   var view = new Date(today.getFullYear(), today.getMonth(), 1);
   var scope = "ALL";
+  var events = [];        // 이번 달치 {d,type,sym,title,note}
+  var loadSeq = 0;        // 빠른 달 넘김 때 늦게 온 응답이 덮어쓰지 않게
 
-  function visible(ev) {
-    if (ev.type === "ECO") return true;                 // 거시는 항상
-    if (scope === "ALL") return true;
-    return ev.sym && MINE[ev.sym];                       // 내 종목만
+  /* 401(비로그인 등)·실패는 빈 배열 — 거시만이라도 보여준다 */
+  function call(url) {
+    return fetch(url)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (body) { return body && body.success && body.data ? body.data : []; })
+        .catch(function () { return []; });
+  }
+
+  function load() {
+    var y = view.getFullYear(), m = view.getMonth();
+    var from = iso(new Date(y, m, 1));
+    var to = iso(new Date(y, m + 1, 0));
+    var range = "from=" + from + "&to=" + to;
+    var mineOnly = "&mineOnly=" + (scope === "MINE");
+    var seq = ++loadSeq;
+
+    document.getElementById("cal-month").textContent = y + "년 " + (m + 1) + "월";
+    var grid = document.getElementById("cal-grid");
+    grid.replaceChildren(el("div", "cal-note", "불러오는 중…"));
+
+    Promise.all([
+      call("/api/calendar/economic?" + range),
+      call("/api/calendar/earnings?" + range + mineOnly),
+      call("/api/calendar/dividends?" + range + mineOnly)
+    ]).then(function (res) {
+      if (seq !== loadSeq) return;                       // 더 새 요청이 이미 나갔다
+      var eco = res[0].map(function (ev) {
+        return { date: ev.date, type: "ECONOMIC", title: ev.name,
+                 note: [ev.timeEt ? ev.timeEt + " ET" : "", ev.note || ""].filter(Boolean).join(" · ") };
+      });
+      events = eco.concat(res[1], res[2]).map(function (ev) {
+        return { d: new Date(ev.date + "T00:00:00"), type: ev.type,
+                 sym: ev.symbol, title: ev.title, note: ev.note };
+      });
+      render();
+    });
   }
 
   function el(tag, cls, text) {
@@ -144,7 +157,7 @@
 
     /* 이벤트를 날짜키로 묶는다 */
     var byDay = {};
-    SAMPLE.filter(visible).forEach(function (ev) {
+    events.forEach(function (ev) {
       (byDay[key(ev.d)] = byDay[key(ev.d)] || []).push(ev);
     });
 
@@ -163,7 +176,7 @@
       if (evs.length) {
         var box = el("div", "events");
         evs.forEach(function (ev) {
-          var chip = el("div", "chip " + PROVIDER[ev.type === "ECO" ? "ECO" : ev.type]);
+          var chip = el("div", "chip " + (CHIP[ev.type] || "eco"));
           if (ev.sym) chip.appendChild(el("span", "tk", ev.sym + " "));
           chip.appendChild(document.createTextNode(ev.title));
           chip.title = (ev.sym ? ev.sym + " · " : "") + ev.title + (ev.note ? " · " + ev.note : "");
@@ -176,24 +189,24 @@
   }
 
   document.getElementById("cal-prev").addEventListener("click", function () {
-    view.setMonth(view.getMonth() - 1); render();
+    view.setMonth(view.getMonth() - 1); load();
   });
   document.getElementById("cal-next").addEventListener("click", function () {
-    view.setMonth(view.getMonth() + 1); render();
+    view.setMonth(view.getMonth() + 1); load();
   });
   document.getElementById("cal-today").addEventListener("click", function () {
-    view = new Date(today.getFullYear(), today.getMonth(), 1); render();
+    view = new Date(today.getFullYear(), today.getMonth(), 1); load();
   });
   document.getElementById("cal-scope").addEventListener("mj:change", function (e) {
-    scope = e.detail; render();
+    scope = e.detail; load();
   });
   /* pills 토글이 mj:change 를 안 쏘는 환경 대비 — 클릭도 직접 듣는다 */
   document.getElementById("cal-scope").addEventListener("click", function (e) {
     var b = e.target.closest("[data-value]");
-    if (b) { scope = b.dataset.value; render(); }
+    if (b) { scope = b.dataset.value; load(); }
   });
 
-  render();
+  load();
 })();
 </script>
 </body>
