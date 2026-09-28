@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  MarketDayMapper.xml — 거래일 달력 SQL
-
-  이 파일이 하는 일
-    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
-    조회 컬럼 순서가 MarketDay record 의 선언 순서와 같아야 한다 —
-    이름이 아니라 자리로 매핑되므로 하나만 어긋나도 값이 뒤바뀐다.
--->
+<!-- MarketDayMapper.xml — 거래일 달력 SQL. 자리 매핑이라 조회 컬럼 순서가 MarketDay record 선언 순서와 같아야 한다. -->
 <mapper namespace="com.example.mijang.market.mapper.MarketDayMapper">
 
     <sql id="cols">

@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  PortfolioMapper.xml — 포트폴리오 SQL
-
-  이 파일이 하는 일
-    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
--->
+<!-- PortfolioMapper.xml — 포트폴리오 SQL. -->
 <mapper namespace="com.example.mijang.portfolio.mapper.PortfolioMapper">
 
     <select id="findDefaultId" parameterType="long" resultType="java.lang.Long">

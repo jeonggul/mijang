@@ -43,9 +43,7 @@
     <p class="nav-label">보유 종목</p>
     <ul class="holdings-nav" id="rp-nav"><!-- 스크립트가 채운다 --></ul>
 
-    <!-- 화면 설계서가 리포트·배당·양도세를 포트폴리오 영역으로 묶는다.
-         이 링크들이 원래 알림·포트폴리오 드롭다운 목업 안에 있다가 목업을
-         걷어낼 때 같이 사라졌다 — 완성된 화면이 주소로만 닿는 상태였다 -->
+    <!-- 포트폴리오 영역 화면(보유·리포트·배당·양도세) 링크 -->
     <p class="nav-label">포트폴리오 화면</p>
     <ul class="holdings-nav">
       <li><a th:href="@{/portfolio}"><span class="tk">보유 현황</span></a></li>
@@ -137,10 +135,7 @@
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
 <script th:attr="nonce=${cspNonce}">
-/* 수익률 리포트 (PROFIT-06 · PROFIT-09)
-   스냅샷 배치가 찍어 둔 값을 읽기만 한다. 손익 계산은 여기서 하지 않는다 —
-   대시보드와 같은 ProfitLossCalculator 가 이미 계산해 스냅샷에 박아 두었다(2.2).
-   화면이 만드는 것은 월별로 접는 뺄셈뿐이고, 그건 저장되는 값이 아니다. */
+/* 수익률 리포트 (PROFIT-06 · PROFIT-09). 스냅샷 값을 읽기만 하고 손익 계산은 하지 않는다 */
 (function () {
   var rows = document.getElementById("rp-rows");
   if (!rows) return;
@@ -187,9 +182,7 @@
     return iso(d);
   }
 
-  /* ── 상단 카드 — 지금 시점의 손익 분해 ──────────────────────
-     스냅샷이 아니라 손익 분해 API 를 쓴다. 오늘치 스냅샷은 장 마감 배치가 돌기 전까지
-     없어서, 스냅샷으로 채우면 오늘 화면이 어제 값을 보여준다 */
+  /* ── 상단 카드 ── 손익 분해 API 를 쓴다. 오늘치 스냅샷은 배치 전까지 없어 어제 값이 된다 */
   function drawSummary(pnl) {
     var chip = document.getElementById("rp-chip");
     if (!pnl) {
@@ -215,9 +208,7 @@
     chip.hidden = pnl.state !== "OFFSET";
   }
 
-  /* ── 누적 손익 추이 — 선 세 개 ──────────────────────────────
-     세 선을 같은 축에 놓아야 서로 비교가 된다. 각자 최대값으로 늘리면
-     환차손익이 주가손익만큼 커 보인다 */
+  /* ── 누적 손익 추이 ── 선 세 개를 같은 축에 그린다 */
   function drawChart(series) {
     var empty = document.getElementById("ln-empty");
     var ids = { "ln-price": "pricePnlKrw", "ln-fx": "fxPnlKrw", "ln-total": "totalPnlKrw" };
@@ -266,11 +257,7 @@
     });
   }
 
-  /* ── 월별 손익 ──────────────────────────────────────────────
-     스냅샷의 손익은 그 시점의 **누적** 값이다. 월별 손익은 월말 누적에서
-     전월말 누적을 뺀 값이고, 수익률은 평가액 기준으로 그 달의 변화를 본다.
-     구간의 첫 달은 비교할 전월이 구간 밖이라 — 로 둔다. 0 으로 두면 그 달에
-     아무 일도 없었던 것처럼 보인다. */
+  /* ── 월별 손익 ── 월말 누적에서 전월말 누적을 뺀다. 구간 첫 달은 전월이 없어 — 로 둔다 */
   function monthlyRows(series) {
     var lastOfMonth = {};
     series.forEach(function (p) { lastOfMonth[p.snapshotDate.slice(0, 7)] = p; });
@@ -310,9 +297,7 @@
       tr.innerHTML = '<td></td><td class="r num"></td><td class="r num"></td>' +
                      '<td class="r num"></td><td class="r num"></td>';
       tr.children[0].textContent = r.month;
-      /* 대괄호 두 개가 잇달아 붙는 표기를 쓰지 않는다 — Thymeleaf 가 그것을 인라인 표현식
-         여는 기호로 읽어 템플릿 파싱이 통째로 깨진다. 응답이 렌더 도중 끊겨 브라우저는
-         빈 화면만 보여주고, 콘솔에도 원인이 남지 않아 찾기가 어렵다 */
+      /* 대괄호 중첩 표기를 쓰지 않는다 — Thymeleaf 가 인라인 표현식으로 읽어 파싱이 깨진다 */
       var values = [r.price, r.fx, r.total];
       values.forEach(function (v, i) {
         tr.children[i + 1].textContent = v == null ? "—" : signed(v);

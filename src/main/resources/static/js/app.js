@@ -1,7 +1,4 @@
-/* ==========================================================================
-   미장 — SR-003 대시보드
-   목 데이터를 걷어내고 실제 API 를 부른다. 그리는 코드는 그대로다.
-   ========================================================================== */
+/* 미장 — SR-003 대시보드. 목 데이터를 걷어내고 실제 API 를 부른다. */
 
 /** 화면이 쓰는 값. 응답이 오기 전까지는 비어 있다. */
 let breakdown = null;
@@ -10,10 +7,7 @@ let watchlist = [];
 let latestFx = null;
 let displayCurrency = localStorage.getItem("mijang-base-currency") === "USD" ? "USD" : "KRW";
 
-/**
- * 응답 봉투를 벗긴다.
- * 401 이면 로그인으로 보낸다 — 대시보드는 로그인 전용 화면이다.
- */
+/** 응답 봉투를 벗긴다. 401 이면 로그인으로 보낸다 — 대시보드는 로그인 전용 화면이다. */
 async function api(url) {
   const res = await fetch(url);
   if (res.status === 401) { location.href = "/login"; return null; }
@@ -21,12 +15,7 @@ async function api(url) {
   return body.success ? body.data : null;
 }
 
-/**
- * 손익 응답을 화면이 기대하는 모양으로 바꾼다.
- *
- * 렌더 함수를 고치지 않으려고 여기서 맞춘다(5.7.2).
- * 환율을 못 구하면 서버가 data 를 null 로 주므로 그때는 null 을 그대로 넘긴다.
- */
+/** 손익 응답을 화면 모양으로 바꾼다(5.7.2). 환율을 못 구해 data 가 null 이면 null 을 그대로 넘긴다. */
 function toBreakdown(pnl) {
   if (!pnl) return null;
   return {
@@ -43,13 +32,7 @@ function toBreakdown(pnl) {
   };
 }
 
-/**
- * 보유 목록을 화면 모양으로 바꾼다.
- *
- * 종목별 주가·환율 분해는 이 응답에 없다. 전체 분해만 있으면 대시보드가 성립하고,
- * 종목별까지 담으려면 종목 수만큼 계산이 늘어난다. 없는 값은 null 로 두고
- * 화면이 — 로 그린다. 0 으로 채우면 계산된 값처럼 읽힌다.
- */
+/** 보유 목록을 화면 모양으로 바꾼다. 종목별 주가·환율 분해는 응답에 없어 null 로 두고 화면이 — 로 그린다. */
 function toHolding(h) {
   return {
     symbol: h.symbol,
@@ -78,12 +61,7 @@ function returnRateOf(h) {
   return cost === 0 ? null : Number(h.evalPnlKrw) / cost;
 }
 
-/**
- * 화면에 필요한 것을 한 번에 받아 그린다.
- *
- * 세 요청을 나란히 보낸다. 순서대로 기다리면 가장 느린 것의 합이 되고,
- * 서로 필요로 하지 않으므로 기다릴 이유가 없다.
- */
+/** 화면에 필요한 세 요청을 나란히 보내 한 번에 받아 그린다. */
 async function loadDashboard() {
   const [pnl, hold, watch, fx] = await Promise.all([
     api("/api/portfolio/pnl"),
@@ -103,9 +81,7 @@ async function loadDashboard() {
   }));
   loadHoldingNews();
 
-  /* 보유가 없으면 손익 분해와 보유 표를 통째로 감추고 다음 행동을 제시한다.
-     빈 표에 0원과 0% 를 채워 두면 "계산해 봤더니 0" 으로 읽힌다.
-     별도 페이지(dashboard-empty)를 두지 않는다 — 한 주소가 두 상태를 다 처리한다 */
+  /* 보유가 없으면 손익 분해와 보유 표를 감추고 다음 행동을 제시한다 — 빈 표에 0 을 채우면 계산 결과처럼 읽힌다 */
   var blank = holdings.length === 0;
   toggle("dash-empty", blank);
   toggle("dash-breakdown", !blank);
@@ -120,12 +96,7 @@ async function loadDashboard() {
   renderFxCard();
 }
 
-/**
- * 환율 카드. <b>손익 계산에 실제로 쓴 값</b>을 보여준다.
- *
- * 다른 값을 띄우면 같은 화면의 환차손익과 어긋나 보인다. 주말·휴일이라 직전 영업일
- * 값으로 대체됐으면 그 사실도 밝힌다 — 오늘 값인 줄 알면 안 된다.
- */
+/** 환율 카드 — 손익 계산에 실제로 쓴 값을 보여준다. 직전 영업일 값으로 대체됐으면 그 사실도 밝힌다. */
 function renderFxCard() {
   const rate = document.getElementById("fx-rate");
   const asOf = document.getElementById("fx-asof");
@@ -277,9 +248,7 @@ function renderBreakdown() {
     cell("i", dir(totalValuePnl), pct2(totalPnl.returnRate)));
 }
 
-/* ── DOM 조립 ──────────────────────────────────────────────
-   벤더 문자열(종목명·티커)을 innerHTML 에 끼워 넣지 않는다. CSP 가 인라인 스크립트를
-   막고 있어 실행까지는 못 가지만, 태그가 섞이면 표가 깨지고 가짜 문구를 심을 수 있다. */
+/* DOM 조립 — 벤더 문자열(종목명·티커)을 innerHTML 에 끼워 넣지 않는다. 태그가 섞이면 표가 깨지고 가짜 문구가 실린다 */
 function cell(tag, className, text) {
   const el = document.createElement(tag);
   if (className) el.className = className;
@@ -295,9 +264,7 @@ function stack(top, bottom, bottomClass) {
 
 /* ── 사이드바 · 표 ─────────────────────────────────────────── */
 function renderHoldings() {
-  /* 사이드바의 주가·환차손익은 전 종목 합계다. 보유 목록을 더해서 만들지 않는다 —
-     종목별 분해는 이 응답에 없어서 더하면 전부 0 이 된다. 그 합계는 손익 분해가
-     이미 갖고 있다(2.4 — 종목별로 계산해서 합친 값이 곧 전체다) */
+  /* 사이드바 주가·환차손익은 손익 분해 응답의 전체 합계를 쓴다 — 보유 목록에는 종목별 분해가 없어 더하면 전부 0 이 된다 */
   const priceSum = breakdown ? breakdown.pricePnl[displayCurrency.toLowerCase()] : null;
   const fxSum    = breakdown ? breakdown.fxPnl[displayCurrency.toLowerCase()] : null;
 

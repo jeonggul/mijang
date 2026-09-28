@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  NewsMapper.xml — 뉴스 SQL
-
-  이 파일이 하는 일
-    수집한 기사를 넣고 찾는다. 중복은 uk_news_vendor 가 DB 레벨에서 막는다.
-
-  개발명세서(MVC): "NewsMapper XML id 일치"
--->
+<!-- NewsMapper.xml — 뉴스 SQL. 중복은 uk_news_vendor 가 DB 레벨에서 막는다. -->
 <mapper namespace="com.example.mijang.news.mapper.NewsMapper">
 
     <!-- news 의 PK 는 id 다. 예전에는 n.news_id 로 조인해 이 문장이 아예 실행되지 않았다 -->

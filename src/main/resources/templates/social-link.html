@@ -47,9 +47,7 @@
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}">
-/* 소셜 계정 연결 (AUTH-07)
-   연결할 신원은 세션에 있다. 여기서는 비밀번호만 보낸다 —
-   본문으로 신원을 받으면 아무 계정이나 자기 것으로 붙일 수 있다. */
+/* 소셜 계정 연결 (AUTH-07). 신원은 세션에 있고 비밀번호만 보낸다 — 본문으로 신원을 받으면 아무 계정이나 붙일 수 있다. */
 (function () {
   var form = document.getElementById("link-form");
   var pw = document.getElementById("link-pw");

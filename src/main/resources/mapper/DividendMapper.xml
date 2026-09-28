@@ -1,14 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  DividendMapper — dividends 접근 SQL
-
-  이 파일이 하는 일
-    배당 기록의 저장·조회·확정·삭제. 모든 문장이 user_id 를 함께 묻고,
-    deleted_at IS NULL 만 본다. 확정은 status='ESTIMATED' 조건부 갱신이라
-    이미 확정된 행은 0건으로 답한다.
--->
+<!-- DividendMapper — dividends 접근 SQL. 모든 문장이 user_id 와 deleted_at IS NULL 을 조건으로 한다.
+     확정은 status='ESTIMATED' 조건부 갱신이라 이미 확정된 행은 0건으로 답한다. -->
 <mapper namespace="com.example.mijang.dividend.mapper.DividendMapper">
 
   <!-- 확정 상태로 넣으면 확정 시각도 함께 찍는다 — ck_dividends_confirmed 가 요구하고,

@@ -130,8 +130,7 @@ public enum ErrorCode {
     MAINTENANCE_MODE("MAINTENANCE_MODE", HttpStatus.SERVICE_UNAVAILABLE,
             "서비스 점검 중입니다. 잠시 후 다시 시도해 주세요"),
 
-    // ===== 외부 벤더 =====
-    // 벤더 장애와 우리 쪽 설정 누락을 구분한다. 전자는 재시도, 후자는 사람이 고쳐야 한다.
+    // ===== 외부 벤더 ===== 벤더 장애(재시도)와 설정 누락(사람이 고침)을 구분한다 =====
     /** 명세서 1.6. */
     VENDOR_RATE_LIMIT("VENDOR_RATE_LIMIT", HttpStatus.TOO_MANY_REQUESTS,
             "데이터 조회 요청이 많습니다. 잠시 후 다시 시도해 주세요"),
