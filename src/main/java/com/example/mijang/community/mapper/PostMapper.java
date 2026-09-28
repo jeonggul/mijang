@@ -1,13 +1,3 @@
-/*
- * PostMapper — posts(게시글) 테이블 접근
- *
- * 이 파일이 하는 일
- *   목록·상세·저장 통로다. 목록이 둘로 갈린다 —
- *     findByBoard   자유·질문. 종목이 없다
- *     findBySymbol  종목별. 게시판이 곧 종목이다
- *   한 메서드에 board 와 symbol 을 함께 받아 분기시킬 수도 있지만, 그러면 두 조회가
- *   서로 다른 인덱스를 타는데 SQL 한 덩이가 그 사실을 가린다.
- */
 package com.example.mijang.community.mapper;
 
 import com.example.mijang.community.domain.PostRow;
@@ -17,20 +7,11 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-/**
- * posts(게시글) 접근.
- *
- * <p>개발명세서(MVC) · 커뮤니티 · mapper — 확장(부록 C)
- */
+/** posts(게시글) 테이블에 접근한다. */
 @Mapper
 public interface PostMapper {
 
-    /**
-     * 저장.
-     *
-     * <p>인자가 많지만 전부 서버가 정한 값이다. 화면이 보낸 것은 제목·본문·배지 여부뿐이고
-     * 나머지는 서비스가 구해서 넣는다.
-     */
+    /** 게시글을 저장한다. 제목·본문·배지 외 값은 전부 서버가 정한다. */
     int insert(@Param("userId") Long userId,
                @Param("board") String board,
                @Param("symbol") String symbol,
@@ -48,88 +29,63 @@ public interface PostMapper {
                @Param("tradePnlKrw") BigDecimal tradePnlKrw,
                @Param("tradePnlRate") BigDecimal tradePnlRate);
 
-    /** 방금 저장한 글의 id. insert 직후에만 의미가 있다. */
+    /** 방금 저장한 글의 id 를 반환한다. insert 직후에만 유효하다. */
     Long findLastInsertedId();
 
-    /**
-     * 일반 커뮤니티 목록. {@code COM-001}
-     *
-     * @param sort {@code HOT} 이면 좋아요 순, 그 외에는 최신순
-     */
+    /** 일반 커뮤니티 목록을 조회한다. HOT 이면 좋아요 순, 그 외 최신순이다. */
     List<PostRow> findByBoard(@Param("board") String board,
                               @Param("sort") String sort,
                               @Param("limit") int limit,
                               @Param("offset") int offset);
 
-    /** 일반 커뮤니티 글 수. 페이징에 쓴다. */
+    /** 일반 커뮤니티 글 수를 센다. */
     long countByBoard(@Param("board") String board);
 
-    /**
-     * 내가 쓴 글. 게시판을 가리지 않고, 숨김·삭제된 것도 함께 돌려준다.
-     *
-     * <p>남에게 안 보이는 글도 <b>쓴 사람에게는 보여야</b> 한다 — 왜 목록에서
-     * 사라졌는지 알 수 없으면 고장으로 읽힌다.
-     */
+    /** 내가 쓴 글을 조회한다. 숨김·삭제된 것도 함께 돌려준다. */
     List<PostRow> findByUser(@Param("userId") Long userId,
                              @Param("limit") int limit,
                              @Param("offset") int offset);
 
+    /** 내가 쓴 글 수를 센다. */
     long countByUser(@Param("userId") Long userId);
 
-    /**
-     * 내가 스크랩한 글. 스크랩한 순서(최신 먼저)로 돌려준다.
-     *
-     * <p>내 글 목록과 달리 공개된 글만 준다 — 남의 글이 숨김·삭제되면
-     * 상세를 열 수 없으니 목록에 남겨 둬도 눌러서 갈 곳이 없다.
-     */
+    /** 내가 스크랩한 글을 최신 스크랩 순으로 조회한다. 공개된 글만 준다. */
     List<PostRow> findScrappedByUser(@Param("userId") Long userId,
                                      @Param("limit") int limit,
                                      @Param("offset") int offset);
 
+    /** 내가 스크랩한 글 수를 센다. */
     long countScrappedByUser(@Param("userId") Long userId);
 
-    /** 종목별 게시판 목록. {@code COM-001} */
+    /** 종목별 게시판 목록을 조회한다. */
     List<PostRow> findBySymbol(@Param("symbol") String symbol,
                                @Param("sort") String sort,
                                @Param("limit") int limit,
                                @Param("offset") int offset);
 
-    /** 종목별 게시글 수. COM-001 */
+    /** 종목별 게시글 수를 센다. */
     long countBySymbol(@Param("symbol") String symbol);
 
-    /** 상세. 숨김·삭제된 글은 없는 것으로 본다. {@code COM-003} */
+    /** 공개된 글 한 건을 조회한다. 숨김·삭제된 글은 없는 것으로 본다. */
     PostRow findById(@Param("postId") Long postId);
 
-    /**
-     * 상태를 가리지 않고 한 건. <b>본인 글 상세에만 쓴다.</b>
-     *
-     * <p>{@link #findById} 와 나눠 둔 이유 — 반응·수정·삭제는 공개된 글에만 걸려야 하고,
-     * 상세만 예외다. 내가 쓴 글 목록에는 숨김·삭제된 글도 나오는데(2026-09-03 점검 5.3)
-     * 그걸 열면 404 가 났다. 목록에는 보이는데 못 여는 상태였다.
-     *
-     * <p>이 메서드가 상태를 안 거르므로, <b>남의 숨김 글을 막는 일은 서비스가 한다.</b>
-     * 여기서 걸러 버리면 본인 글도 함께 막혀 고치려던 것이 그대로 남는다.
-     */
+    /** 상태를 가리지 않고 한 건을 조회한다. 남의 숨김 글 차단은 서비스가 맡는다. */
     PostRow findAnyById(@Param("postId") Long postId);
 
-    /** 조회수 +1. 상세를 열 때마다 부른다. */
+    /** 조회수를 1 올린다. */
     int increaseViewCount(@Param("postId") Long postId);
 
-    /** 제목·본문 수정. 작성 시점 값(주가·환율·매매 카드)은 건드리지 않는다(2.3). */
+    /** 제목·본문을 수정한다. 작성 시점 값은 건드리지 않는다. */
     int updateContent(@Param("postId") Long postId,
                       @Param("title") String title,
                       @Param("content") String content);
 
-    /** 상태 전환. 삭제·숨김·복원이 전부 이 문 하나다 — 지우는 경로는 없다(2.6). */
+    /** 글 상태를 바꾼다. 삭제·숨김·복원 모두 이 문으로 처리한다. */
     int updateStatus(@Param("postId") Long postId, @Param("status") String status);
 
-    /**
-     * 지금 공개 상태일 때만 바꾼다. 신고 자동 숨김이 쓴다.
-     *
-     * <p>조건 없이 바꾸면 관리자가 손으로 복원해 둔 글을 신고 한 건이 다시 끌어내린다.
-     */
+    /** 공개 상태일 때만 상태를 바꾼다. 관리자가 복원한 글을 다시 내리지 않기 위함이다. */
     int updateStatusIfPublished(@Param("postId") Long postId, @Param("status") String status);
 
-    /** 댓글 수 +1. 댓글을 달 때마다 부른다 — 목록에서 매번 세면 글 수만큼 COUNT 가 나간다. */
+    /** 댓글 수를 1 올린다. */
     int increaseCommentCount(@Param("postId") Long postId);
 }

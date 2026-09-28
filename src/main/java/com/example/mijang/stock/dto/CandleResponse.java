@@ -3,7 +3,7 @@ package com.example.mijang.stock.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** 일봉 한 건. 개발명세서(API) PRICE-05 · PK 는 (티커, 거래일) */
+/** 일봉 한 건의 응답이다. */
 public record CandleResponse(
         LocalDate tradeDate,
         BigDecimal open,

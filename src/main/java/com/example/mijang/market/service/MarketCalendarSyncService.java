@@ -1,12 +1,3 @@
-/*
- * MarketCalendarSyncService — 거래일 달력을 채우는 곳
- *
- * 이 파일이 하는 일
- *   Alpaca 에서 거래일 달력을 받아 market_days 에 넣는다.
- *
- *   앞뒤로 넉넉히 받는다. 뒤(과거)는 전일 종가를 찾는 데, 앞(미래)은 배치가 하루 걸러도
- *   세션 판정이 멈추지 않게 하는 데 쓴다.
- */
 package com.example.mijang.market.service;
 
 import com.example.mijang.market.client.AlpacaCalendarClient;
@@ -20,21 +11,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
 
+/** Alpaca 에서 거래일 달력을 받아 market_days 에 채운다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MarketCalendarSyncService {
 
-    /** 과거로 얼마나. 전일 종가를 찾으려면 연휴를 건널 만큼은 있어야 한다 */
+    /** 과거로 받는 일수. 전일 종가를 찾으려면 연휴를 건널 만큼 필요하다. */
     private static final int BACK_DAYS = 400;
 
-    /** 미래로 얼마나. 배치가 며칠 걸러도 판정이 멈추지 않게 둔다 */
+    /** 미래로 받는 일수. 배치가 며칠 걸러도 판정이 멈추지 않게 둔다. */
     private static final int FORWARD_DAYS = 120;
 
     private final AlpacaCalendarClient calendarClient;
     private final MarketDayMapper marketDayMapper;
 
-    /** @return 채운 거래일 수 */
+    /** 거래일 달력을 받아 저장하고 채운 거래일 수를 반환한다. */
     @Transactional
     public int syncAll() {
         LocalDate today = LocalDate.now(MarketCalendarService.ET);
@@ -56,12 +48,7 @@ public class MarketCalendarSyncService {
         return saved;
     }
 
-    /**
-     * 한 줄을 읽는다.
-     *
-     * <p>{@code open}·{@code close} 는 "09:30" 처럼 오고, {@code session_open}·
-     * {@code session_close} 는 <b>콜론 없이</b> "0400" 으로 온다. 형식이 달라 따로 읽는다.
-     */
+    /** 달력 한 줄을 읽는다. session_open·session_close 는 콜론 없는 "0400" 형식으로 온다. */
     private MarketDay parse(JsonNode day) {
         try {
             return new MarketDay(
@@ -76,7 +63,7 @@ public class MarketCalendarSyncService {
         }
     }
 
-    /** "0400" → 04:00. 콜론이 없는 표기다 */
+    /** 콜론 없는 "0400" 표기를 04:00 으로 읽는다. */
     private LocalTime compact(String raw) {
         String value = raw.trim();
         if (value.length() != 4) {

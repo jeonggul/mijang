@@ -1,11 +1,3 @@
-/*
- * DividendForm — 배당 직접 입력
- *
- * 이 파일이 하는 일
- *   직접 입력 모달(SR-016-2)이 보내는 내용이다. 실수령액은 개인 계좌 정보라
- *   API 로 얻을 수 없으므로 사용자가 적는다(PROFIT-11). 환율은 비워 보낼 수
- *   있고, 그러면 서버가 지급일 환율을 대신 채운다 — 매매 기록과 같은 규칙이다.
- */
 package com.example.mijang.dividend.dto;
 
 import jakarta.validation.constraints.NotBlank;
@@ -16,9 +8,7 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * 배당 직접 입력. 개발명세서(API) PROFIT-11 · 화면 SR-016-2
- */
+/** 배당 직접 입력 모달(SR-016-2)의 입력을 담는다. PROFIT-11. */
 @Getter
 @Setter
 public class DividendForm {

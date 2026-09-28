@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
-/** 반응 토글 요청. 표의 ENUM 그대로 두 종류뿐이다. */
+/** 좋아요·스크랩 토글 요청 값을 담는다. */
 @Getter
 @Setter
 public class ReactionForm {

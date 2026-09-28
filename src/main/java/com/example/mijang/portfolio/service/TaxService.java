@@ -1,13 +1,3 @@
-/*
- * TaxService — 양도소득세 참고 계산
- *
- * 이 파일이 하는 일
- *   한 해의 매도들이 확정한 실현손익을 모아 기본공제·세율을 적용해 본다.
- *   새 계산이 아니다 — 건별 실현손익은 HoldingCalculator 가 이미 구하는
- *   값이고, 여기는 그것을 연도로 묶기만 한다. 같은 계산이 두 곳에 있으면
- *   언젠가 갈라진다(portfolio 2.10).
- *   참고값이다. 실제 신고 자료가 아니라는 경고는 화면이 띄운다.
- */
 package com.example.mijang.portfolio.service;
 
 import com.example.mijang.common.time.TradingClock;
@@ -26,13 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 양도소득세 참고 계산. 개발명세서(API) GLOBAL-06 · 화면 SR-009-1
- *
- * <p>실현손익은 <b>원화 기준</b>이다 — 매도환율과 평균매수환율이 계산에 이미
- * 들어 있어 환차손익이 포함된 금액이 나온다. 실제 세법과 다를 수 있는 지점
- * (결제일 기준·환율 고시 기준 등)은 화면의 참고 문구가 안내한다.
- */
+/** 연도별 실현손익(원화 기준)에 기본공제·세율을 적용한 양도소득세 참고 계산 서비스다. */
 @Service
 @RequiredArgsConstructor
 public class TaxService {
@@ -46,13 +30,7 @@ public class TaxService {
     private final TransactionMapper transactionMapper;
     private final LedgerService ledgerService;
 
-    /**
-     * 한 해의 실현손익과 과세 추정.
-     *
-     * <p>{@code year} 를 비우면 매도가 있는 가장 최근 해, 그것도 없으면 올해다.
-     * 전 종목의 거래를 처음부터 다시 훑는다 — 건별 실현손익이 그 시점의 평단가에
-     * 달려 있어 연도만 잘라 계산할 수 없기 때문이다(portfolio 2.2).
-     */
+    /** 한 해의 실현손익과 과세 추정을 계산한다. year 를 비우면 매도가 있는 가장 최근 해다. */
     @Transactional(readOnly = true)
     public CapitalGainsResponse capitalGains(Long userId, Integer year) {
         List<SellRealized> sells = collectSells(userId);
@@ -92,12 +70,7 @@ public class TaxService {
     private record SellRealized(LocalDate date, BigDecimal realizedKrw) {
     }
 
-    /**
-     * 전 종목을 훑어 매도 건별 실현손익을 모은다. 계산기는 portfolio 의 것을 그대로 쓴다.
-     *
-     * <p>입력은 {@link LedgerService#calculationOf} 를 거친다. 거래만 따로 읽으면 분할 보정이
-     * 빠져 세금 화면의 실현손익이 보유 현황·매매 기록과 갈린다(2026-09-03 점검 4.1).
-     */
+    /** 전 종목을 LedgerService 로 훑어 매도 건별 실현손익을 모은다. */
     private List<SellRealized> collectSells(Long userId) {
         List<SellRealized> sells = new ArrayList<>();
         for (String symbol : transactionMapper.findSymbolsByUser(userId)) {

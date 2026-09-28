@@ -26,6 +26,7 @@ public class AdminUserController {
 
     private final AdminUserService service;
 
+    /** 사용자 목록을 조회한다. */
     @GetMapping
     public ApiResponse<List<AdminUserResponse>> users(
             @LoginUser SessionUser me,
@@ -35,6 +36,7 @@ public class AdminUserController {
         return ApiResponse.ok(service.users(me.userId(), status, q, limit));
     }
 
+    /** 같은 조건의 사용자 전체 건수를 돌려준다. */
     @GetMapping("/count")
     public ApiResponse<Integer> count(
             @RequestParam(defaultValue = "ALL") String status,
@@ -42,6 +44,7 @@ public class AdminUserController {
         return ApiResponse.ok(service.userCount(status, q));
     }
 
+    /** 사용자 상태를 ACTIVE·SUSPENDED 로 바꾼다. */
     @PatchMapping("/{userId}/status")
     public ApiResponse<Void> changeStatus(
             @LoginUser SessionUser me,
@@ -51,7 +54,7 @@ public class AdminUserController {
         return ApiResponse.ok(null);
     }
 
-    /** 관리자 권한 해제. {@code ADMIN-03} 본인과 마지막 활성 관리자는 내릴 수 없다. */
+    /** 관리자 권한을 해제한다 — 본인과 마지막 활성 관리자는 내릴 수 없다. */
     @PatchMapping("/{userId}/demote")
     public ApiResponse<Void> demote(@LoginUser SessionUser me, @PathVariable Long userId) {
         service.demote(me.userId(), userId);

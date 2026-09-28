@@ -13,25 +13,14 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 @Component
 public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver {
 
-    /**
-     * 이 리졸버가 채울 파라미터인지 판단한다.
-     *
-     * <p>어노테이션과 타입을 모두 본다. {@code @LoginUser} 만 보면 다른 타입에도 걸리고,
-     * 타입만 보면 어노테이션 없는 SessionUser 파라미터까지 가로챈다.
-     */
+    /** {@code @LoginUser} 어노테이션과 SessionUser 타입을 모두 갖춘 파라미터인지 판단한다. */
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(LoginUser.class)
                 && SessionUser.class.equals(parameter.getParameterType());
     }
 
-    /**
-     * SecurityContext 에서 로그인 사용자를 꺼내 파라미터에 넣는다.
-     *
-     * <p>비로그인이면 null 을 돌려준다. 공개 화면에서도 {@code @LoginUser} 를 받아
-     * "로그인했으면 이름을 보여준다" 같은 분기를 쓸 수 있게 하기 위해서다.
-     * 인증이 필수인 곳은 SecurityConfig 가 이미 막으므로 null 이 올 수 없다.
-     */
+    /** SecurityContext 에서 로그인 사용자를 꺼내 준다. 비로그인이면 null 이다. */
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {

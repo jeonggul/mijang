@@ -1,10 +1,3 @@
-/*
- * DividendController — 배당 API
- *
- * 이 파일이 하는 일
- *   배당 관리 화면(SR-016)이 부르는 다섯 가지 — 목록, 요약, 직접 입력,
- *   확정, 수정·삭제. 경로는 API 명세서 7장을 따른다.
- */
 package com.example.mijang.dividend.controller;
 
 import com.example.mijang.common.response.ApiResponse;
@@ -27,9 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 배당 API. 개발명세서(API) PROFIT-11·12 · 화면 SR-016
- */
+/** 배당 관리 화면(SR-016)의 목록·요약·입력·확정·수정·삭제 API를 제공한다. PROFIT-11·12. */
 @RestController
 @RequestMapping("/api/dividends")
 @RequiredArgsConstructor
@@ -37,26 +28,26 @@ public class DividendController {
 
     private final DividendService dividendService;
 
-    /** 배당 내역. 최근 지급일이 위로 온다. */
+    /** 배당 내역을 최근 지급일 순으로 조회한다. */
     @GetMapping
     public ApiResponse<List<DividendResponse>> list(@LoginUser SessionUser me) {
         return ApiResponse.ok(dividendService.list(me.userId()));
     }
 
-    /** 요약 띠 — 올해 누적·확정 대기·다음 배당. */
+    /** 올해 누적·확정 대기·다음 배당 요약을 조회한다. */
     @GetMapping("/summary")
     public ApiResponse<DividendSummaryResponse> summary(@LoginUser SessionUser me) {
         return ApiResponse.ok(dividendService.summary(me.userId()));
     }
 
-    /** 직접 입력(1차). 바로 확정 상태가 된다. */
+    /** 배당을 직접 입력하며, 바로 확정 상태로 저장한다. */
     @PostMapping
     public ApiResponse<DividendResponse> create(@LoginUser SessionUser me,
                                                 @Valid @RequestBody DividendForm form) {
         return ApiResponse.ok(dividendService.create(me.userId(), form));
     }
 
-    /** 예상 → 확정. 이미 확정이면 409. */
+    /** 예상 배당을 확정한다. 이미 확정이면 409를 낸다. */
     @PostMapping("/{id}/confirm")
     public ApiResponse<DividendResponse> confirm(@LoginUser SessionUser me,
                                                  @PathVariable Long id,
@@ -64,7 +55,7 @@ public class DividendController {
         return ApiResponse.ok(dividendService.confirm(me.userId(), id, form));
     }
 
-    /** 수정. */
+    /** 배당을 수정한다. */
     @PatchMapping("/{id}")
     public ApiResponse<DividendResponse> update(@LoginUser SessionUser me,
                                                 @PathVariable Long id,
@@ -72,7 +63,7 @@ public class DividendController {
         return ApiResponse.ok(dividendService.update(me.userId(), id, form));
     }
 
-    /** 삭제. */
+    /** 배당을 삭제한다. */
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@LoginUser SessionUser me, @PathVariable Long id) {
         dividendService.delete(me.userId(), id);

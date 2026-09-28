@@ -19,11 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 경제 캘린더 API. 출처는 BLS(지표 발표)와 연준(FOMC), 그리고 어닝·배당(4.14).
- *
- * <p>개발명세서(API) INFO-07 · 기능명세서 INFO-07
- */
+/** 경제 지표·실적·배당 캘린더 API를 제공한다. INFO-07. */
 @RestController
 @RequestMapping("/api/calendar")
 @RequiredArgsConstructor
@@ -32,13 +28,7 @@ public class EconomicCalendarController {
     private final EconomicCalendarService economicCalendarService;
     private final CalendarService calendarService;
 
-    /**
-     * 기간별 경제 지표 발표 일정.
-     *
-     * @param from     생략하면 오늘
-     * @param to       생략하면 from 으로부터 1개월
-     * @param highOnly true 면 FOMC·CPI·고용지표 등 큰 발표만
-     */
+    /** 기간별 경제 지표 발표 일정을 조회한다. from·to 생략 시 오늘부터 1개월이다. */
     @GetMapping("/economic")
     public ApiResponse<List<EconomicEventResponse>> economic(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -50,7 +40,7 @@ public class EconomicCalendarController {
         return ApiResponse.ok(economicCalendarService.events(start, end, highOnly));
     }
 
-    /** 다가오는 일정. 대시보드 위젯용. */
+    /** 다가오는 경제 지표 일정을 조회한다. */
     @GetMapping("/economic/upcoming")
     public ApiResponse<List<EconomicEventResponse>> upcoming(
             @RequestParam(defaultValue = "5") int limit,
@@ -58,14 +48,7 @@ public class EconomicCalendarController {
         return ApiResponse.ok(economicCalendarService.upcoming(limit, highOnly));
     }
 
-    /**
-     * 기간별 실적 발표 일정(4.14).
-     *
-     * <p>{@code mineOnly} 가 false 면 전체(필터 없음). true 면 내 종목(보유 ∪ 관심)으로
-     * 거른다 — 비로그인이거나 로그인했어도 보유·관심이 하나도 없으면 내 종목 집합이
-     * 빈 집합이라 결과도 빈 목록이다. 거시 일정과 달리 실적·배당은 종목 종속이라
-     * "내 종목만" 인데 종목이 없으면 보여줄 것이 없다.
-     */
+    /** 기간별 실적 발표 일정을 조회한다. mineOnly 면 내 종목(보유 ∪ 관심)으로 거르며, 내 종목이 없으면 빈 목록이다. */
     @GetMapping("/earnings")
     public ApiResponse<List<CalendarEventResponse>> earnings(
             @LoginUser SessionUser me,
@@ -76,7 +59,7 @@ public class EconomicCalendarController {
         return ApiResponse.ok(calendarService.earnings(from, to, mine));
     }
 
-    /** 기간별 배당(배당락·배당 지급) 일정(4.14). */
+    /** 기간별 배당(배당락·지급) 일정을 조회한다. */
     @GetMapping("/dividends")
     public ApiResponse<List<CalendarEventResponse>> dividends(
             @LoginUser SessionUser me,
@@ -87,13 +70,7 @@ public class EconomicCalendarController {
         return ApiResponse.ok(calendarService.dividends(from, to, mine));
     }
 
-    /**
-     * 오늘부터 한 달, 거시·실적·배당을 한 줄로 모은 대시보드 위젯용 목록.
-     *
-     * <p>날짜순으로 정렬해 상위 {@code limit} 건만 낸다. 세 출처를 한 화면 위젯에 섞어
-     * 보여줄 때, 화면이 세 번 호출해 각자 정렬·병합하는 것보다 서버가 한 번에 정리해
-     * 주는 편이 낫다.
-     */
+    /** 오늘부터 한 달의 거시·실적·배당 일정을 날짜순으로 병합해 상위 limit 건을 낸다. */
     @GetMapping("/upcoming")
     public ApiResponse<List<CalendarEventResponse>> calendarUpcoming(
             @LoginUser SessionUser me,

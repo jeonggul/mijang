@@ -1,12 +1,3 @@
-/*
- * DividendService — 배당 기록의 규칙
- *
- * 이 파일이 하는 일
- *   직접 입력(1차)·확정·수정·삭제·요약. 직접 입력한 배당은 바로 확정
- *   상태가 된다 — 실수령액을 적는 것 자체가 확정이다. 예상(ESTIMATED)
- *   행은 2차에서 벤더가 만들고, 여기서는 확정 경로만 미리 열어 둔다.
- *   환율을 비워 보내면 지급일 환율(없으면 직전 영업일)로 채운다.
- */
 package com.example.mijang.dividend.service;
 
 import com.example.mijang.common.exception.BusinessException;
@@ -29,12 +20,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 배당 기록. 개발명세서(API) PROFIT-11·12 · 화면 SR-016
- *
- * <p>1차는 직접 입력만이다 — 실수령액·적용 환율은 개인 계좌 정보라 API 로
- * 얻을 수 없다(PROFIT-11). 벤더 예상치 생성(PROFIT-12)은 2차다.
- */
+/** 배당 기록의 입력·확정·수정·삭제·요약 규칙을 담당한다. PROFIT-11·12 · SR-016. */
 @Service
 @RequiredArgsConstructor
 public class DividendService {
@@ -46,13 +32,13 @@ public class DividendService {
     private final PortfolioMapper portfolioMapper;
     private final FxRateService fxRateService;
 
-    /** 배당 내역. 최근 지급일이 위로 온다. */
+    /** 배당 내역을 최근 지급일 순으로 조회한다. */
     @Transactional(readOnly = true)
     public List<DividendResponse> list(Long userId) {
         return dividendMapper.findByUser(userId);
     }
 
-    /** 요약 띠 — 올해 누적(확정분만)·확정 대기·다음 배당. */
+    /** 올해 확정 누적·확정 대기·다음 배당 요약을 만든다. */
     @Transactional(readOnly = true)
     public DividendSummaryResponse summary(Long userId) {
         LocalDate today = LocalDate.now(TradingClock.SERVICE_ZONE);
@@ -69,11 +55,7 @@ public class DividendService {
                 next == null ? null : next.payDate());
     }
 
-    /**
-     * 직접 입력(1차). <b>바로 확정 상태가 된다</b> — 실수령액을 적는 것 자체가 확정이다.
-     *
-     * <p>같은 종목·지급일이 이미 있으면 409. 분할 입금 같은 경우는 한 건으로 합쳐 적는다.
-     */
+    /** 배당을 직접 입력해 바로 확정 상태로 저장한다. 같은 종목·지급일 중복이면 409 를 낸다. */
     @Transactional
     public DividendResponse create(Long userId, DividendForm form) {
         String symbol = form.getSymbol().trim().toUpperCase();
@@ -93,11 +75,7 @@ public class DividendService {
                 form.getNetAmountUsd(), fxRate, krw, "CONFIRMED", "MANUAL");
     }
 
-    /**
-     * 예상 → 확정(2차 경로). 이미 확정된 배당이면 409 — 명세서 1.6.
-     *
-     * <p>갱신이 status='ESTIMATED' 조건부라 두 번 눌러도 한 번만 성공한다.
-     */
+    /** 예상 배당을 확정한다. 이미 확정이면 409 를 내며, 조건부 갱신이라 두 번 눌러도 한 번만 성공한다. */
     @Transactional
     public DividendResponse confirm(Long userId, Long id, DividendConfirmForm form) {
         Dividend found = require(userId, id);
@@ -120,7 +98,7 @@ public class DividendService {
                 form.getNetAmountUsd(), fxRate, krw, "CONFIRMED", found.source());
     }
 
-    /** 수정. 세후 금액·환율·지급일을 고치고 원화 환산을 다시 구한다. */
+    /** 세후 금액·환율·지급일을 고치고 원화 환산을 다시 구한다. */
     @Transactional
     public DividendResponse update(Long userId, Long id, DividendForm form) {
         Dividend found = require(userId, id);
@@ -132,7 +110,7 @@ public class DividendService {
                 form.getNetAmountUsd(), fxRate, krw, found.status(), found.source());
     }
 
-    /** 삭제 표시. 없는(남의) 기록이면 404. */
+    /** 배당에 삭제 표시를 한다. 없는(남의) 기록이면 404 를 낸다. */
     @Transactional
     public void delete(Long userId, Long id) {
         if (dividendMapper.softDelete(id, userId) == 0) {
@@ -148,12 +126,7 @@ public class DividendService {
         return found;
     }
 
-    /**
-     * 환율을 정한다. 적어 냈으면 그대로, 비워 냈으면 지급일 환율(없으면 직전 영업일)이다.
-     *
-     * <p>환율 없이는 저장하지 않는다 — 0 으로 채우면 그 배당만 원화 집계에서 조용히
-     * 사라진다. 매매 기록과 같은 규칙이다(portfolio 2.7).
-     */
+    /** 환율을 정한다. 비워 냈으면 지급일 환율을 쓰고, 그것도 없으면 예외를 낸다. */
     private BigDecimal resolveFxRate(BigDecimal given, LocalDate payDate) {
         if (given != null) {
             return given;
@@ -169,7 +142,7 @@ public class DividendService {
         return usd.multiply(fxRate).setScale(KRW_SCALE, RoundingMode.HALF_UP);
     }
 
-    /** 기본 포트폴리오. 없으면 만든다 — 매매 기록과 같은 규칙이다(portfolio 2.8). */
+    /** 기본 포트폴리오 id 를 얻고, 없으면 만든다. */
     private Long defaultPortfolioId(Long userId) {
         Long id = portfolioMapper.findDefaultId(userId);
         if (id != null) {

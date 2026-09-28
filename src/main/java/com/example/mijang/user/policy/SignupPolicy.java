@@ -1,23 +1,10 @@
-/*
- * SignupPolicy — 가입 입력 규칙
- *
- * 이 파일이 하는 일
- *   비밀번호가 어때야 하는지, 닉네임에 무엇을 쓸 수 있는지를 한 곳에서 정한다.
- *   가입·재설정·변경 세 군데가 같은 규칙을 봐야 하는데, 각자 적으면
- *   언젠가 한 곳만 느슨해진다.
- */
 package com.example.mijang.user.policy;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-/**
- * 가입 입력 규칙. 비밀번호 형식과 닉네임 형식·금지어를 한 곳에서 정한다.
- *
- * <p>화면에도 같은 규칙을 두지만 <b>판정의 근거는 여기다.</b> 화면 검사는 사용자를 돕기 위한 것이고,
- * 브라우저 개발자 도구로 얼마든지 우회된다. 서버가 다시 보지 않으면 규칙이 없는 것과 같다.
- */
+/** 비밀번호 형식과 닉네임 형식·금지어 등 가입 입력 규칙을 한 곳에서 정한다. */
 public final class SignupPolicy {
 
     private SignupPolicy() {
@@ -34,19 +21,10 @@ public final class SignupPolicy {
     public static final Pattern NICKNAME = Pattern.compile(NICKNAME_REGEX);
     public static final String NICKNAME_GUIDE = "한글·영문·숫자 2~10자";
 
-    /** 이메일 길이 상한. 탈퇴 시 "{id}.withdrawn." 접두(최대 약 30자)를 붙여도
-        users.email VARCHAR(255) 를 넘지 않게 한다(4.13 #5). */
+    /** 이메일 길이 상한이다 — 탈퇴 시 withdrawn 접두를 붙여도 VARCHAR(255)를 넘지 않게 한다. */
     public static final int EMAIL_MAX_LENGTH = 225;
 
-    /**
-     * 닉네임 금지어.
-     *
-     * <p>두 갈래다 — <b>사칭</b>(운영자로 오인시키는 말)과 <b>비속어</b>.
-     * 포함만 해도 막는다. "관리자1" 같은 우회를 열어 두면 금지어를 두는 의미가 없다.
-     *
-     * <p>완전한 목록은 만들 수 없다. 신고(COM-005)로 사후 대응하는 것이 전제이고,
-     * 이 목록은 가장 흔한 것만 앞에서 걸러 준다.
-     */
+    /** 닉네임 금지어 목록이다 — 사칭·비속어 두 갈래이고 포함만 해도 막는다. */
     private static final List<String> FORBIDDEN = List.of(
             // 운영자 사칭
             "관리자", "운영자", "운영팀", "관리팀", "고객센터", "고객지원", "운영진",
@@ -61,25 +39,10 @@ public final class SignupPolicy {
             "일베", "한남", "김치녀", "된장녀"
     );
 
-    /**
-     * 닉네임/이메일 아이디가 너무 짧으면 우연히 겹친다. 의미 있는 길이부터만 본다.
-     *
-     * <p>2자 미만을 검사하면 닉네임이 "김" 인 사람은 비밀번호에 "김" 을 못 쓴다.
-     */
+    /** 프로필 정보 포함 검사를 적용할 최소 길이다 — 더 짧으면 우연히 겹친다. */
     private static final int MIN_PROFILE_MATCH_LENGTH = 2;
 
-    /**
-     * 비밀번호가 닉네임이나 이메일 아이디를 품고 있는가.
-     *
-     * <p>형식 규칙만으로는 {@code mijang12} 같은 값을 막지 못한다. 형식은 통과하지만
-     * <b>공개된 정보로 만든 비밀번호</b>다. 닉네임은 커뮤니티에 그대로 노출되고
-     * 이메일 아이디도 알아내기 어렵지 않아, 둘 다 시도 목록의 맨 앞에 온다.
-     *
-     * <p>대소문자를 구분하지 않는다. 서비스 이름에 숫자만 붙인 흔한 조합을
-     * 대소문자만 바꿔 통과시키면 막는 의미가 없다.
-     *
-     * @param email 전체 주소. {@code @} 앞부분만 본다 — 뒷부분은 도메인이라 개인 정보가 아니다
-     */
+    /** 비밀번호가 닉네임이나 이메일 아이디(@ 앞부분)를 대소문자 무시하고 품고 있는지 판정한다. */
     public static boolean containsProfileInfo(String password, String nickname, String email) {
         if (password == null || password.isBlank()) {
             return false;
@@ -95,7 +58,7 @@ public final class SignupPolicy {
                 && lower.contains(localPart.toLowerCase(Locale.ROOT));
     }
 
-    /** {@code @} 앞부분. {@code @} 로 시작하는 값은 아이디가 없는 것으로 본다. */
+    /** 이메일의 @ 앞부분을 꺼낸다 — @로 시작하면 아이디가 없는 것으로 본다. */
     private static String emailLocalPart(String email) {
         if (email == null) {
             return null;
@@ -104,21 +67,17 @@ public final class SignupPolicy {
         return at > 0 ? email.substring(0, at) : null;
     }
 
-    /** 형식이 맞는 비밀번호인가. */
+    /** 형식이 맞는 비밀번호인지 판정한다. */
     public static boolean isValidPassword(String password) {
         return password != null && PASSWORD.matcher(password).matches();
     }
 
-    /** 형식이 맞는 닉네임인가. 금지어는 보지 않는다. */
+    /** 형식이 맞는 닉네임인지 판정한다 — 금지어는 보지 않는다. */
     public static boolean isValidNicknameFormat(String nickname) {
         return nickname != null && NICKNAME.matcher(nickname).matches();
     }
 
-    /**
-     * 금지어를 품고 있는가.
-     *
-     * <p>대소문자를 구분하지 않는다. {@code Admin} 과 {@code admin} 을 다르게 보면 막는 의미가 없다.
-     */
+    /** 금지어를 품고 있는지 대소문자 무시하고 판정한다. */
     public static boolean containsForbiddenWord(String nickname) {
         if (nickname == null) {
             return false;
@@ -127,11 +86,7 @@ public final class SignupPolicy {
         return FORBIDDEN.stream().anyMatch(lower::contains);
     }
 
-    /**
-     * 닉네임을 형식·금지어 기준으로 판정한다. 중복 확인은 여기서 하지 않는다(DB 가 필요하다).
-     *
-     * @return 문제가 없으면 null, 있으면 사용자에게 보여줄 사유
-     */
+    /** 닉네임을 형식·금지어 기준으로 판정해 문제가 없으면 null, 있으면 사유 문구를 돌려준다 — 중복 확인은 하지 않는다. */
     public static String validateNickname(String nickname) {
         if (!isValidNicknameFormat(nickname)) {
             return NICKNAME_GUIDE + "로 입력해주세요";

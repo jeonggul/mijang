@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-/** 재설정 링크 요청. 개발명세서(API) AUTH-05 */
+/** 비밀번호 재설정 링크 요청 입력이다. */
 @Getter
 @Setter
 public class PasswordForgotForm {

@@ -17,22 +17,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-/**
- * BLS 발표 일정(iCalendar) 조회·파싱.
- *
- * <p>개발명세서(MVC) · 뉴스·정보 · client — 기능명세서 INFO-07
- *
- * <p>BLS 는 발표 일정을 JSON API 가 아니라 iCalendar 파일로 준다. 형식이 단순해서
- * (한 파일에 VEVENT 300여 개, 접힘 없음) 라이브러리를 붙이지 않고 직접 읽는다.
- */
+/** BLS 발표 일정(iCalendar)을 받아 직접 파싱한다. INFO-07. */
 @Slf4j
 @Component
 public class BlsScheduleClient {
 
-    /**
-     * 시장이 크게 움직이는 발표. BLS 파일의 CATEGORIES 필드는 전 항목이 {@code IMPORTANT} 로
-     * 똑같이 찍혀 나와서 구분에 쓸 수 없다. 그래서 발표명으로 가른다.
-     */
+    /** 시장이 크게 움직이는 발표명. BLS 의 CATEGORIES 는 전 항목이 같아 발표명으로 가른다. */
     private static final Set<String> HIGH_IMPACT = Set.of(
             "Consumer Price Index",
             "Employment Situation",
@@ -101,10 +91,7 @@ public class BlsScheduleClient {
         return events;
     }
 
-    /**
-     * iCalendar 는 긴 줄을 다음 줄 맨 앞 공백으로 이어 붙인다(RFC 5545 폴딩). 현재 BLS 파일에는
-     * 접힌 줄이 없지만 규격상 언제든 생길 수 있어 먼저 펴 둔다.
-     */
+    /** RFC 5545 폴딩(줄 이어 붙이기)을 먼저 펴 둔다. */
     private static String unfold(String ics) {
         return ics.replace("\r\n", "\n").replaceAll("\n[ \t]", "");
     }
@@ -124,7 +111,7 @@ public class BlsScheduleClient {
         }
     }
 
-    /** 날짜만 있는 종일 일정도 있을 수 있어 시각은 없을 수 있다. */
+    /** 시각을 파싱한다. 종일 일정은 null 이다. */
     private static LocalTime parseTime(String value) {
         try {
             if (value.length() >= 15 && value.charAt(8) == 'T') {

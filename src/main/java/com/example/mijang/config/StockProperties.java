@@ -2,9 +2,7 @@ package com.example.mijang.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * 종목 범위 설정. application.properties 의 mijang.stock.* 를 받는다.
- */
+/** 종목({@code mijang.stock.*}) 설정 바인딩이다. */
 @ConfigurationProperties(prefix = "mijang.stock")
 public class StockProperties {
 
@@ -17,16 +15,7 @@ public class StockProperties {
     /** 52주 최고·최저를 계산할 기간(일). */
     private int highLowDays = 365;
 
-    /**
-     * 일봉을 받아올 피드. {@code iex} 또는 {@code sip}.
-     *
-     * <p><b>무료 플랜은 최근 SIP 데이터를 주지 않는다</b> — 403 과 함께
-     * "subscription does not permit querying recent SIP data" 가 온다.
-     * 파라미터를 생략해도 기본이 SIP 라 같은 오류가 난다. 그래서 기본을 iex 로 둔다.
-     *
-     * <p>과거 데이터(1년 전 등)는 무료로도 SIP 가 열린다. 유료 플랜으로 올리면
-     * 이 값만 sip 으로 바꾸면 된다.
-     */
+    /* 일봉 피드(iex/sip)다. 무료 플랜은 최근 SIP 데이터에 403 을 주므로 기본을 sip 으로 바꾸면 안 된다. */
     private String barFeed = "iex";
 
     // 아래는 스프링이 값을 넣고 꺼내기 위한 접근자다.
