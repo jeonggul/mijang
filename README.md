@@ -44,7 +44,7 @@
 
 <br/>
 
-### 핵심 — 거래 한 건이 손익 화면이 되기까지
+### 거래 한 건이 손익 화면이 되기까지
 
 ```mermaid
 flowchart LR
@@ -62,8 +62,7 @@ flowchart LR
     style V fill:#FFF4DE,stroke:#d98500,color:#000
 ```
 
-계산기 두 개는 **DB도 스프링도 모르는 순수 계산** — 입력과 출력만 있어 단위 테스트가 쉬운 모양으로 분리.
-이 서비스에서 가장 틀리면 안 되는 코드이기 때문.
+계산기 두 개는 순수 계산 - 이 서비스에서 가장 틀리면 안되는 코드 중 하나, 입력과 출력만 있어 단위 테스트가 쉬운 모양으로 분리함
 
 > 📄 [`HoldingCalculator`](src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java) · [`ProfitLossCalculator`](src/main/java/com/example/mijang/portfolio/service/ProfitLossCalculator.java)
 
