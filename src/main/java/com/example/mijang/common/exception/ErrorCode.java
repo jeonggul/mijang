@@ -2,21 +2,7 @@ package com.example.mijang.common.exception;
 
 import org.springframework.http.HttpStatus;
 
-/**
- * 오류 코드와 HTTP 상태 매핑.
- *
- * <p>개발명세서(MVC) · 공통/설정 · Common.exception
- * <p>코드 문자열은 [[미장-API명세서]] 1.6 의 {@code UPPER_SNAKE_CASE} 표기를 따른다.
- * 명세서에 이미 있는 항목은 문자열을 글자 그대로 옮겼고, 명세서에 없지만 구현상 필요한 것은
- * 같은 접두사 규칙({@code AUTH_} · {@code STOCK_} · {@code TX_} · {@code FX_} · {@code COMMUNITY_}
- * · {@code VENDOR_} · {@code COMMON_})으로 덧붙였다.
- *
- * <p>400 과 422 를 구분한다. 형식이 틀린 것이 400, 형식은 맞지만 업무 규칙에 어긋나는 것이 422다.
- * 화면 처리가 다르기 때문이다 — 400 은 필드 하이라이트, 422 는 안내 모달.
- *
- * <p>명세서 1.6 의 {@code FX_NOT_AVAILABLE} 은 여기에 없다. 환율 미수집은 오류가 아니라
- * 대체 환율로 응답하고 {@code substituted} 플래그를 세우는 정상 응답이기 때문이다.
- */
+/** 오류 코드·HTTP 상태·메시지 매핑이다. 형식 오류는 400, 형식은 맞지만 업무 규칙 위반이면 422 — 화면 처리가 달라 바꾸면 안 된다. */
 public enum ErrorCode {
 
     // ===== 인증·회원 (AUTH-001~003, USER-001) =====
@@ -38,11 +24,7 @@ public enum ErrorCode {
     /** 로그인된 사용자가 현재 비밀번호를 틀린 경우. 이미 인증된 상태라 401 이 아니라 400 이다. */
     AUTH_PASSWORD_MISMATCH("AUTH_PASSWORD_MISMATCH", HttpStatus.BAD_REQUEST,
             "현재 비밀번호가 올바르지 않습니다"),
-    /**
-     * 형식은 맞지만 닉네임이나 이메일 아이디가 들어 있다.
-     *
-     * <p>형식 오류가 아니라 <b>추측하기 쉬운 값</b>이라 막는 것이라 422다.
-     */
+    /** 형식은 맞지만 닉네임·이메일 아이디가 들어 있어 막는다(422). */
     AUTH_PASSWORD_TOO_GUESSABLE("AUTH_PASSWORD_TOO_GUESSABLE", HttpStatus.UNPROCESSABLE_CONTENT,
             "닉네임이나 이메일 아이디가 들어간 비밀번호는 사용할 수 없습니다"),
     /** 형식은 맞지만 이전과 같은 값이다. 형식 오류가 아니므로 422다. */
@@ -51,12 +33,7 @@ public enum ErrorCode {
     /** 만료·위조·이미 사용됨을 구분하지 않는다. 화면이 할 일은 어느 쪽이든 같다. */
     AUTH_RESET_TOKEN_INVALID("AUTH_RESET_TOKEN_INVALID", HttpStatus.BAD_REQUEST,
             "재설정 링크가 만료되었거나 이미 사용되었습니다"),
-    /**
-     * 소셜 전용 계정. 바꾸거나 확인할 비밀번호가 없다.
-     *
-     * <p>전에는 USER_NOT_FOUND 를 던져 로그인해 있는 사람에게 "존재하지 않는 사용자"가 나갔다.
-     * 형식이 아니라 계정 상태의 문제라 422다.
-     */
+    /** 소셜 전용 계정이라 확인할 비밀번호가 없다(422). */
     AUTH_PASSWORD_NOT_SET("AUTH_PASSWORD_NOT_SET", HttpStatus.UNPROCESSABLE_CONTENT,
             "비밀번호가 설정되지 않은 계정입니다. 소셜 로그인으로 이용해주세요"),
     /** 재설정 링크 요청이 너무 잦다. 가입 여부와 무관하게 같은 기준으로 센다. */
@@ -87,18 +64,11 @@ public enum ErrorCode {
     /** 명세서 1.6. 형식은 맞고 규칙에 어긋나므로 422다. */
     TX_QUANTITY_EXCEEDS_HOLDING("TX_QUANTITY_EXCEEDS_HOLDING", HttpStatus.UNPROCESSABLE_CONTENT,
             "보유 수량보다 많이 매도할 수 없습니다"),
-    /** 명세서 1.6. 날짜 형식 자체가 틀린 것이 아니라 값이 미래이므로 400이다. */
-    /**
-     * 그날 환율을 못 찾았고 사용자도 적지 않았다.
-     *
-     * <p>입력이 틀린 게 아니라 우리가 값을 못 채운 것이라 422 다. 문구는 화면의
-     * 환율 힌트("그날 환율이 없습니다 · 직접 입력해주세요")와 같은 말을 해야 한다 —
-     * 힌트를 보고도 그냥 낸 사람에게 "요청 값이 올바르지 않습니다" 만 뜨면
-     * 무엇을 고쳐야 하는지 알 수 없다.
-     */
+    /** 그날 환율이 없고 사용자도 적지 않았다(422). 문구는 화면의 환율 힌트와 같은 말이어야 한다. */
     TX_FX_RATE_REQUIRED("TX_FX_RATE_REQUIRED", HttpStatus.UNPROCESSABLE_CONTENT,
             "그날 환율을 찾지 못했습니다. 적용 환율을 직접 입력해주세요"),
 
+    /** 명세서 1.6. 형식이 아니라 값이 미래인 것이므로 400이다. */
     TX_TRADE_DATE_FUTURE("TX_TRADE_DATE_FUTURE", HttpStatus.BAD_REQUEST,
             "거래일은 미래일 수 없습니다"),
     /** 명세서 1.6. */
@@ -110,13 +80,7 @@ public enum ErrorCode {
             "본인의 매매 기록만 다룰 수 있습니다"),
 
     // ===== 소셜 로그인 (AUTH-07) =====
-    /**
-     * 제공자가 이메일을 주지 않았다.
-     *
-     * <p>카카오는 동의를 받지 않았거나 비즈 앱이 아니면 이메일을 안 준다.
-     * users.email 이 NOT NULL·UNIQUE 라 회원을 만들 수 없고, 가짜 주소를 지어 넣으면
-     * 비밀번호 찾기가 영영 막힌다. 그래서 만들지 않고 거절한다.
-     */
+    /** 제공자가 이메일을 주지 않아 회원을 만들 수 없어 거절한다. */
     SOCIAL_EMAIL_REQUIRED("SOCIAL_EMAIL_REQUIRED", HttpStatus.UNPROCESSABLE_CONTENT,
             "이메일 제공에 동의해야 소셜 로그인을 쓸 수 있습니다"),
 
@@ -166,8 +130,7 @@ public enum ErrorCode {
     MAINTENANCE_MODE("MAINTENANCE_MODE", HttpStatus.SERVICE_UNAVAILABLE,
             "서비스 점검 중입니다. 잠시 후 다시 시도해 주세요"),
 
-    // ===== 외부 벤더 =====
-    // 벤더 장애와 우리 쪽 설정 누락을 구분한다. 전자는 재시도, 후자는 사람이 고쳐야 한다.
+    // ===== 외부 벤더 ===== 벤더 장애(재시도)와 설정 누락(사람이 고침)을 구분한다 =====
     /** 명세서 1.6. */
     VENDOR_RATE_LIMIT("VENDOR_RATE_LIMIT", HttpStatus.TOO_MANY_REQUESTS,
             "데이터 조회 요청이 많습니다. 잠시 후 다시 시도해 주세요"),

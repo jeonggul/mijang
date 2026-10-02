@@ -11,14 +11,18 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface AdminStatsMapper {
 
+    /** 기간 내 서비스 활동 건수를 집계한다. */
     AdminStatsCounts countActivities(@Param("from") LocalDateTime from,
                                      @Param("to") LocalDateTime to);
 
+    /** 기간 내 신규 가입자 수를 센다. */
     int countNewUsers(@Param("from") LocalDateTime from,
                       @Param("to") LocalDateTime to);
 
+    /** 기간 내 거래 건수를 센다. */
     int countTransactions(@Param("from") LocalDateTime from,
                           @Param("to") LocalDateTime to);
 
+    /** 인기 종목을 조회한다. */
     List<AdminPopularStockResponse> findPopularStocks(@Param("limit") int limit);
 }

@@ -15,15 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
 
-/**
- * 화면 라우팅 전용 컨트롤러.
- *
- * <p>프로토타입 26페이지를 Thymeleaf 템플릿으로 옮기면서 경로만 연결한 상태다.
- * 화면에 보이는 값은 전부 템플릿에 하드코딩되어 있으며, 아직 서비스·DB를 거치지 않는다.
- * 기능을 붙일 때 이 클래스의 메서드를 도메인별 컨트롤러로 옮기고 Model 을 채우면 된다.
- *
- * <p>오류 화면(templates/error.html)은 Spring Boot 기본 오류 뷰로 동작하므로 여기서 매핑하지 않는다.
- */
+/** Thymeleaf 화면 라우팅 전용 컨트롤러다. */
 @Controller
 @RequiredArgsConstructor
 public class PageController {
@@ -35,27 +27,13 @@ public class PageController {
 
     /* ── 소개 · 인증 ─────────────────────────────────────────── */
 
-    /**
-     * 서비스 진입점. 화면설계서 3장 "첫 방문 → 랜딩" 흐름이라 루트가 SR-001 이다.
-     *
-     * <p>인증이 붙으면(P1) 여기서 로그인 여부로 갈라 로그인 상태면 대시보드로 보낸다.
-     * 지금은 인증 전이라 항상 랜딩을 렌더한다.
-     */
+    /** 랜딩 화면을 렌더한다. {@code SR-001} */
     @GetMapping("/")
     public String landing() {
         return "landing";
     }
 
-    /**
-     * 로그인 화면.
-     *
-     * <p>체험 계정이 설정돼 있으면 화면에 안내를 띄운다. 값이 없으면 아이콘도 나오지
-     * 않는다 — 운영에 그대로 올라가도 설정을 채우지 않는 한 아무것도 새지 않는다.
-     *
-     * <p>설정을 그대로 쓰지 않고 {@link LoginHintService} 를 거친다. 이 화면은 비로그인
-     * 공개 화면이라 여기 실린 계정은 곧 공개된 계정이고, 관리자 계정이 섞여 들어오면
-     * 운영 콘솔이 통째로 열린다.
-     */
+    /** 로그인 화면을 렌더한다. 공개 화면이라 노출 가능한 체험 계정만 싣는다. */
     @GetMapping("/login")
     public String login(Model model) {
         model.addAttribute("demoAccounts", loginHint.visibleAccounts());
@@ -67,29 +45,14 @@ public class PageController {
         return "signup";
     }
 
-    /**
-     * 비밀번호 찾기 화면.
-     *
-     * <p>재전송 간격을 화면에 내려 준다. 화면이 따로 60 을 적어 두면 설정을 바꿨을 때
-     * 두 값이 어긋나 "다 기다렸는데 또 안 온다" 가 된다.
-     *
-     * <p>이 값은 계정마다 다르지 않은 설정값이라 내려 줘도 가입 여부가 드러나지 않는다.
-     */
+    /** 비밀번호 찾기 화면을 렌더한다. 재전송 간격 설정값을 함께 내린다. */
     @GetMapping("/password-forgot")
     public String passwordForgot(Model model) {
         model.addAttribute("resendCooldownSeconds", resetProperties.getResendCooldown().toSeconds());
         return "password-forgot";
     }
 
-    /**
-     * 메일 링크로 들어오는 화면.
-     *
-     * <p>토큰을 <b>여기서 미리 확인한다.</b> 확인하지 않으면 만료된 링크로도 입력 화면이
-     * 뜨고, 새 비밀번호를 다 적어 제출한 뒤에야 실패한다.
-     *
-     * <p>유효 시간도 함께 넘긴다. 화면이 "30분"을 글자로 들고 있으면 설정을 바꿨을 때
-     * 거짓말이 된다.
-     */
+    /** 비밀번호 재설정 화면을 렌더한다. 토큰을 미리 검증해 만료 링크를 거른다. */
     @GetMapping("/password-reset")
     public String passwordReset(@RequestParam(required = false) String token, Model model) {
         model.addAttribute("resetMinutes", resetProperties.getTokenTtl().toMinutes());
@@ -97,46 +60,34 @@ public class PageController {
             passwordService.validateToken(token);
             model.addAttribute("token", token);
         } catch (BusinessException e) {
-            // 없음·이미 씀·만료를 구분하지 않는다. 화면이 할 일은 어느 쪽이든 같다
+            // 없음·이미 씀·만료를 구분하지 않는다.
             model.addAttribute("invalid", true);
             model.addAttribute("errorMessage", e.getMessage());
         }
         return "password-reset";
     }
 
-    /**
-     * 소셜 계정 연결 확인. {@code AUTH-07}
-     *
-     * <p>같은 이메일로 이미 가입된 사람이 소셜로 들어왔을 때만 온다.
-     * 자동으로 잇지 않는 이유 — 제공자가 이메일을 검증하지 않으면 남의 주소를 적은
-     * 소셜 계정으로 그 사람의 매매 원장에 들어갈 수 있다.
-     */
+    /** 소셜 계정 연결 확인 화면을 렌더한다. 검증 없는 자동 연결은 하지 않는다. {@code AUTH-07} */
     @GetMapping("/social-link")
     public String socialLink(HttpServletRequest request, Model model) {
         var pending = SocialAuthHandlers.pendingOf(request);
         if (pending == null || pending.kind() != SocialAuthHandlers.Pending.Kind.LINK) {
-            return "redirect:/login";   // 직접 주소를 쳤거나 가입 보류(SIGNUP)다. 여기서 보여 줄 것이 없다
+            return "redirect:/login";   // 직접 진입이거나 가입 보류(SIGNUP)다.
         }
         model.addAttribute("linkEmail", pending.email());
         model.addAttribute("linkProvider", "GOOGLE".equals(pending.provider()) ? "구글" : "카카오");
         return "social-link";
     }
 
-    /**
-     * 소셜 첫 가입. {@code AUTH-07}
-     *
-     * <p>제공자에게서 받은 이메일·닉네임을 채워 두고 비밀번호를 받는다.
-     * 비밀번호 없이 계정을 만들면 연동을 끊는 순간 들어올 문이 사라진다.
-     */
+    /** 소셜 첫 가입 화면을 렌더한다. {@code AUTH-07} */
     @GetMapping("/social-signup")
     public String socialSignup(HttpServletRequest request) {
         var pending = SocialAuthHandlers.pendingOf(request);
         if (pending == null
                 || pending.kind() != SocialAuthHandlers.Pending.Kind.SIGNUP) {
-            return "redirect:/login";   // 직접 주소를 친 경우다. 보여 줄 것이 없다
+            return "redirect:/login";   // 직접 진입은 보여 줄 것이 없다.
         }
-        /* 값은 화면이 /api/auth/social/pending 으로 받아 간다. 여기서 모델에 담지
-           않는 이유 — 닉네임 중복 확인 뒤 다시 그리는 흐름이 있어 어차피 JS 가 필요하다 */
+        // 가입 정보는 화면이 /api/auth/social/pending 으로 받아 간다.
         return "social-signup";
     }
 
@@ -152,13 +103,7 @@ public class PageController {
         return "privacy";
     }
 
-    /**
-     * 점검 화면.
-     *
-     * <p>{@link com.example.mijang.config.MaintenanceInterceptor} 가 화면 요청을 이리로
-     * 넘긴다. 주소를 직접 쳐서 들어올 자리는 아니지만, 인터셉터가 forward 하려면
-     * 매핑이 실재해야 한다.
-     */
+    /** 점검 화면을 렌더한다. MaintenanceInterceptor 의 forward 대상이다. */
     @GetMapping("/maintenance")
     public String maintenance() {
         return "maintenance";
@@ -215,13 +160,7 @@ public class PageController {
         return "search";
     }
 
-    /**
-     * 종목 상세. 심볼이 없으면 검색으로 보낸다.
-     *
-     * <p>예전에는 심볼이 없으면 화면 JS 가 AAPL 로 폴백해, 맨몸 {@code /stock} 이 특정
-     * 종목을 기본으로 띄웠다 — 투자 자문을 하지 않는 서비스에서 특정 종목을 미는 모양이라
-     * 맞지 않는다. 종목이 정해지지 않았으면 고르는 자리(검색)로 돌려보낸다.
-     */
+    /** 종목 상세 화면을 렌더한다. 심볼이 없으면 검색으로 보낸다. */
     @GetMapping("/stock")
     public String stock(@RequestParam(required = false) String symbol) {
         if (symbol == null || symbol.isBlank()) {
@@ -252,15 +191,7 @@ public class PageController {
 
     /* ── 커뮤니티 ────────────────────────────────────────────── */
 
-    /**
-     * 일반 커뮤니티. 헤더 메뉴의 "커뮤니티" 가 여기로 온다.
-     *
-     * <p>게시판은 자유와 질문 둘이고 종목이 없다. 종목별 게시판은 아래
-     * {@link #communityStock(String, Model)} 이 맡는다 — 경로를 나눠 두면 링크만 보고도
-     * 어느 커뮤니티인지 알 수 있고, 화면도 종목 유무를 모델 하나로 갈라 그린다.
-     *
-     * @param board {@code free}(기본) 또는 {@code qna}
-     */
+    /** 일반 커뮤니티(자유·질문) 화면을 렌더한다. */
     @GetMapping("/community")
     public String community(@RequestParam(defaultValue = "free") String board, Model model) {
         model.addAttribute("board", "qna".equalsIgnoreCase(board) ? "QNA" : "FREE");
@@ -276,23 +207,18 @@ public class PageController {
         return "community";
     }
 
-    /**
-     * 게시글 상세.
-     *
-     * <p>글 번호가 경로에 있어야 링크를 복사해 남에게 보낼 수 있다. 번호 없는
-     * {@code /community-post} 는 예전 링크라 목록으로 돌려보낸다.
-     */
+    /** 게시글 상세 화면을 렌더한다. */
     @GetMapping("/community-post/{postId}")
     public String communityPost(@PathVariable Long postId, Model model) {
         model.addAttribute("postId", postId);
         return "community-post";
     }
 
+    /** 글 번호 없는 옛 링크를 목록으로 돌려보낸다. */
     @GetMapping("/community-post")
     public RedirectView communityPostWithoutId() {
         RedirectView redirect = new RedirectView("/community");
-        /* 모델을 붙이지 않는다. 기본값으로 두면 CSP nonce 가 쿼리스트링에 실려
-           주소창과 리퍼러에 남는다 — 매 요청 새로 만드는 값이라 새는 것 자체가 문제다 */
+        // 모델을 붙이지 않는다 — CSP nonce 가 쿼리스트링·리퍼러로 새는 것을 막는다.
         redirect.setExposeModelAttributes(false);
         return redirect;
     }
@@ -305,12 +231,7 @@ public class PageController {
         return "community-write";
     }
 
-    /**
-     * 종목별 글쓰기.
-     *
-     * <p>게시판을 고르는 칸이 없다 — 경로가 이미 게시판을 정했다. 대신 그 종목의
-     * 내 매매를 골라 본문에 카드로 붙일 수 있다.
-     */
+    /** 종목별 글쓰기 화면을 렌더한다. */
     @GetMapping("/community-write/{symbol}")
     public String communityWriteStock(@PathVariable String symbol, Model model) {
         model.addAttribute("board", "STOCK");

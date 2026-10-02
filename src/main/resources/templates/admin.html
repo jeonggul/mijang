@@ -418,8 +418,7 @@
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}">
 /* 관리자 화면 (ADMIN-01 · ADMIN-02 · ADMIN-07)
-   접근 통제는 SecurityConfig 가 /api/admin/** 를 ADMIN 에만 열어 막는다(2.1).
-   화면이 탭을 숨기는 것은 편의일 뿐 방어가 아니다. */
+   접근 통제는 SecurityConfig 가 /api/admin/** 로 막는다(2.1) — 화면의 탭 숨김은 방어가 아니다. */
 (function () {
   var box = document.getElementById("ad-batches");
   if (!box) return;

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-/** 신고 입력. 개발명세서(API) COM-005 — body {targetType, targetId, reason} */
+/** 신고 요청 값을 담는다. */
 @Getter
 @Setter
 public class ReportForm {
@@ -20,7 +20,7 @@ public class ReportForm {
     @NotNull
     private Long targetId;
 
-    /** 표의 ENUM 그대로. 밖에서 새 값이 오면 저장에서 터지기 전에 여기서 막는다. */
+    /** 신고 사유. 허용 값 외에는 여기서 막는다. */
     @NotBlank
     @Pattern(regexp = "SPAM|ABUSE|MISINFO|ETC", message = "허용되지 않는 값입니다")
     private String reason;

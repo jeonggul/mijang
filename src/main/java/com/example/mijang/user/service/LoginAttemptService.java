@@ -1,22 +1,3 @@
-/*
- * LoginAttemptService — 로그인 시도 제한
- *
- * 이 파일이 하는 일
- *   짧은 시간에 실패가 몰리면 잠시 막는다. 비밀번호 재설정에는 재전송 간격이 있는데
- *   정작 로그인은 무제한이라 대입을 그냥 받아 주고 있었다.
- *
- *   왜 이메일과 IP 를 둘 다 세는가
- *     이메일만 세면 한 곳에서 계정을 바꿔 가며 흔한 비밀번호를 뿌리는 공격이 통과한다.
- *     IP 만 세면 회사·학교처럼 여럿이 한 IP 를 쓰는 곳에서 남 때문에 막힌다.
- *     둘 중 하나라도 넘으면 막되, IP 한도를 이메일보다 넉넉히 둔다.
- *
- *   왜 메모리인가
- *     서버가 한 대다. 여러 대가 되면 각 대가 따로 세어 한도가 대수만큼 늘어나므로
- *     그때는 Redis 로 옮겨야 한다 — 그 전제를 여기 적어 둔다.
- *
- *   막힌 동안에도 응답은 "이메일 또는 비밀번호가 올바르지 않습니다" 와 같은 자리에서
- *   나온다. 잠금 사실을 알려 주면 어떤 이메일이 실재하는지가 드러난다.
- */
 package com.example.mijang.user.service;
 
 import java.time.Duration;
@@ -25,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
-/** 로그인 실패 횟수를 세어 잠근다. */
+/** 로그인 실패를 이메일·IP 별로 세어 잠근다. 단일 서버 메모리 집계라 다중화 시 Redis 이관이 필요하다. */
 @Service
 public class LoginAttemptService {
 
@@ -50,28 +31,19 @@ public class LoginAttemptService {
         final Instant firstAt = Instant.now();
     }
 
-    /**
-     * 지금 로그인을 받아도 되는지.
-     *
-     * <p>이메일과 IP 중 <b>하나라도</b> 한도를 넘으면 막는다.
-     */
+    /** 이메일·IP 중 하나라도 한도를 넘었으면 로그인을 막는다. */
     public boolean isBlocked(String email, String ip) {
         sweepIfDue();
         return over("e:" + normalize(email), EMAIL_MAX) || over("i:" + ip, IP_MAX);
     }
 
-    /** 실패했다. 두 열쇠 모두에 한 번씩 센다. */
+    /** 실패를 이메일·IP 두 열쇠에 각각 센다. */
     public void recordFailure(String email, String ip) {
         bump("e:" + normalize(email));
         bump("i:" + ip);
     }
 
-    /**
-     * 성공했다. 그 이메일의 기록만 지운다.
-     *
-     * <p>IP 기록은 남긴다 — 계정 하나를 맞혔다고 그 IP 가 뿌리던 시도까지 없던 일이 되면
-     * 공격자가 자기 계정으로 한 번 로그인해 한도를 계속 초기화할 수 있다.
-     */
+    /** 성공한 이메일의 기록만 지운다. IP 기록은 한도 초기화 악용을 막기 위해 남긴다. */
     public void recordSuccess(String email) {
         attempts.remove("e:" + normalize(email));
     }

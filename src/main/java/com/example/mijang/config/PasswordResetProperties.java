@@ -3,12 +3,7 @@ package com.example.mijang.config;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * 비밀번호 재설정 링크 설정. application.properties 의 mijang.password-reset.* 를 받는다.
- *
- * <p>전에는 mijang.jwt.reset-ttl 이었다. 재설정 토큰이 JWT 가 아니게 되면서
- * 인증 토큰 설정과 한 묶음으로 둘 이유가 없어졌다.
- */
+/** 비밀번호 재설정 링크({@code mijang.password-reset.*}) 설정 바인딩이다. */
 @ConfigurationProperties(prefix = "mijang.password-reset")
 public class PasswordResetProperties {
 

@@ -70,10 +70,7 @@
 </div>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}">
-/* 회원가입 폼 검증.
-
-   화면 검사는 사용자를 돕기 위한 것이고, 판정의 근거는 서버(SignupPolicy)다.
-   여기 규칙만 고치고 서버를 그대로 두면 우회된다. 두 곳을 함께 본다. */
+/* 회원가입 폼 검증. 판정의 근거는 서버(SignupPolicy)다 — 여기만 고치면 우회되므로 두 곳을 함께 본다. */
 (function () {
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   var PW    = /^(?=.*[A-Za-z])(?=.*[0-9])[!-~]{8,16}$/;   // 영문+숫자, 8~16자
@@ -122,11 +119,8 @@
                         && terms.checked && advice.checked);
   }
 
-  /* ── 이메일 — 형식만 본다 ──
-     가입 여부는 여기서 묻지 않는다. 인증 없이 부를 수 있는 조회를 두면
-     "이 주소가 가입돼 있는가"를 알려 주는 통로가 되고, 로그인 오류를 하나로 합쳐
-     막아 둔 계정 존재 여부가 그쪽으로 새어 나간다.
-     중복은 가입 버튼을 눌렀을 때 서버가 409 로 알려 주고, 그 문구를 이 칸에 붙인다. */
+  /* 이메일은 형식만 본다. 가입 여부 조회를 두면 계정 존재 여부가 새므로 두지 않는다.
+     중복은 가입 버튼을 눌렀을 때 서버가 409 로 알려 주고 그 문구를 이 칸에 붙인다. */
   email.addEventListener("input", function () {
     if (!email.value) { pass.email = false; hide("m-email", email); sync(); return; }
     pass.email = EMAIL.test(email.value);

@@ -17,6 +17,7 @@ public class AdminStatsController {
 
     private final AdminStatsService service;
 
+    /** 기간별 관리자 통계를 조회한다. */
     @GetMapping
     public ApiResponse<AdminStatsResponse> stats(
             @RequestParam(defaultValue = "1M") String period) {

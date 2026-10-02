@@ -25,6 +25,7 @@ public enum AdminStatsPeriod {
         return code;
     }
 
+    /** 코드 문자열로 기간을 찾는다. 모르는 값이면 MONTH 다. */
     public static AdminStatsPeriod from(String value) {
         String code = value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
         for (AdminStatsPeriod period : values()) {
@@ -35,6 +36,7 @@ public enum AdminStatsPeriod {
         return MONTH;
     }
 
+    /** 오늘 기준으로 현재·이전 기간의 조회 창을 만든다. */
     public Window window(LocalDate today) {
         LocalDate from = switch (this) {
             case DAY -> today;

@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  DailySnapshotMapper.xml — 스냅샷 SQL
-
-  이 파일이 하는 일
-    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
-    저장은 넣기 겸 갱신이다 — 배치가 두 번 돌아도 그날 값이 하나만 남는다.
--->
+<!-- DailySnapshotMapper.xml — 스냅샷 SQL. 저장은 UPSERT 라 배치가 두 번 돌아도 그날 값이 하나만 남는다. -->
 <mapper namespace="com.example.mijang.portfolio.mapper.DailySnapshotMapper">
 
     <!-- record 는 순서로 매핑된다. SnapshotResponse 선언 순서와 같아야 한다 -->

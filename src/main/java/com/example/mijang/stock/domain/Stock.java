@@ -2,11 +2,7 @@ package com.example.mijang.stock.domain;
 
 import java.time.LocalDateTime;
 
-/**
- * stocks 테이블 한 행.
- *
- * <p>검색 결과용 DTO 와 따로 둔다. 검색은 세 컬럼만 필요하고 이 record 는 전부 담는다.
- */
+/** stocks 테이블 한 행이다. */
 public record Stock(
         Long id,
         String symbol,

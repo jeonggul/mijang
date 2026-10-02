@@ -24,21 +24,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 가입·로그인·토큰 갱신. 개발명세서(API) AUTH-001~003
- *
- * <p>쿠키를 굽는 일은 컨트롤러가 한다. 이 클래스는 토큰 문자열까지만 만든다.
- */
+/** 가입·로그인·토큰 갱신·탈퇴를 담당한다. 쿠키는 컨트롤러가 굽고 여기서는 토큰 문자열까지만 만든다. */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    /**
-     * 계정이 없을 때 대신 검증할 해시. 어떤 비밀번호와도 맞지 않는다.
-     *
-     * <p>값 자체는 의미가 없고 BCrypt 를 같은 비용으로 한 번 돌리게 하는 것이 목적이다.
-     * 상수라 매 요청 새로 만들지 않는다.
-     */
+    /** 계정이 없을 때 대신 검증할 해시. BCrypt 를 같은 비용으로 태워 타이밍 차이를 없앤다. */
     private static final String DUMMY_HASH =
             "$2a$10$ZZZZZZZZZZZZZZZZZZZZZeS7Z5nQ0Xk8Yq9Q0Yq9Q0Yq9Q0Yq9Q0y";
 
@@ -51,17 +42,7 @@ public class AuthService {
     private final AdminUserMapper adminUserMapper;
     private final PasswordVersionRegistry versions;
 
-    /**
-     * 가입 전 닉네임 사용 가능 확인. 형식 → 금지어 → 중복 순으로 본다.
-     *
-     * <p>이메일에는 같은 확인을 두지 않는다. 인증 없이 부를 수 있는 조회는 그대로
-     * "이 주소가 가입돼 있는가"를 알려 주는 통로가 되어, 로그인 오류를 하나로 합쳐
-     * 막아 둔 계정 존재 여부가 그쪽으로 새어 나간다. 닉네임은 게시글에 그대로 노출되는
-     * 공개 값이라 같은 문제가 없다.
-     *
-     * <p>순서에 이유가 있다. 형식이 틀린 값으로 DB 를 조회할 이유가 없고,
-     * 금지어는 DB 없이 판정되므로 조회 전에 걸러 낸다.
-     */
+    /** 가입 전 닉네임 사용 가능 여부를 형식 → 금지어 → 중복 순으로 확인한다. */
     @Transactional(readOnly = true)
     public AvailabilityResponse checkNickname(String nickname) {
         String reason = SignupPolicy.validateNickname(nickname);
@@ -74,31 +55,17 @@ public class AuthService {
         return AvailabilityResponse.ok("사용 가능한 닉네임입니다");
     }
 
-    /**
-     * AUTH-001 회원가입.
-     *
-     * <p>중복을 먼저 보고 저장한다. 검사와 저장 사이에 다른 요청이 끼어들 수 있는데,
-     * 이메일은 UNIQUE 제약이 잡아 주고(그때는 DataIntegrityViolationException 이 난다)
-     * 닉네임은 제약이 없어 통과할 수 있다. 2.2 의 주의와 같은 이야기다.
-     *
-     * <p>가입만 하고 토큰은 발급하지 않는다. 화면도 가입 후 로그인 화면으로 보낸다.
-     *
-     * @return 생성된 사용자 id
-     * @throws BusinessException 이메일 또는 닉네임이 이미 있을 때(409)
-     */
+    /** 회원가입을 처리하고 생성된 사용자 id 를 돌려준다. 토큰은 발급하지 않는다. */
     @Transactional
     public Long signup(SignupForm form) {
-        /* 운영 설정에서 가입을 닫아 두면 여기서 멈춘다. 중복 검사보다 앞에 두는 이유 —
-           닫아 둔 상태에서 "이미 있는 이메일" 을 알려 주면 가입은 못 하면서
-           계정 존재 여부만 새어 나간다 */
+        // 가입 차단 확인은 계정 존재 여부가 새지 않도록 중복 검사보다 앞에 둔다.
         if (!settingService.isOn(AdminSettingKey.SIGNUP_ENABLED)) {
             throw new BusinessException(ErrorCode.SIGNUP_DISABLED);
         }
         if (userMapper.countByEmail(form.getEmail()) > 0) {
             throw new BusinessException(ErrorCode.AUTH_EMAIL_DUPLICATED, "email");
         }
-        /* 소셜 가입 경로는 @Valid 를 거치지 않으므로 여기서 길이를 다시 본다.
-           @Size 는 수동 가입(AUTH-001) 입력 검증에만 쓰인다. 이곳이 진짜 보장이다 */
+        // 소셜 가입 경로는 @Valid 를 거치지 않으므로 이메일 길이를 여기서 다시 본다.
         if (form.getEmail() != null && form.getEmail().length() > SignupPolicy.EMAIL_MAX_LENGTH) {
             throw new BusinessException(ErrorCode.COMMON_INVALID_REQUEST, "email");
         }
@@ -106,8 +73,7 @@ public class AuthService {
         if (SignupPolicy.containsForbiddenWord(form.getNickname())) {
             throw new BusinessException(ErrorCode.AUTH_NICKNAME_FORBIDDEN, "nickname");
         }
-        /* 형식 규칙은 mijang12 를 통과시킨다. 닉네임은 커뮤니티에 그대로 보이고
-           이메일 아이디도 알기 어렵지 않아, 그대로 쓰면 시도 목록의 맨 앞에 놓인다 */
+        // 닉네임·이메일이 들어간 비밀번호를 막는다.
         if (SignupPolicy.containsProfileInfo(
                 form.getPassword(), form.getNickname(), form.getEmail())) {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_TOO_GUESSABLE, "password");
@@ -123,43 +89,23 @@ public class AuthService {
         try {
             userMapper.insert(param);
         } catch (DuplicateKeyException e) {
-            // 확인과 저장 사이에 같은 이메일이 먼저 들어온 경우. uk_users_email 이 잡아 준다.
-            // 잡지 않으면 500 이 나가고 화면은 "일시적인 오류"를 띄운다 — 실제로는 중복이다.
+            // 확인과 저장 사이에 같은 이메일이 먼저 들어온 경우다. uk_users_email 이 잡는다.
             throw new BusinessException(ErrorCode.AUTH_EMAIL_DUPLICATED, "email");
         }
         return param.getId();
     }
 
-    /**
-     * AUTH-002 로그인.
-     *
-     * <p>이메일이 없는 경우와 비밀번호가 틀린 경우를 <b>같은 오류</b>로 돌려준다.
-     * 나누면 계정 존재 여부가 새어 나간다 (미장-API명세서 2장).
-     */
-    /**
-     * 자격을 검증하고 토큰 두 개를 만든다.
-     *
-     * <p>세 갈래의 실패(없는 이메일·소셜 전용 계정·비밀번호 불일치)를 하나로 합쳐
-     * 같은 오류로 던진다. 나누면 어떤 이메일이 가입돼 있는지 알아낼 수 있다.
-     *
-     * <p>정지 계정도 같은 오류다. "정지된 계정입니다"라고 알려 주면 그 자체로
-     * 계정이 있다는 정보가 된다.
-     *
-     * @throws BusinessException 어떤 이유든 로그인 실패면 AUTH_INVALID_CREDENTIALS
-     */
+    /** 자격을 검증하고 토큰 한 쌍을 만든다. 계정 존재 여부가 새지 않도록 모든 실패를 같은 오류로 돌려준다. */
     @Transactional(readOnly = true)
     public Tokens login(LoginForm form, String clientIp) {
-        /* 잠긴 동안에도 자격 증명 오류와 같은 응답을 준다. "잠겼습니다" 라고 알려 주면
-           그 이메일이 실재한다는 사실이 드러나, 문구를 통일해 막아 둔 것이 도로 샌다 */
+        // 잠금 상태도 자격 증명 오류와 같은 응답으로 감춘다.
         if (loginAttemptService.isBlocked(form.getEmail(), clientIp)) {
             throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
         User user = userMapper.findByEmail(form.getEmail());
 
-        // 계정이 없거나 소셜 전용이어도 BCrypt 를 한 번 태운다.
-        // 짧게 끊으면 응답 시간이 갈려 "가입된 이메일인가"가 시간으로 드러난다.
-        // 오류 문구를 하나로 합쳐 막아 둔 것이 타이밍으로 새는 것을 여기서 닫는다.
+        // 계정이 없어도 BCrypt 를 한 번 태워 응답 시간 차이로 계정 존재가 새는 것을 막는다.
         String hash = (user != null && user.hasPassword()) ? user.passwordHash() : DUMMY_HASH;
         boolean passwordMatches = passwordEncoder.matches(form.getPassword(), hash);
 
@@ -171,24 +117,7 @@ public class AuthService {
         return issue(user, form.isRememberMe());
     }
 
-    /**
-     * AUTH-03 토큰 갱신. refresh 쿠키로만 호출된다.
-     *
-     * <p>refresh 를 서버에 저장하지 않으므로 여기서 하는 검증은 서명·만료·종류뿐이다.
-     * 사용자 상태는 매번 다시 조회해 정지·탈퇴 계정이 갱신으로 되살아나지 않게 한다.
-     */
-    /**
-     * refresh 쿠키로 토큰을 다시 발급한다.
-     *
-     * <p>서명·만료·종류를 본 뒤 <b>사용자를 DB 에서 다시 읽는다.</b> 토큰 안의 값만 믿으면
-     * 정지·탈퇴된 계정이 14일 동안 갱신으로 되살아난다.
-     *
-     * <p>만료와 위조를 구분하지 않고 모두 AUTH_TOKEN_EXPIRED 로 돌려준다.
-     * 화면 입장에서 할 일은 어느 쪽이든 "다시 로그인"으로 같다.
-     *
-     * @param refreshToken 쿠키에서 읽은 값. null 이면 비로그인으로 본다
-     * @throws BusinessException 토큰이 없거나(401) 못 믿을 때(401)
-     */
+    /** refresh 쿠키로 토큰을 다시 발급한다. 사용자를 DB 에서 다시 읽어 정지·탈퇴 계정이 갱신으로 되살아나지 않게 한다. */
     @Transactional(readOnly = true)
     public Tokens refresh(String refreshToken) {
         if (refreshToken == null) {
@@ -208,10 +137,7 @@ public class AuthService {
         if (user == null || !user.isActive()) {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
-        /* 비밀번호가 바뀐 뒤에 발급된 토큰만 받는다.
-           이 검사가 없으면 비밀번호를 유출당한 사람이 재설정을 해도 공격자의 쿠키가
-           그대로 살아 있고, 갱신 때마다 만료가 다시 14일로 늘어나 사실상 끊기지 않는다.
-           갱신 길목이라 어차피 사용자를 다시 읽으므로 조회가 늘지 않는다. */
+        // password_version 이 다른 토큰은 거부한다. 비밀번호 변경 뒤 옛 refresh 가 살아남지 못하게 한다.
         if (jwtProvider.passwordVersion(claims) != user.passwordVersion()) {
             throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED);
         }
@@ -219,22 +145,12 @@ public class AuthService {
         return issue(user, jwtProvider.remember(claims));
     }
 
-    /**
-     * 검증이 끝난 사용자로 토큰 한 쌍과 응답용 정보를 만든다.
-     *
-     * <p>로그인과 갱신이 같은 결과를 내야 해서 한 곳에 모았다.
-     * 한쪽만 고치면 두 경로의 토큰 내용이 달라진다.
-     */
-    /**
-     * 소셜 로그인이 쓰는 토큰 발급.
-     *
-     * <p>비밀번호를 확인하는 자리가 아니다 — 제공자가 이미 신원을 확인했다.
-     * 그래도 발급 경로는 같아야 해서 {@link #issue} 를 그대로 탄다.
-     */
+    /** 소셜 로그인용 토큰을 발급한다. 신원 확인은 제공자가 이미 했고 발급 경로만 공유한다. */
     public Tokens issueForSocial(User user) {
         return issue(user, true);
     }
 
+    /** 검증이 끝난 사용자로 토큰 한 쌍과 응답용 정보를 만든다. 로그인·갱신·소셜이 함께 쓴다. */
     private Tokens issue(User user, boolean remember) {
         String access = jwtProvider.createAccessToken(
                 user.id(), user.nickname(), user.role(), user.passwordVersion());
@@ -244,30 +160,18 @@ public class AuthService {
         return new Tokens(access, refresh, remember, info);
     }
 
-    /**
-     * AUTH-06 회원 탈퇴.
-     *
-     * <p>행을 지우지 않고 상태만 바꾼다(9.1.1). 매매 기록·게시글이 외래키를 타고
-     * 함께 사라지는 것을 막고, 30일 안에는 되돌릴 여지를 남긴다.
-     *
-     * <p>돌이킬 수 없는 동작이라 비밀번호를 다시 받는다. 소셜 전용 계정은 확인할
-     * 비밀번호가 없어 지금은 탈퇴할 수 없다 — 소셜 로그인(AUTH-07)과 함께 정리한다.
-     *
-     * @throws BusinessException 사용자가 없거나(404) 비밀번호가 틀릴 때(400)
-     */
+    /** 회원 탈퇴를 처리한다. 행을 지우지 않고 상태만 바꾸며, 비밀번호를 다시 확인한다. */
     @Transactional
     public void withdraw(Long userId, String password) {
         User user = userMapper.findById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
-        // 정지된 계정은 남은 access 토큰으로 탈퇴까지 밀어붙일 수 있었다
+        // 정지된 계정이 남은 access 토큰으로 탈퇴하지 못하게 막는다.
         if (!user.isActive()) {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
-        /* 소셜 전용 계정은 확인할 비밀번호가 없다. "비밀번호가 틀렸다"고 답하면
-           한 번도 만든 적 없는 값을 맞히라는 말이 된다. 사실대로 알려 준다.
-           이 경로로는 탈퇴할 수 없다는 것이 지금의 한계다(10장). */
+        // 소셜 전용 계정은 확인할 비밀번호가 없어 이 경로로는 탈퇴할 수 없다.
         if (!user.hasPassword()) {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_NOT_SET);
         }
@@ -275,8 +179,7 @@ public class AuthService {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_MISMATCH, "password");
         }
 
-        /* 유일한 활성 관리자는 탈퇴할 수 없다(4.13 #3). 관리자 정지에서 쓰는 잠금 조회를
-           그대로 써 동시 탈퇴·정지와도 직렬화한다 — 관리자가 0명이 되는 창을 막는다 */
+        // 유일한 활성 관리자는 탈퇴할 수 없다. FOR UPDATE 잠금 조회로 동시 탈퇴·정지와 직렬화한다.
         if ("ADMIN".equals(user.role())) {
             List<Long> activeAdminIds = adminUserMapper.lockActiveAdminIds();
             if (activeAdminIds.size() <= 1 && activeAdminIds.contains(userId)) {
@@ -284,22 +187,14 @@ public class AuthService {
             }
         }
 
-        /* CAS: 확인한 비밀번호 그대로여야 바뀐다. 그 사이 비밀번호 변경·정지가 끼면 0행이
-           되고, 아래에서 충돌로 돌려보낸다. 이미 나간 요청이 낡은 상태를 덮어쓰지 못한다 */
+        // CAS 갱신 — 확인한 비밀번호 해시 그대로일 때만 탈퇴되고, 그 사이 변경·정지가 끼면 0행이 된다.
         int changed = userMapper.withdraw(userId, user.passwordHash());
         if (changed != 1) {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
         oauthMapper.deleteByUser(userId);
 
-        /* 옛 access 토큰을 죽인다. 비밀번호 변경(PasswordService)과 같은 장치다 —
-           탈퇴 뒤 최대 30분간 살아 있던 토큰을 다음 요청에서 거부한다.
-           스냅샷(user.passwordVersion()+1)을 그대로 쓰지 않는다 — updateRole 같은 다른 경로도
-           password_version 을 올릴 수 있어, findById 를 읽은 뒤 이 UPDATE 사이에 세대가
-           한 번 더 올라가 있으면 스냅샷+1은 실제 결과보다 낮은 값이 된다. 그 값을 registry
-           에 기록하면 그 사이 세대로 발급된 토큰이 낡지 않은 것으로 통과해 탈퇴한 계정을
-           계속 인증시킨다. withdraw 의 행 잠금이 걸린 같은 트랜잭션 안이라 방금 확정된
-           값을 그대로 읽어도 안전하다 */
+        // 옛 access 토큰 무효화. 스냅샷+1 이 아니라 방금 확정된 password_version 을 다시 읽어 기록한다.
         int newVersion = userMapper.findPasswordVersion(userId);
         versions.record(userId, newVersion);
     }
@@ -308,12 +203,7 @@ public class AuthService {
     public record Tokens(String accessToken, String refreshToken, boolean remember,
                          LoginResponse.LoginUserInfo user) {
 
-        /**
-         * 응답 본문용으로 변환한다.
-         *
-         * <p>refreshToken 을 일부러 뺀다. 갱신 토큰은 HttpOnly 쿠키로만 오가야 하고,
-         * 본문에 실리면 JS 가 읽을 수 있어 쿠키로 감춘 의미가 사라진다.
-         */
+        /** 응답 본문용으로 변환한다. refreshToken 은 HttpOnly 쿠키 전용이라 일부러 뺀다. */
         public LoginResponse toResponse() {
             return new LoginResponse(accessToken, user);
         }

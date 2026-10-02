@@ -1,11 +1,3 @@
-/*
- * HoldingMapper — 보유 현황 테이블 접근
- *
- * 이 파일이 하는 일
- *   holdings 를 읽고 쓰는 통로다. 이 표는 사용자가 직접 만드는 것이 아니라
- *   매매 기록에서 다시 계산되어 채워지는 파생 표다.
- *   손익 계산에 필요한 값을 한 번에 꺼내 오는 조회가 핵심이다.
- */
 package com.example.mijang.portfolio.mapper;
 
 import com.example.mijang.portfolio.dto.HoldingResponse;
@@ -15,29 +7,15 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-/**
- * holdings(보유 현황) 접근. 매매 기록에서 재계산되는 파생 표다(2.1).
- *
- * <p>개발명세서(MVC) · 포트폴리오 · mapper
- */
+/** holdings(보유 현황) 테이블에 접근하는 매퍼다. */
 @Mapper
 public interface HoldingMapper {
 
-    /**
-     * 보유 현황 조회. 시세와 평가금액을 함께 붙인다.
-     *
-     * <p>수량 0 인 행은 <b>목록에서 뺀다.</b> 표에는 남겨 두지만(2.4) 화면에 보일 이유는 없다.
-     *
-     * @param fxRate 평가에 쓸 현재 환율. null 이면 원화 금액이 전부 null 로 나온다
-     */
+    /** 보유 현황을 시세·평가금액과 함께 조회한다. 수량 0 인 행은 뺀다. */
     List<HoldingResponse> findByUser(@Param("userId") Long userId,
                                      @Param("fxRate") BigDecimal fxRate);
 
-    /**
-     * 재계산 결과 저장. 이미 있으면 갱신한다.
-     *
-     * <p>{@code (portfolio_id, symbol)} 이 UNIQUE 라 종목마다 한 행이다.
-     */
+    /** 재계산 결과를 저장한다. 이미 있으면 갱신한다. */
     int upsert(@Param("userId") Long userId,
                @Param("portfolioId") Long portfolioId,
                @Param("symbol") String symbol,
@@ -47,36 +25,16 @@ public interface HoldingMapper {
                @Param("totalFee") BigDecimal totalFee,
                @Param("realizedPnlKrw") BigDecimal realizedPnlKrw);
 
-    /** 총 평가금액(원). ACCOUNT-07. 보유가 없으면 null. */
+    /** 총 평가금액(원)을 계산한다. 보유가 없으면 null 이다. */
     BigDecimal sumMarketValueKrw(@Param("userId") Long userId, @Param("fxRate") BigDecimal fxRate);
 
-    /**
-     * 한 종목의 보유 수량. 산 적이 없으면 null, 전량 매도했으면 0.
-     *
-     * <p>커뮤니티의 "주주" 배지가 이 값만 본다(COM-002). 배지 하나 때문에 보유 목록을
-     * 통째로 읽고 시세와 환율까지 붙이면 화면에 쓰지도 않을 계산이 따라온다.
-     */
+    /** 한 종목의 보유 수량을 조회한다. 산 적이 없으면 null, 전량 매도했으면 0 이다. */
     BigDecimal findQuantity(@Param("userId") Long userId, @Param("symbol") String symbol);
 
-    /**
-     * 손익 분해 입력값. 보유 종목마다 평단가·평균환율·현재가를 모아 준다.
-     *
-     * <p>현재가가 없는 종목도 <b>돌려준다.</b> 걸러내는 것은 계산기가 하고,
-     * 몇 개가 빠졌는지 세어 응답에 담아야 하기 때문이다(2.5).
-     *
-     * @param symbol 주면 그 종목만. null 이면 전체 — 종목 상세가 같은 문장을 쓴다(2.4)
-     */
+    /** 손익 분해 입력값을 조회한다. 현재가가 없는 종목도 포함해 돌려준다. */
     List<SymbolPnl> findForPnl(@Param("userId") Long userId, @Param("symbol") String symbol);
 
-    /**
-     * 손익 계산 입력값 — <b>그날 기준</b>.
-     *
-     * <p>{@link #findForPnl} 은 언제나 <b>최신</b> 종가를 붙인다. 오늘 스냅샷에는 그것이 맞지만,
-     * 놓친 날을 나중에 메울 때 그대로 쓰면 <b>과거 추이가 통째로 거짓이 된다</b>(report 2.4).
-     * 그래서 그 날짜 이하의 마지막 종가를 붙이는 경로를 따로 둔다.
-     *
-     * @param asOf 이 날짜까지의 마지막 종가를 쓴다
-     */
+    /** asOf 날짜 이하의 마지막 종가를 붙인 손익 분해 입력값을 조회한다. 과거 백필용이다. */
     List<SymbolPnl> findForPnlAsOf(@Param("userId") Long userId,
                                    @Param("symbol") String symbol,
                                    @Param("asOf") java.time.LocalDate asOf);

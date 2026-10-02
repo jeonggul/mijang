@@ -1,11 +1,3 @@
-/*
- * TransactionController — 매매 기록 API
- *
- * 이 파일이 하는 일
- *   거래 입력·목록·삭제 화면이 부르는 것들을 내준다.
- *   전부 로그인이 필요하다. 누구의 기록인지는 요청에서 받지 않고 토큰에서 꺼낸다 —
- *   요청에서 받으면 남의 기록을 보거나 남의 이름으로 저장할 수 있게 된다.
- */
 package com.example.mijang.portfolio.controller;
 
 import com.example.mijang.common.response.ApiResponse;
@@ -37,12 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 매매 기록 API. 개발명세서(API) ACCOUNT-01·06 · 화면 SR-006·SR-007
- *
- * <p>전부 인증이 필요하다. 사용자 식별자는 요청에서 받지 않고 토큰에서 꺼낸다 —
- * 받으면 남의 기록을 조회하거나 남의 이름으로 저장할 수 있다.
- */
+/** 매매 기록의 등록·조회·수정·삭제·CSV 내보내기를 담당하는 API 컨트롤러다. */
 @RestController
 @RequestMapping("/api/transactions")
 @RequiredArgsConstructor
@@ -53,18 +40,14 @@ public class TransactionController {
 
     private final TransactionService transactionService;
 
-    /** 매매 기록 등록. {@code ACCOUNT-01}·{@code ACCOUNT-02} */
+    /** 매매 기록을 등록한다. */
     @PostMapping
     public ApiResponse<Long> create(@LoginUser SessionUser me,
                                     @Valid @RequestBody TransactionForm form) {
         return ApiResponse.ok(transactionService.create(me.userId(), form));
     }
 
-    /**
-     * 목록. {@code ACCOUNT-06}
-     *
-     * @param symbol 주면 그 종목만. 생략하면 전체
-     */
+    /** 매매 기록 목록을 페이지로 조회한다. symbol 을 주면 그 종목만 조회한다. */
     @GetMapping
     public ApiResponse<PageResponse<TransactionResponse>> list(
             @LoginUser SessionUser me,
@@ -94,25 +77,20 @@ public class TransactionController {
                 .body(csv(rows));
     }
 
-    /**
-     * 이 사용자가 거래한 적 있는 종목 티커. 목록 화면 종목 필터가 쓴다({@code ACCOUNT-06}).
-     *
-     * <p>보유 목록({@code /api/portfolio/holdings})으로 대신할 수 없다 — 그쪽은 수량이 남은
-     * 종목만 준다. 전량 매도한 종목의 기록도 찾을 수 있어야 한다.
-     */
+    /** 거래한 적 있는 종목 티커를 조회한다. 전량 매도한 종목도 포함한다. */
     @GetMapping("/symbols")
     public ApiResponse<List<String>> symbols(@LoginUser SessionUser me) {
         return ApiResponse.ok(transactionService.tradedSymbols(me.userId()));
     }
 
-    /** 한 건 조회. 수정 화면이 값을 채울 때 쓴다. */
+    /** 매매 기록 한 건을 조회한다. */
     @GetMapping("/{txId}")
     public ApiResponse<TransactionResponse> detail(@LoginUser SessionUser me,
                                                    @PathVariable Long txId) {
         return ApiResponse.ok(transactionService.detail(me.userId(), txId));
     }
 
-    /** 수정. {@code ACCOUNT-04} 고치면 보유 현황이 다시 계산된다. */
+    /** 매매 기록을 수정한다. 보유 현황이 다시 계산된다. */
     @PatchMapping("/{txId}")
     public ApiResponse<Void> update(@LoginUser SessionUser me,
                                     @PathVariable Long txId,
@@ -121,7 +99,7 @@ public class TransactionController {
         return ApiResponse.ok(null);
     }
 
-    /** 삭제. 지우지 않고 표시만 한다(2.9). */
+    /** 매매 기록을 삭제한다. 실제로 지우지 않고 표시만 한다. */
     @DeleteMapping("/{txId}")
     public ApiResponse<Void> delete(@LoginUser SessionUser me, @PathVariable Long txId) {
         transactionService.delete(me.userId(), txId);

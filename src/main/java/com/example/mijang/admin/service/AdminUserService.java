@@ -31,22 +31,19 @@ public class AdminUserService {
     private final AdminLogMapper adminLogMapper;
     private final PasswordVersionRegistry versions;
 
+    /** 사용자 목록을 조회한다. */
     @Transactional(readOnly = true)
     public List<AdminUserResponse> users(Long adminId, String status, String q, int limit) {
         return userMapper.findUsers(adminId, statusFilter(status), blankToNull(q), clamp(limit));
     }
 
+    /** 같은 조건의 사용자 전체 건수를 돌려준다. */
     @Transactional(readOnly = true)
     public int userCount(String status, String q) {
         return userMapper.countUsers(statusFilter(status), blankToNull(q));
     }
 
-    /**
-     * 사용자를 정지하거나 해제한다.
-     *
-     * <p>본인과 마지막 활성 관리자는 정지할 수 없다. 상태 변경 시 토큰 세대도 올려
-     * 이미 발급된 access·refresh token을 즉시 끊는다.
-     */
+    /** 사용자를 정지·해제한다 — 본인과 마지막 활성 관리자는 정지할 수 없고, 토큰 세대를 올려 기존 토큰을 끊는다. */
     @Transactional
     public void changeStatus(Long adminId, Long userId, String requestedStatus) {
         String nextStatus = mutableStatus(requestedStatus);
@@ -79,16 +76,7 @@ public class AdminUserService {
         writeLog(adminId, nextStatus, target);
     }
 
-    /**
-     * 관리자를 일반 사용자로 내린다. {@code ADMIN-03}
-     *
-     * <p>정지와 같은 안전장치를 건다 — <b>본인은 못 내린다</b>(내리는 순간 그 화면을
-     * 잃는다), <b>마지막 활성 관리자도 못 내린다</b>(아무도 관리자 화면에 못 들어간다).
-     *
-     * <p>토큰 세대를 함께 올려 이미 발급된 토큰을 끊는다. 그러지 않으면 권한은
-     * 내려갔는데 손에 든 토큰의 role 이 ADMIN 이라 그 토큰이 살아 있는 동안
-     * 관리자 화면을 계속 쓸 수 있다.
-     */
+    /** 관리자를 일반 사용자로 내린다 — 본인·마지막 활성 관리자는 못 내리고, 토큰 세대를 올려 기존 토큰을 끊는다. */
     @Transactional
     public void demote(Long adminId, Long userId) {
         if (adminId.equals(userId)) {
@@ -144,7 +132,7 @@ public class AdminUserService {
         return Math.max(1, Math.min(limit, 200));
     }
 
-    /* 권한 변경도 남긴다. 정지와 마찬가지로 로그 실패가 본 작업을 되돌리면 안 된다 */
+    /** 권한 변경 로그를 남긴다. 실패해도 본 작업은 되돌리지 않는다. */
     private void writeRoleLog(Long adminId, AdminUserAccount target) {
         try {
             adminLogMapper.insert(adminId, "USER_DEMOTE", TARGET_USER, String.valueOf(target.id()),
@@ -155,6 +143,7 @@ public class AdminUserService {
         }
     }
 
+    /** 상태 변경 로그를 남긴다. 실패해도 본 작업은 되돌리지 않는다. */
     private void writeLog(Long adminId, String status, AdminUserAccount target) {
         String action = ACTIVE.equals(status) ? "USER_RESTORE" : "USER_SUSPEND";
         try {

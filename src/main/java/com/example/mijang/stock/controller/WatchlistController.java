@@ -16,12 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 관심종목 API. 개발명세서(API) WATCH-01·WATCH-02 · 화면 SR-010
- *
- * <p>종목 조회와 달리 <b>전부 인증이 필요하다.</b> 누구의 관심종목인지가 있어야 하는 자원이다.
- * 사용자 식별자는 요청에서 받지 않고 토큰에서 꺼낸다 — 받으면 남의 것을 조회할 수 있다.
- */
+/** 관심종목 API 다. 전부 인증이 필요하고 사용자 식별자는 토큰에서 꺼낸다. */
 @RestController
 @RequestMapping("/api/watchlists")
 @RequiredArgsConstructor
@@ -29,13 +24,13 @@ public class WatchlistController {
 
     private final WatchlistService watchlistService;
 
-    /** 목록. 시세가 함께 나온다. */
+    /** 관심종목 목록을 시세와 함께 돌려준다. */
     @GetMapping
     public ApiResponse<List<WatchlistItemResponse>> list(@LoginUser SessionUser me) {
         return ApiResponse.ok(watchlistService.list(me.userId()));
     }
 
-    /** 등록. {@code WATCH-01} */
+    /** 관심종목을 등록한다. */
     @PostMapping("/items")
     public ApiResponse<Void> add(@LoginUser SessionUser me,
                                  @RequestBody @jakarta.validation.Valid AddItemRequest request) {
@@ -43,7 +38,7 @@ public class WatchlistController {
         return ApiResponse.ok(null);
     }
 
-    /** 해제. {@code WATCH-01} */
+    /** 관심종목을 해제한다. */
     @DeleteMapping("/items/{id}")
     public ApiResponse<Void> remove(@LoginUser SessionUser me, @PathVariable Long id) {
         watchlistService.remove(me.userId(), id);

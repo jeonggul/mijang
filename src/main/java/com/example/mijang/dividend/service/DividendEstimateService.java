@@ -1,11 +1,3 @@
-/*
- * DividendEstimateService — 예상 배당 생성 (PROFIT-12)
- *
- * 이 파일이 하는 일
- *   종목 배당 마스터(stock_dividends)와 매매 기록을 결합해, 배당락일에
- *   보유하고 있던 사람마다 예상 배당(ESTIMATED)을 만든다. 사용자는 실제
- *   입금액으로 확정만 하면 된다. 예상은 확정 전까지 손익 집계에서 빠진다.
- */
 package com.example.mijang.dividend.service;
 
 import com.example.mijang.common.time.TradingClock;
@@ -24,27 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 예상 배당 생성. 개발명세서(API) PROFIT-12 · 화면 SR-016
- *
- * <p>산출식은 [[2.1 기능 명세서]] 그대로다 —
- * 예상 세후 = 주당 배당금 × 배당락일 보유 수량 × (1 − 원천징수 15%).
- * 원화 환산은 지급일 환율이되, 지급일이 아직 오지 않았으면 지금 환율로
- * 어림한다 — 예상값이므로 확정 때 실제 환율로 바뀐다.
- *
- * <p>넣기는 INSERT IGNORE 다. 같은 (포트폴리오·종목·지급일)이 있으면 —
- * 사용자가 먼저 직접 입력했든 지난 배치가 만들었든 — 건드리지 않는다.
- * 그래서 같은 날 몇 번을 돌려도 안전하다.
- */
+/** 배당락일 보유자별 예상 배당(ESTIMATED)을 INSERT IGNORE 로 생성한다. PROFIT-12 · SR-016. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DividendEstimateService {
 
-    /**
-     * 배당락일을 거슬러 보는 구간. 지급일이 배당락일보다 한 달쯤 늦는 종목이
-     * 있어, 며칠 치만 보면 수집이 늦었을 때 그 사이 배당락일을 놓친다.
-     */
+    /** 배당락일을 거슬러 보는 구간. 짧으면 수집이 늦었을 때 배당락일을 놓친다. */
     private static final int LOOKBACK_DAYS = 45;
 
     private static final BigDecimal ONE = BigDecimal.ONE;
@@ -55,20 +33,13 @@ public class DividendEstimateService {
     private final DividendMapper dividendMapper;
     private final FxRateService fxRateService;
 
-    /** 마지막 배당락일 기준으로 만든다. 배치가 부른다. */
+    /** 오늘 기준으로 예상 배당을 생성한다. */
     @Transactional
     public int produceLatest() {
         return produce(LocalDate.now(TradingClock.SERVICE_ZONE));
     }
 
-    /**
-     * {@code asOf} 까지 배당락일이 지난 이벤트로 예상 배당을 만든다.
-     *
-     * <p>배당락일이 아직 오지 않은 이벤트는 만들지 않는다 — 그날까지 보유할지
-     * 알 수 없어 수량이 확정되지 않았다.
-     *
-     * @return 새로 만든 예상 배당 수
-     */
+    /** asOf 까지 배당락일이 지난 이벤트로 예상 배당을 만들고 생성 건수를 반환한다. */
     @Transactional
     public int produce(LocalDate asOf) {
         List<StockDividend> events = stockDividendMapper.findByExDateBetween(
@@ -91,14 +62,14 @@ public class DividendEstimateService {
         return created;
     }
 
-    /** 지급일 환율. 지급일이 없거나 아직 오지 않았으면 지금까지의 값으로 어림한다. */
+    /** 지급일 환율을 구하되, 지급일이 아직 오지 않았으면 현재까지의 값으로 어림한다. */
     private BigDecimal estimateFxRate(StockDividend event, LocalDate asOf) {
         LocalDate payDate = payDate(event);
         BigDecimal rate = fxRateService.rateOf(payDate.isAfter(asOf) ? asOf : payDate);
         return rate != null ? rate : fxRateService.rateOf(asOf);
     }
 
-    /** 지급일이 비어 있으면 배당락일로 적는다 — pay_date 는 비울 수 없는 컬럼이다. */
+    /** 지급일이 비어 있으면 배당락일로 대신한다 — pay_date 는 비울 수 없는 컬럼이다. */
     private static LocalDate payDate(StockDividend event) {
         return event.payableDate() != null ? event.payableDate() : event.exDate();
     }

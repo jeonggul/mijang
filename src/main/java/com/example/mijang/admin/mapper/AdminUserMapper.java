@@ -10,33 +10,27 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface AdminUserMapper {
 
+    /** 사용자 목록을 조회한다. */
     List<AdminUserResponse> findUsers(@Param("adminId") Long adminId,
                                       @Param("status") String status,
                                       @Param("q") String q,
                                       @Param("limit") int limit);
 
+    /** 같은 조건의 사용자 수를 센다. */
     int countUsers(@Param("status") String status, @Param("q") String q);
 
+    /** 사용자 원본 값 한 건을 조회한다. */
     AdminUserAccount findAccount(@Param("id") Long id);
 
-    /** 상태 변경끼리 직렬화해 두 관리자가 서로를 동시에 정지하는 것을 막는다. */
+    /** 활성 관리자 행을 잠근다 — 상태 변경끼리 직렬화해 두 관리자가 서로를 동시에 정지하는 것을 막는다. */
     List<Long> lockActiveAdminIds();
 
-    /**
-     * 상태와 토큰 세대를 함께 바꾼다.
-     *
-     * @return 예상한 기존 상태가 맞아 변경된 행 수
-     */
-    /**
-     * 권한을 바꾼다. 지금 권한이 기대와 같을 때만 바뀐다.
-     *
-     * <p>두 관리자가 동시에 강등을 눌러 마지막 한 명까지 내려가는 것을 막는다 —
-     * 뒤에 온 쪽은 0 을 돌려받고 서비스가 충돌로 읽는다.
-     */
+    /** 권한을 바꾼다 — 지금 권한이 기대와 같을 때만 바뀌고, 아니면 0 을 돌려준다. */
     int updateRole(@Param("id") Long id,
                    @Param("role") String role,
                    @Param("expectedRole") String expectedRole);
 
+    /** 상태를 바꾼다 — 지금 상태가 기대와 같을 때만 바뀐 행 수가 1 이다. */
     int updateStatus(@Param("id") Long id,
                      @Param("status") String status,
                      @Param("expectedStatus") String expectedStatus);

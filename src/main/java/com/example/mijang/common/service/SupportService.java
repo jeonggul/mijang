@@ -11,17 +11,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 공지·FAQ 조회와 공지 관리 로직을 담당한다. */
 @Service
 @RequiredArgsConstructor
 public class SupportService {
 
     private final SupportMapper supportMapper;
 
+    /** 공지 목록을 조회한다. */
     @Transactional(readOnly = true)
     public List<NoticeResponse> notices() {
         return supportMapper.findNotices();
     }
 
+    /** 공지 상세를 조회한다. 없으면 404 를 던진다. */
     @Transactional(readOnly = true)
     public NoticeResponse notice(Long id) {
         NoticeResponse notice = supportMapper.findNoticeById(id);
@@ -31,11 +34,13 @@ public class SupportService {
         return notice;
     }
 
+    /** FAQ 목록을 조회한다. */
     @Transactional(readOnly = true)
     public List<FaqResponse> faqs() {
         return supportMapper.findFaqs();
     }
 
+    /** 공지를 등록하고 생성된 id 를 반환한다. */
     @Transactional
     public Long createNotice(Long authorId, NoticeForm form) {
         SupportMapper.NoticeInsert insert = new SupportMapper.NoticeInsert(
@@ -44,11 +49,7 @@ public class SupportService {
         return insert.getId();
     }
 
-    /**
-     * 공지 수정. {@code ADMIN-05}
-     *
-     * @throws BusinessException 없거나 이미 지워진 공지일 때(404)
-     */
+    /** 공지를 수정한다. 없거나 지워진 공지면 404 를 던진다. */
     @Transactional
     public void updateNotice(Long noticeId, NoticeForm form) {
         int changed = supportMapper.updateNotice(noticeId,
@@ -58,7 +59,7 @@ public class SupportService {
         }
     }
 
-    /** 공지 삭제. 지우지 않고 표시만 한다 — 링크를 타고 들어온 사람이 있을 수 있다. */
+    /** 공지를 소프트 삭제한다. */
     @Transactional
     public void deleteNotice(Long noticeId) {
         if (supportMapper.deleteNotice(noticeId) != 1) {

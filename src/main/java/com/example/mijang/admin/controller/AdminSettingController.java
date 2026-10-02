@@ -1,11 +1,3 @@
-/*
- * AdminSettingController — 운영 설정 API
- *
- * 이 파일이 하는 일
- *   설정을 통째로 내주고, 한 칸씩 받아 저장한다.
- *   한 번에 전부 받지 않는 이유 — 화면에서 스위치 하나를 누르면 그것만 바뀌면 된다.
- *   전체를 받으면 두 관리자가 다른 칸을 만졌을 때 나중 저장이 앞 것을 덮는다.
- */
 package com.example.mijang.admin.controller;
 
 import com.example.mijang.admin.service.AdminSettingService;
@@ -22,11 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 운영 설정 API. 화면 SR-013 운영 설정
- *
- * <p>{@code /api/admin/**} 전체가 {@code SecurityConfig} 에서 ROLE_ADMIN 으로 막혀 있다.
- */
+/** 운영 설정 API — 설정을 통째로 내주고 한 칸씩 받아 저장한다. */
 @RestController
 @RequestMapping("/api/admin/settings")
 @RequiredArgsConstructor

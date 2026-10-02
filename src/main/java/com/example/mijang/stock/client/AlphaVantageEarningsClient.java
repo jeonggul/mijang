@@ -1,13 +1,3 @@
-/*
- * AlphaVantageEarningsClient — 실적 발표 일정을 CSV 로 받는다
- *
- * 이 파일이 하는 일
- *   EARNINGS_CALENDAR 한 번 호출로 향후 3개월 전체 어닝을 CSV 로 받아 파싱한다.
- *   심볼별로 부르지 않는다 — 통짜 한 방이라 무료 한도(25/일) 안에서 하루 1회면 된다.
- *
- *   응답이 CSV 가 아니면(유료 안내 JSON·빈 본문) 빈 리스트로 접는다. 배치가 다음 날
- *   다시 돌고, 그 사이 화면은 어제 수집분을 그대로 보여 준다.
- */
 package com.example.mijang.stock.client;
 
 import com.example.mijang.config.ExternalApiProperties;
@@ -20,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Alpha Vantage EARNINGS_CALENDAR 를 CSV 로 받아 향후 3개월 어닝 일정을 파싱하는 클라이언트다. */
 @Slf4j
 @Component
 public class AlphaVantageEarningsClient {
@@ -34,7 +25,7 @@ public class AlphaVantageEarningsClient {
         this.config = props.alphavantage();
     }
 
-    /** 향후 3개월 전체 어닝. 실패·빈 응답이면 빈 리스트. */
+    /** 향후 3개월 전체 어닝을 받는다. 실패·빈 응답이면 빈 리스트를 돌려준다. */
     public List<EarningsRow> fetchUpcoming() {
         if (!config.configured()) {
             log.warn("[실적] Alpha Vantage 키가 없어 수집을 건너뜀");
@@ -56,12 +47,7 @@ public class AlphaVantageEarningsClient {
         }
     }
 
-    /**
-     * CSV 본문을 파싱한다. 순수 함수라 테스트가 이걸 고정한다.
-     *
-     * <p>헤더가 {@code symbol,name,reportDate…} 로 시작하지 않으면(유료 안내 JSON·빈 본문)
-     * 빈 리스트다. reportDate 가 비거나 깨진 행은 건너뛴다 — 캘린더의 핵심 값이라 없으면 쓸모없다.
-     */
+    /** CSV 본문을 파싱한다. 헤더가 안 맞으면 빈 리스트, reportDate 가 깨진 행은 건너뛴다. */
     public static List<EarningsRow> parseCsv(String body) {
         if (body == null || body.isBlank()) {
             return List.of();

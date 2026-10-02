@@ -1,27 +1,12 @@
-/*
- * ChartRange — 차트 기간과 시간대의 대응표
- *
- * 이 파일이 하는 일
- *   화면이 고른 기간("1D"·"1Y"…)을 세 가지로 바꿔 준다 —
- *   벤더에 보낼 시간대(1Min·1Day…), 얼마나 거슬러 올라갈지, 그리고
- *   그 값을 DB 에 쌓아 둘지 그때그때 받을지.
- *
- *   기간마다 이 셋이 함께 정해지는데 코드 여기저기에 흩어지면 반드시 어긋난다.
- *   1년치를 1분봉으로 받는 것 같은 일이 그렇게 생긴다.
- */
 package com.example.mijang.stock.domain;
 
 import java.time.Duration;
 import java.util.Locale;
 
+/** 차트 기간을 벤더 시간대·조회 범위·저장 여부로 바꿔 주는 대응표다. */
 public enum ChartRange {
 
-    /**
-     * 최근 다섯 시간. 실시간 체결이 이 위에 얹힌다.
-     *
-     * <p>하루 치를 다 그리면 봉이 800개가 넘어 지금 무슨 일이 벌어지는지가 묻힌다.
-     * 하루 전체는 {@code ONE_DAY} 가 맡는다.
-     */
+    /** 최근 다섯 시간. 실시간 체결이 이 위에 얹힌다. */
     LIVE("1Min", Duration.ofHours(5), false),
     ONE_DAY("1Min", Duration.ofDays(1), false),
     ONE_WEEK("5Min", Duration.ofDays(7), false),
@@ -41,37 +26,27 @@ public enum ChartRange {
         this.stored = stored;
     }
 
-    /** 벤더에 보낼 시간대 문자열. Alpaca 가 받는 표기 그대로다 */
+    /** 벤더에 보낼 시간대 문자열을 돌려준다. Alpaca 표기 그대로다. */
     public String timeframe() {
         return timeframe;
     }
 
-    /** 지금으로부터 얼마나 거슬러 올라갈지 */
+    /** 지금으로부터 얼마나 거슬러 올라갈지를 돌려준다. */
     public Duration lookback() {
         return lookback;
     }
 
-    /**
-     * 받은 값을 {@code daily_prices} 에 쌓아 둘지.
-     *
-     * <p>일봉만 쌓는다. 분봉은 하루에 종목당 400건 가까이 나와 전 종목을 담을 수 없고,
-     * 손익 계산에 쓰지도 않는다. 주봉·월봉은 일봉에서 만들 수 있는 값이라 따로 담지 않는다.
-     */
+    /** 받은 값을 daily_prices 에 쌓아 둘지 여부다. 일봉만 쌓는다. */
     public boolean stored() {
         return stored;
     }
 
-    /** 장중에 값이 계속 바뀌는 구간인가. 캐시를 얼마나 짧게 잡을지 정하는 데 쓴다 */
+    /** 장중에 값이 계속 바뀌는 분봉 구간인지 여부다. 캐시 수명 결정에 쓴다. */
     public boolean intraday() {
         return timeframe.endsWith("Min");
     }
 
-    /**
-     * 화면이 보낸 문자열을 기간으로 바꾼다.
-     *
-     * <p>모르는 값이 오면 막지 않고 3개월로 본다. 차트는 잘못된 입력에 오류를 띄우기보다
-     * 무언가를 보여 주는 편이 낫다.
-     */
+    /** 화면이 보낸 문자열을 기간으로 바꾼다. 모르는 값은 3개월로 본다. */
     public static ChartRange of(String raw) {
         if (raw == null) {
             return THREE_MONTH;
@@ -88,7 +63,7 @@ public enum ChartRange {
         };
     }
 
-    /** 화면이 보낸 표기로 되돌린다. 응답에 실어 어떤 기간의 답인지 알려 준다 */
+    /** 화면 표기 문자열로 되돌린다. */
     public String code() {
         return switch (this) {
             case LIVE -> "LIVE";

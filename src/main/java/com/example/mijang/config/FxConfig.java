@@ -18,12 +18,7 @@ public class FxConfig {
         this.external = external;
     }
 
-    /**
-     * Open Exchange Rates 창구.
-     *
-     * <p>App ID 는 헤더가 아니라 <b>질의 문자열</b>로 보낸다. 벤더가 그 방식만 받는다.
-     * 그래서 여기서는 주소만 잡고, 키는 부르는 쪽이 붙인다.
-     */
+    /** Open Exchange Rates 클라이언트를 만든다. App ID 는 벤더가 질의 문자열만 받으므로 호출부가 붙인다. */
     @Bean
     public RestClient fxClient() {
         return RestClient.builder()

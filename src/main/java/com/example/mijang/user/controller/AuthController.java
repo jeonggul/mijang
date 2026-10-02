@@ -30,12 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 인증 API. 개발명세서(API) AUTH-001~003 · 화면 SR-002
- *
- * <p>토큰은 두 경로로 나간다. 본문의 accessToken 은 API 클라이언트용이고,
- * HttpOnly 쿠키는 Thymeleaf 화면용이다. 자세한 이유는 미장-auth-구현 2.1.
- */
+/** 회원가입·로그인·토큰 갱신·비밀번호 관리 등 인증 API를 제공한다. */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -46,35 +41,19 @@ public class AuthController {
     private final PasswordService passwordService;
     private final ResetRequestThrottle throttle;
 
-    /**
-     * 닉네임 사용 가능 확인. 가입 폼의 중복 확인 버튼이 부른다.
-     *
-     * <p>형식·금지어·중복을 한 번에 판정해 사유 문구까지 돌려준다.
-     * 화면이 규칙을 다시 해석하지 않아도 되도록 문구를 서버가 만든다.
-     */
+    /** 닉네임의 형식·금지어·중복을 한 번에 판정해 사유 문구와 함께 돌려준다. */
     @GetMapping("/check-nickname")
     public ApiResponse<AvailabilityResponse> checkNickname(@RequestParam String nickname) {
         return ApiResponse.ok(authService.checkNickname(nickname));
     }
 
-    /**
-     * AUTH-001 회원가입. 가입만 하고 로그인은 시키지 않는다.
-     *
-     * <p>쿠키를 굽지 않으므로 반환형이 ResponseEntity 가 아니라 ApiResponse 다.
-     *
-     * @return 생성된 사용자 id
-     */
+    /** 회원가입을 처리하고 생성된 사용자 id를 반환한다 — 로그인은 시키지 않는다. */
     @PostMapping("/signup")
     public ApiResponse<Long> signup(@Valid @RequestBody SignupForm form) {
         return ApiResponse.ok(authService.signup(form));
     }
 
-    /**
-     * AUTH-002 로그인.
-     *
-     * <p>토큰을 두 경로로 내보낸다 — 본문의 accessToken 은 API 클라이언트가,
-     * Set-Cookie 는 브라우저 화면이 쓴다. 쿠키를 실어야 해서 ResponseEntity 로 받는다.
-     */
+    /** 로그인을 처리하고 토큰을 본문(API용)과 HttpOnly 쿠키(화면용) 두 경로로 내보낸다. */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginForm form,
                                                            HttpServletRequest request) {
@@ -84,12 +63,7 @@ public class AuthController {
                 .body(ApiResponse.ok(tokens.toResponse()));
     }
 
-    /**
-     * AUTH-03 토큰 갱신.
-     *
-     * <p>요청 본문이 없다. refresh 는 HttpOnly 쿠키에만 있어 클라이언트가 보낼 수 없고,
-     * 서버가 요청에서 직접 꺼낸다. 그래서 파라미터가 HttpServletRequest 다.
-     */
+    /** HttpOnly 쿠키의 refresh 토큰으로 토큰을 갱신한다. */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<LoginResponse>> refresh(HttpServletRequest request) {
         var tokens = authService.refresh(cookies.readRefresh(request));
@@ -98,28 +72,18 @@ public class AuthController {
                 .body(ApiResponse.ok(tokens.toResponse()));
     }
 
-    /**
-     * AUTH-003 로그아웃.
-     *
-     * <p>refresh 를 서버에 저장하지 않으므로 쿠키를 지우는 것이 전부다.
-     * 이미 발급된 토큰은 수명이 다할 때까지 유효하다 (미장-auth-구현 2.2).
-     */
+    /** 토큰 쿠키를 지워 로그아웃한다 — 이미 발급된 토큰은 수명까지 유효하다. */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
         return ResponseEntity.ok()
                 .headers(cookies.clear())
                 .body(ApiResponse.ok(null));
     }
-    /**
-     * AUTH-05 재설정 링크 요청.
-     *
-     * <p>가입 여부와 상관없이 같은 응답을 준다(8.1.3). 화면도 같은 문구를 띄운다.
-     */
+    /** 비밀번호 재설정 링크를 요청한다 — 가입 여부와 상관없이 같은 응답을 준다. */
     @PostMapping("/password/forgot")
     public ApiResponse<Void> forgotPassword(@Valid @RequestBody PasswordForgotForm form,
                                             HttpServletRequest request) {
-        /* 가입 여부를 보기 전에 센다. 가입된 주소만 제한하면 "제한에 걸렸다"가 곧
-           가입돼 있다는 뜻이 되어 위에서 막아 둔 것이 도로 새어 나간다. */
+        /* 가입 여부 확인 전에 제한을 센다 — 순서를 바꾸면 제한 응답으로 가입 여부가 새어 나간다. */
         if (!throttle.allow(form.getEmail(), request.getRemoteAddr())) {
             throw new BusinessException(ErrorCode.AUTH_TOO_MANY_REQUESTS, "email");
         }
@@ -127,32 +91,21 @@ public class AuthController {
         return ApiResponse.ok(null);
     }
 
-    /** AUTH-05 링크로 들어온 사용자의 새 비밀번호 저장. 인증이 필요 없고 토큰이 대신한다. */
+    /** 재설정 토큰으로 새 비밀번호를 저장한다 — 인증은 토큰이 대신한다. */
     @PostMapping("/password/reset")
     public ApiResponse<Void> resetPassword(@Valid @RequestBody PasswordResetForm form) {
         passwordService.reset(form.getToken(), form.getPassword());
         return ApiResponse.ok(null);
     }
 
-    /**
-     * AUTH-05 로그인 상태에서의 비밀번호 변경.
-     *
-     * <p>바꾸고 나면 <b>모든 기기의 로그인이 끊긴다.</b> 다른 기기는 비밀번호 세대가
-     * 어긋나 갱신에서 막히고, 이 브라우저는 여기서 쿠키를 지워 함께 내보낸다.
-     * 지금 쓰던 창만 남겨 두면 "이 창은 왜 살아 있나"가 되어 규칙이 흐려진다.
-     */
+    /** 로그인 상태에서 비밀번호를 변경한다 — 변경 후 모든 기기의 로그인이 끊긴다. */
     @PatchMapping("/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(@LoginUser SessionUser me,
                                                             @Valid @RequestBody PasswordChangeForm form) {
         passwordService.change(me.userId(), form.getCurrentPassword(), form.getNewPassword());
         return ResponseEntity.ok().headers(cookies.clear()).body(ApiResponse.ok(null));
     }
-    /**
-     * AUTH-06 회원 탈퇴.
-     *
-     * <p>성공하면 쿠키를 지워 보낸다. 남겨 두면 access 가 만료되는 30분 동안
-     * 탈퇴한 계정으로 화면이 열린다.
-     */
+    /** 비밀번호를 확인해 회원 탈퇴를 처리하고 토큰 쿠키를 지운다. */
     @DeleteMapping("/account")
     public ResponseEntity<ApiResponse<Void>> deleteAccount(@LoginUser SessionUser me,
                                                            @Valid @RequestBody AccountDeleteForm form) {
@@ -160,13 +113,7 @@ public class AuthController {
         return ResponseEntity.ok().headers(cookies.clear()).body(ApiResponse.ok(null));
     }
 
-    /**
-     * 호출한 곳의 IP.
-     *
-     * <p>프록시 뒤라면 X-Forwarded-For 의 <b>맨 앞</b>이 원래 클라이언트다. 다만 이 값은
-     * 클라이언트가 꾸며 보낼 수 있으므로, 신뢰할 수 있는 프록시 뒤에 둘 때만 의미가 있다.
-     * 지금은 시도 제한의 보조 열쇠로만 쓰고 인가 판단에는 쓰지 않는다.
-     */
+    /** X-Forwarded-For 맨 앞 값 우선으로 클라이언트 IP를 얻는다 — 위조 가능하므로 시도 제한 보조 용도로만 쓴다. */
     private static String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {

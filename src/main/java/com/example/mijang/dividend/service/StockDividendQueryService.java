@@ -1,11 +1,3 @@
-/*
- * StockDividendQueryService — 종목 배당 탭 조회
- *
- * 이 파일이 하는 일
- *   수집된 배당 마스터를 화면 모양으로 만든다 — 이력 몇 건과
- *   배당수익률·연간 배당금·주기·연속 증배. 열 때마다 신선도를 확인하고
- *   낡았으면 수집부터 한다.
- */
 package com.example.mijang.dividend.service;
 
 import com.example.mijang.common.time.TradingClock;
@@ -23,21 +15,19 @@ import java.util.TreeMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/**
- * 종목 배당 탭. 개발명세서(API) INFO-06 · 화면 stock p4
- */
+/** 종목 배당 탭(INFO-06)의 이력·요약 응답을 만든다. */
 @Service
 @RequiredArgsConstructor
 public class StockDividendQueryService {
 
-    /** 화면 표에 보여주는 이력 수. 더 길면 표가 화면을 넘긴다. */
+    /** 화면 표에 보여주는 이력 수. */
     private static final int HISTORY_LIMIT = 8;
 
     private final StockDividendSyncService syncService;
     private final StockDividendMapper stockDividendMapper;
     private final DailyPriceMapper dailyPriceMapper;
 
-    /* readOnly 트랜잭션을 걸지 않는다 — ensureFresh 가 수집(INSERT)을 할 수 있다 */
+    /** 종목 배당 탭 응답을 만든다. ensureFresh 가 INSERT 할 수 있어 readOnly 트랜잭션을 걸지 않는다. */
     public StockDividendTabResponse tab(String symbol) {
         String upper = symbol.trim().toUpperCase();
         syncService.ensureFresh(upper);
@@ -67,7 +57,7 @@ public class StockDividendQueryService {
                 yieldPct(upper, annual), annual, perYear, streakYears(all, today));
     }
 
-    /** 배당수익률(%). 최근 1년 합 ÷ 최신 종가. 종가나 배당이 없으면 null. */
+    /** 배당수익률(%)을 구한다. 종가나 배당이 없으면 null 이다. */
     private BigDecimal yieldPct(String symbol, BigDecimal annual) {
         if (annual.signum() <= 0) {
             return null;
@@ -80,13 +70,7 @@ public class StockDividendQueryService {
                 .divide(latest.close(), 2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * 연속 증배 연수.
-     *
-     * <p>완결된 해(올해 제외)의 연간 합(특별배당 제외)을 해마다 비교해,
-     * 마지막 해부터 거슬러 "작년보다 늘었다" 가 이어진 횟수다.
-     * 첫 해까지 이어지면 그 앞은 알 수 없으므로 거기서 멈춘다.
-     */
+    /** 완결된 해의 연간 합(특별배당 제외)을 비교해 연속 증배 연수를 센다. */
     private static int streakYears(List<StockDividend> all, LocalDate today) {
         Map<Integer, BigDecimal> byYear = new TreeMap<>();
         for (StockDividend d : all) {

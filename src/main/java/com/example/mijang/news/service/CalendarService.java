@@ -1,10 +1,3 @@
-/*
- * CalendarService — 거시·실적·배당을 한 캘린더 이벤트로 모은다
- *
- * 이 파일이 하는 일
- *   경제 캘린더(기존)·어닝(stock_earnings)·배당(stock_dividends)을 CalendarEventResponse
- *   한 모양으로 맞춰 낸다. "내 종목" 필터는 보유·관심 심볼 합집합으로 판정한다.
- */
 package com.example.mijang.news.service;
 
 import com.example.mijang.common.time.TradingClock;
@@ -24,6 +17,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/** 어닝·배당 일정을 CalendarEventResponse 한 모양으로 맞춰 낸다. */
 @Service
 @RequiredArgsConstructor
 public class CalendarService {
@@ -32,9 +26,8 @@ public class CalendarService {
     private final StockDividendMapper dividendMapper;
     private final TransactionMapper transactionMapper;
     private final WatchlistMapper watchlistMapper;
-    // 오늘 날짜는 TradingClock.SERVICE_ZONE(static)만 쓰므로 주입 필드를 두지 않는다
 
-    /** 내 종목 = 보유 ∪ 관심. 비로그인은 빈 집합. */
+    /** 내 종목(보유 ∪ 관심)을 모은다. 비로그인은 빈 집합이다. */
     public Set<String> mySymbols(Long userId) {
         if (userId == null) {
             return Set.of();
@@ -45,13 +38,7 @@ public class CalendarService {
         return s;
     }
 
-    /**
-     * 기간 내 실적 발표.
-     *
-     * @param mine null 이면 전체(필터 없음). 비어 있지 않은 집합이면 그 심볼만.
-     *             <b>빈 집합이면 전부 걸러져 빈 목록</b> — "내 종목"인데 종목이 하나도
-     *             없다는 뜻이라, null(전체)과 같이 취급하면 안 된다.
-     */
+    /** 기간 내 실적 발표를 조회한다. mine 이 null 이면 전체, 빈 집합이면 빈 목록이다 — 전체로 취급하면 안 된다. */
     public List<CalendarEventResponse> earnings(LocalDate from, LocalDate to, Set<String> mine) {
         List<CalendarEventResponse> out = new ArrayList<>();
         for (StockEarnings e : earningsMapper.findByReportDateBetween(from, to)) {
@@ -64,12 +51,7 @@ public class CalendarService {
         return out;
     }
 
-    /**
-     * 기간 내 배당(락일·지급일).
-     *
-     * @param mine null 이면 전체(필터 없음). 비어 있지 않은 집합이면 그 심볼만.
-     *             <b>빈 집합이면 전부 걸러져 빈 목록</b> — earnings 와 같은 규칙.
-     */
+    /** 기간 내 배당(락일·지급일) 이벤트를 조회한다. mine 규칙은 earnings 와 같다. */
     public List<CalendarEventResponse> dividends(LocalDate from, LocalDate to, Set<String> mine) {
         List<CalendarEventResponse> out = new ArrayList<>();
         for (StockDividend d : dividendMapper.findByExDateBetween(from, to)) {
@@ -78,7 +60,7 @@ public class CalendarService {
             }
             String amount = d.amountPerShare() == null ? null
                     : "$" + d.amountPerShare().stripTrailingZeros().toPlainString();
-            // 배당 한 행이 두 이벤트(락일·지급일)가 된다. 각자 자기 날짜가 구간 안일 때만 낸다
+            // 배당 한 행이 락일·지급일 두 이벤트가 되며, 각자 날짜가 구간 안일 때만 낸다
             if (!d.exDate().isBefore(from) && !d.exDate().isAfter(to)) {
                 out.add(new CalendarEventResponse(d.exDate(), CalendarEventResponse.TYPE_DIVIDEND,
                         d.symbol(), "배당락", amount));
@@ -91,7 +73,7 @@ public class CalendarService {
         return out;
     }
 
-    /** 종목 상세용 — 그 종목의 오늘 이후 첫 실적·첫 배당락. 없으면 null. */
+    /** 종목의 오늘 이후 첫 실적·첫 배당락을 조회한다. 없으면 각각 null 이다. */
     public NextEvents nextEvents(String symbol) {
         LocalDate today = LocalDate.now(TradingClock.SERVICE_ZONE);
         String up = symbol.toUpperCase(Locale.ROOT);
@@ -115,6 +97,7 @@ public class CalendarService {
         return when + " · " + eps;
     }
 
+    /** 종목의 다음 실적·배당락 이벤트 쌍을 담는다. */
     public record NextEvents(CalendarEventResponse earnings, CalendarEventResponse dividend) {
     }
 }

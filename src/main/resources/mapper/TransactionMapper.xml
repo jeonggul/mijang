@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  TransactionMapper.xml — 매매 기록 SQL
-
-  이 파일이 하는 일
-    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
-    삭제는 진짜로 지우지 않고 표시만 남긴다. 조회는 그 표시를 걸러서 본다.
--->
+<!-- TransactionMapper.xml — 매매 기록 SQL. 삭제는 표시만 남기고 조회는 그 표시를 거른다. -->
 <mapper namespace="com.example.mijang.portfolio.mapper.TransactionMapper">
 
     <!-- record 는 생성자로 매핑되고 MyBatis 가 이름이 아니라 순서로 맞춘다.
@@ -31,9 +25,7 @@
         SELECT LAST_INSERT_ID()
     </select>
 
-    <!-- user_id 를 WHERE 에 둔다. 서비스가 먼저 소유를 확인하지만, 질의 자체가
-         남의 행에 닿지 않아야 검사 한 겹이 빠져도 새어 나가지 않는다.
-         지운 기록은 되살리지 않는다 — deleted_at IS NULL 이 그 뜻이다 -->
+    <!-- user_id 를 WHERE 에 두어 질의 자체가 남의 행에 닿지 않게 한다. deleted_at IS NULL — 지운 기록은 되살리지 않는다 -->
     <update id="update">
         UPDATE transactions
            SET symbol       = #{symbol},

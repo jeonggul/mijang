@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  UserMapper.xml — 회원 SQL
-
-  이 파일이 하는 일
-    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
-    프로필 갱신은 보낸 값만 SET 에 들어가도록 조건으로 감싼다.
--->
+<!-- UserMapper.xml — 회원 SQL. 프로필 갱신은 보낸 값만 SET 에 들어가도록 조건으로 감싼다. -->
 <!-- 개발명세서(MVC): "UserMapper XML id 일치" -->
 <mapper namespace="com.example.mijang.user.mapper.UserMapper">
 
@@ -78,9 +72,7 @@
         VALUES (#{email}, #{passwordHash}, #{nickname})
     </insert>
 
-    <!-- 재설정과 변경이 같은 문장을 쓴다. updated_at 은 스키마의 ON UPDATE 가 채운다.
-         password_hash 조건이 동시 요청을 막는다. 확인할 때 본 값과 다르면 이미 누가
-         바꾼 것이므로 0 행이 바뀌고, 서비스가 그것을 보고 거절한다 -->
+    <!-- 재설정과 변경이 같은 문장을 쓴다. password_hash 조건(CAS)이 동시 요청을 막는다 — 다르면 0행이고 서비스가 거절한다 -->
     <update id="updatePassword">
         UPDATE users
            SET password_hash = #{passwordHash},
@@ -91,21 +83,8 @@
            AND password_hash = #{expectedHash}
     </update>
 
-    <!-- 탈퇴는 행을 지우지 않고 상태만 바꾼다. 게시글·댓글은 그대로 남아
-         화면에서 "탈퇴한 사용자" 로 보인다(4.12).
-
-         이메일을 {id}.withdrawn.{원본} 표식으로 바꾼다 — uk_users_email 이 UNIQUE 라
-         원본을 붙들고 있으면 그 이메일로 다시 가입할 수 없다. 표식은 슬롯을 비우면서
-         원본을 복원 가능한 형태로 남긴다. id 접두라 두 탈퇴 행이 겹치지 않는다.
-
-         탈퇴는 비밀번호 변경과 같은 급의 상태 전이다(4.13 #1·#2).
-
-         CAS: status='ACTIVE' 이고 password_hash 가 확인한 값과 같을 때만 바꾼다. 확인(SELECT)과
-         실행(UPDATE) 사이에 비밀번호가 바뀌거나 관리자가 정지시켰다면 조건이 어긋나 0행이 되고,
-         서비스가 그것을 보고 거절한다 — SUSPENDED 를 WITHDRAWN 으로 덮어쓰지 않는다.
-
-         password_version + 1: 이미 나간 access 토큰은 옛 세대를 들고 있어 다음 요청에서 걸린다.
-         비밀번호 변경(updatePassword)과 같은 장치다 — 탈퇴만 빠져 있어 최대 30분간 살아 있었다. -->
+    <!-- 탈퇴는 상태만 바꾸고 이메일을 {id}.withdrawn.{원본} 표식으로 바꿔 UNIQUE 슬롯을 비운다(4.12).
+         CAS: status='ACTIVE' 이고 password_hash 가 확인 값과 같을 때만 바꾼다(SUSPENDED 를 덮지 않는다). password_version+1 로 기존 토큰을 무효화한다 -->
     <update id="withdraw">
         UPDATE users
            SET status = 'WITHDRAWN',
@@ -117,9 +96,7 @@
            AND password_hash = #{expectedHash}
     </update>
 
-    <!-- withdraw 뒤 registry 에 기록할 세대를 그대로 읽는다. updateRole 도 password_version 을
-         올릴 수 있어, 호출 전 스냅샷+1로는 CAS UPDATE 가 실제로 만든 값과 어긋날 수 있다.
-         withdraw 의 행 잠금이 걸린 같은 트랜잭션 안에서 읽으므로 이 값을 그대로 믿는다 -->
+    <!-- withdraw 뒤 registry 에 기록할 password_version 을 같은 트랜잭션(행 잠금) 안에서 읽는다 — 스냅샷+1 추정은 어긋날 수 있다 -->
     <select id="findPasswordVersion" resultType="int">
         SELECT password_version FROM users WHERE id = #{id}
     </select>

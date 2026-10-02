@@ -119,12 +119,8 @@
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
 <script th:attr="nonce=${cspNonce}">
-/* 매매 기록 목록 (ACCOUNT-06) · 삭제 (2.9)
-   프로토타입이 표가 아니라 카드라 카드로 그린다. 판단 메모가 한 줄로 들어가야 해서
-   표보다 카드가 맞다 — 이 서비스의 차별점이 그 메모다.
-
-   페이징은 서버가 하고, 매수/매도·기간 필터는 받아 온 한 페이지 안에서 거른다.
-   그래서 필터를 켜면 "표시 M건 / 전체 N건" 으로 무엇을 세고 있는지 밝힌다. */
+/* 매매 기록 목록 (ACCOUNT-06) · 삭제 (2.9) — 판단 메모가 들어가는 카드형 목록.
+   페이징은 서버가 하고 매수/매도·기간 필터는 페이지 안에서 걸어 "표시 M건 / 전체 N건" 으로 밝힌다. */
 (function () {
   var box = document.getElementById("tx-cards");
   if (!box) return;

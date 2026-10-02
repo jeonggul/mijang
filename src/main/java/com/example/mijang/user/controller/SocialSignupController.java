@@ -1,17 +1,3 @@
-/*
- * SocialSignupController — 소셜로 처음 온 사람의 가입을 마무리한다
- *
- * 이 파일이 하는 일
- *   제공자에게서 받은 이메일·닉네임을 화면에 채워 주고, 사용자가 비밀번호와
- *   닉네임을 확정하면 계정을 만들어 소셜 계정을 잇고 그대로 로그인시킨다.
- *
- *   왜 비밀번호를 받는가
- *     받지 않으면 로그인 수단이 소셜 하나뿐인 계정이 된다. 그 상태에서 연동을
- *     끊으면 들어올 문이 사라지고, 비밀번호 찾기로도 복구되지 않는다.
- *
- *   신원은 요청 본문이 아니라 세션에서 꺼낸다. 본문으로 받으면 아무 이메일이나
- *   적어 남의 주소로 계정을 만들거나, 남의 소셜 계정을 자기 것으로 붙일 수 있다.
- */
 package com.example.mijang.user.controller;
 
 import com.example.mijang.common.exception.BusinessException;
@@ -38,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 소셜 첫 가입. {@code AUTH-07} */
+/** 소셜로 처음 온 사용자의 가입을 마무리하고 소셜 계정을 이어 로그인시키는 API를 제공한다. */
 @RestController
 @RequestMapping("/api/auth/social")
 @RequiredArgsConstructor
@@ -49,7 +35,7 @@ public class SocialSignupController {
     private final UserMapper userMapper;
     private final TokenCookies cookies;
 
-    /** 가입 화면이 미리 채울 값. 비밀번호를 받기 전이라 아직 계정은 없다. */
+    /** 가입 화면이 미리 채울 세션의 소셜 신원 정보를 돌려준다. */
     @GetMapping("/pending")
     public ApiResponse<PendingResponse> pending(HttpServletRequest request) {
         Pending pending = requireSignupPending(request);
@@ -57,12 +43,7 @@ public class SocialSignupController {
                 pending.provider(), pending.email(), pending.nickname()));
     }
 
-    /**
-     * 가입을 확정하고 소셜을 이은 뒤 그대로 로그인시킨다.
-     *
-     * <p>방금 만든 비밀번호를 다시 치게 하지 않는다. {@code SocialLinkController} 가
-     * 같은 판단을 하고 있다.
-     */
+    /** 가입을 확정하고 소셜 계정을 이은 뒤 그대로 로그인시킨다. */
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<LoginResponse>> signup(HttpServletRequest request,
                                                              @Valid @RequestBody
@@ -80,12 +61,7 @@ public class SocialSignupController {
                 .body(ApiResponse.ok(tokens.toResponse()));
     }
 
-    /**
-     * 세션 신원과 화면 입력을 합쳐 가입 폼을 만든다.
-     *
-     * <p>이메일은 <b>세션 것만</b> 쓴다. 화면이 보낸 값을 쓰면 아무 주소로나
-     * 계정을 만들 수 있다. 테스트가 이 규칙을 고정한다.
-     */
+    /** 세션 신원과 화면 입력을 합쳐 가입 폼을 만든다 — 이메일은 반드시 세션 것만 쓴다. */
     public static SignupForm toSignupForm(Pending pending, SocialSignupForm submitted) {
         var form = new SignupForm();
         form.setEmail(pending.email());
@@ -94,7 +70,7 @@ public class SocialSignupController {
         return form;
     }
 
-    /** 가입 보류 상태가 아니면 진행할 수 없다. 세션이 끊겼거나 직접 부른 경우다. */
+    /** 세션의 가입 보류 상태를 확인하고 없으면 인증 오류를 던진다. */
     private static Pending requireSignupPending(HttpServletRequest request) {
         Pending pending = SocialAuthHandlers.pendingOf(request);
         if (pending == null || pending.kind() != Pending.Kind.SIGNUP) {
@@ -103,16 +79,11 @@ public class SocialSignupController {
         return pending;
     }
 
-    /** 화면이 채워 넣을 값. 제공자 쪽 식별자는 내보내지 않는다 — 화면이 쓸 일이 없다. */
+    /** 가입 화면이 미리 채울 값이다 — 제공자 쪽 식별자는 내보내지 않는다. */
     public record PendingResponse(String provider, String email, String nickname) {
     }
 
-    /**
-     * 화면이 보내는 값. <b>이메일과 제공자 정보는 받지 않는다</b> — 세션에서 꺼낸다.
-     *
-     * <p>형식은 여기서 걸러 400 으로 돌려주고, 금지어·중복·추측 가능성은
-     * {@code AuthService.signup()} 이 본다.
-     */
+    /** 화면이 보내는 가입 입력이다 — 이메일과 제공자 정보는 받지 않고 세션에서 꺼낸다. */
     public record SocialSignupForm(
             @NotBlank(message = "닉네임을 입력해주세요")
             @Pattern(regexp = SignupPolicy.NICKNAME_REGEX,
