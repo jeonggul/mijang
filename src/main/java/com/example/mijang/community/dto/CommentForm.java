@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-/** 댓글 작성. 개발명세서(API) COM-004 */
+/** 댓글 작성 요청 값을 담는다. */
 @Getter
 @Setter
 public class CommentForm {

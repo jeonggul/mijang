@@ -1,11 +1,3 @@
-/*
- * DividendConfirmForm — 예상 배당 확정
- *
- * 이 파일이 하는 일
- *   확정 모달(SR-016-1)이 보내는 내용이다. 벤더가 만든 예상 금액을
- *   증권사 앱에서 확인한 실제 입금액으로 바꾼다. 확정하는 순간부터
- *   손익 집계에 포함된다.
- */
 package com.example.mijang.dividend.dto;
 
 import jakarta.validation.constraints.NotNull;
@@ -15,9 +7,7 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * 배당 확정 입력. 개발명세서(API) PROFIT-12 · 화면 SR-016-1
- */
+/** 예상 배당 확정 모달(SR-016-1)의 입력을 담는다. PROFIT-12. */
 @Getter
 @Setter
 public class DividendConfirmForm {

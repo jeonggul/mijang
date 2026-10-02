@@ -1,12 +1,3 @@
-/*
- * UserMapper — users 테이블 접근
- *
- * 이 파일이 하는 일
- *   회원 정보를 읽고 쓰는 통로다. auth 범위에서 쓰던 것에 세 가지가 늘었다 —
- *   닉네임 중복 확인(나 자신은 빼고), 프로필 갱신, 프로필 조회.
- *   "나 자신은 빼고" 가 중요하다. 안 빼면 내 닉네임을 그대로 두고
- *   다른 값만 고치려 할 때 내 것이 중복으로 잡힌다.
- */
 package com.example.mijang.user.mapper;
 
 import com.example.mijang.user.domain.User;
@@ -14,144 +5,82 @@ import com.example.mijang.user.dto.UserResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-/**
- * users 테이블 접근. 문장은 resources/mapper/UserMapper.xml 에 둔다.
- *
- * <p>개발명세서(MVC) · 인증/회원 · mapper
- */
+/** users 테이블 접근을 담당한다. */
 @Mapper
 public interface UserMapper {
 
-    /** 이메일 중복 확인. AUTH-001 의 409 판정에 쓴다. */
+    /** 이메일 중복 여부를 센다. */
     int countByEmail(@Param("email") String email);
 
-    /** 닉네임 중복 확인. DB 에 UNIQUE 가 없어 애플리케이션에서 본다. */
+    /** 닉네임 중복 여부를 센다 — DB에 UNIQUE가 없어 애플리케이션에서 본다. */
     int countByNickname(@Param("nickname") String nickname);
 
-    /** 로그인용 조회. 탈퇴 계정은 제외한다. */
+    /** 이메일로 회원을 조회한다 — 탈퇴 계정은 제외한다. */
     User findByEmail(@Param("email") String email);
 
+    /** id로 회원을 조회한다. */
     User findById(@Param("id") Long id);
 
-    /**
-     * 비밀번호 저장. 재설정과 변경이 같은 문장을 쓴다.
-     *
-     * <p>{@code expectedHash} 는 방금 확인한 값이다. 그 사이에 다른 요청이 먼저 바꿔 놓았다면
-     * 조건이 어긋나 0 행이 바뀐다. 확인과 저장 사이가 벌어져 같은 링크가 두 번 먹히는 것을
-     * 여기서 막는다 — 잠금 없이 조건부 갱신 하나로 끝난다.
-     *
-     * @return 바뀐 행 수. 0 이면 그 사이에 비밀번호가 이미 바뀐 것이다
-     */
+    /** 비밀번호를 조건부(expectedHash 일치)로 저장한다 — 0행이면 그 사이 이미 바뀐 것이다. */
     int updatePassword(@Param("id") Long id,
                        @Param("passwordHash") String passwordHash,
                        @Param("expectedHash") String expectedHash);
 
-    /**
-     * 탈퇴 처리. 비밀번호 변경과 같은 급의 상태 전이다(4.13).
-     *
-     * <p>status='ACTIVE' 이고 password_hash 가 {@code expectedHash} 와 같을 때만 바꾼다.
-     * 확인과 실행 사이에 상태·비밀번호가 바뀌면 0행이 되어 서비스가 거절한다. 이메일을
-     * {id}.withdrawn.{원본} 표식으로 바꿔 재가입을 열고, password_version 을 올려 옛 토큰을
-     * 무효로 만든다. 소셜 연동 삭제·토큰 세대 기록은 호출부(AuthService.withdraw)의 몫이다.
-     *
-     * @return 바뀐 행 수. 0이면 상태·비밀번호가 어긋난 것이다
-     */
+    /** ACTIVE·expectedHash 일치 조건으로 탈퇴 처리한다 — 이메일에 withdrawn 표식을 붙이고 password_version을 올리며, 0행이면 조건이 어긋난 것이다. */
     int withdraw(@Param("id") Long id, @Param("expectedHash") String expectedHash);
 
-    /**
-     * 지금 저장된 password_version 을 그대로 읽는다.
-     *
-     * <p>탈퇴 뒤 registry 에 기록할 세대는 호출 전 스냅샷(+1)이 아니라 <b>이 값</b>이어야
-     * 한다. {@code updateRole} 같은 다른 경로도 password_version 을 올릴 수 있어, 스냅샷+1은
-     * withdraw 의 CAS UPDATE 가 실제로 만든 값과 어긋날 수 있다. withdraw 가 쥔 행 잠금이
-     * 같은 트랜잭션 안에서는 이 읽기를 그대로 신뢰할 수 있게 해 준다.
-     */
+    /** 지금 저장된 password_version을 읽는다 — 탈퇴 뒤 registry에 기록할 세대는 스냅샷+1이 아니라 반드시 이 값이어야 한다. */
     int findPasswordVersion(@Param("id") Long id);
 
-    /**
-     * 사용자 행을 잠그고 최신 커밋 상태를 읽는다({@code FOR UPDATE}).
-     *
-     * <p>REPEATABLE READ 의 일반 SELECT 는 트랜잭션이 잡아 둔 스냅샷을 읽어, 그 사이 다른
-     * 트랜잭션이 커밋한 탈퇴를 못 볼 수 있다({@code SocialLoginService.link} 는 앞서
-     * {@code existsByUserAndProvider} 로 이미 스냅샷을 잡는다). {@code FOR UPDATE} 는 잠금을
-     * 걸어 최신 커밋 값을 읽고, 동시에 진행 중인 {@code withdraw} 의 행 잠금과 서로 기다리게
-     * 만들어 두 트랜잭션이 순서대로 풀린다 — 소셜 연동을 죽은 계정에 잇는 경합을 막는다.
-     *
-     * @return 사용자 상태(ACTIVE/WITHDRAWN 등). 행이 없으면 null
-     */
+    /** FOR UPDATE로 행을 잠그고 최신 커밋 상태를 읽는다 — 스냅샷 읽기로는 동시 탈퇴를 못 봐 죽은 계정에 연동이 붙을 수 있다. */
     String lockUserStatusForUpdate(@Param("id") Long id);
 
-    /** 테스트 전용 — 이 사용자를 ADMIN 으로 올린다. 마지막 관리자 가드를 검증하는 데만 쓴다. */
+    /** 테스트 전용 — 이 사용자를 ADMIN으로 올린다. */
     void promoteToAdminForTest(@Param("id") Long id);
 
-    /**
-     * 테스트 전용 — 탈퇴 행의 이메일(표식 포함)을 그대로 읽는다.
-     *
-     * <p>{@code findById}·{@code findByEmail} 은 status 로 탈퇴 행을 걸러 내므로
-     * 표식이 제대로 붙었는지 확인할 길이 없다. 그 확인만을 위한 조회다.
-     */
+    /** 테스트 전용 — 탈퇴 행의 이메일(표식 포함)을 그대로 읽는다. */
     String findWithdrawnEmailForTest(@Param("id") Long id);
 
 
-    /**
-     * 닉네임 중복 확인 — <b>자기 자신은 뺀다</b>(2.2).
-     *
-     * <p>이걸 빼먹으면 닉네임을 그대로 두고 다른 항목만 바꿀 때 "이미 사용 중"이 뜬다.
-     */
+    /** 자기 자신을 뺀 닉네임 중복 여부를 센다 — 안 빼면 닉네임을 그대로 둔 수정이 중복으로 잡힌다. */
     int countByNicknameExcluding(@Param("nickname") String nickname,
                                  @Param("excludeUserId") Long excludeUserId);
 
-    /**
-     * 프로필 수정. null 인 항목은 건드리지 않는다.
-     *
-     * <p>XML 의 {@code <set>} 이 보낸 값만 골라 넣는다.
-     *
-     * @return 바뀐 행 수
-     */
+    /** 프로필을 수정한다 — null인 항목은 건드리지 않는다. */
     int updateProfile(@Param("id") Long id,
                       @Param("nickname") String nickname,
                       @Param("profileImageUrl") String profileImageUrl,
                       @Param("baseCurrency") String baseCurrency,
                       @Param("theme") String theme);
 
-    /** 프로필 응답용 조회. 비밀번호 해시를 담지 않는 DTO 로 바로 받는다. */
+    /** 프로필 응답용으로 조회한다 — 비밀번호 해시를 담지 않는 DTO로 바로 받는다. */
     UserResponse findProfile(@Param("id") Long id);
 
-    /** 저장 후 생성된 id 를 user.id 가 아니라 별도 홀더로 받는다. */
+    /** 회원 한 행을 넣고 생성된 id를 파라미터 홀더로 돌려받는다. */
     int insert(UserInsert param);
 
-    /**
-     * insert 전용 파라미터.
-     *
-     * <p>record 가 아니라 클래스인 이유 — MyBatis 의 {@code useGeneratedKeys} 는
-     * 생성된 키를 파라미터 객체의 setter 로 되돌려 준다. record 는 setter 가 없어
-     * id 를 받을 수 없다.
-     */
+    /** insert 전용 파라미터다 — useGeneratedKeys가 setter로 id를 돌려주므로 record가 아니라 클래스다. */
     class UserInsert {
         private Long id;
         private final String email;
         private final String passwordHash;
         private final String nickname;
 
-        /** 저장할 값만 받는다. id 는 DB 가 채워 setId 로 돌아온다. */
+        /** 저장할 값만 받는다 — id는 DB가 채워 setId로 돌아온다. */
         public UserInsert(String email, String passwordHash, String nickname) {
             this.email = email;
             this.passwordHash = passwordHash;
             this.nickname = nickname;
         }
 
-        /** insert 후 DB 가 채워 준 식별자. 호출 전에는 null 이다. */
+        /** insert 후 DB가 채워 준 식별자를 돌려준다 — 호출 전에는 null이다. */
         public Long getId() { return id; }
-        /** MyBatis 가 생성된 키를 여기로 돌려준다. 애플리케이션 코드가 부를 일은 없다. */
+        /** MyBatis가 생성된 키를 여기로 돌려준다. */
         public void setId(Long id) { this.id = id; }
 
-        // 아래는 MyBatis 가 INSERT 문의 #{...} 를 채울 때 읽는 접근자다.
-
-        /** #{email} 자리에 들어간다. */
         public String getEmail() { return email; }
-        /** #{passwordHash} 자리에 들어간다. 이미 BCrypt 로 해시된 값이다. */
+        /** 이미 BCrypt로 해시된 값을 돌려준다. */
         public String getPasswordHash() { return passwordHash; }
-        /** #{nickname} 자리에 들어간다. */
         public String getNickname() { return nickname; }
     }
 }

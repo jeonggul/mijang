@@ -78,9 +78,7 @@
         <include refid="filterWhere"/>
     </select>
 
-    <!-- 지우지 않고 갱신한다(2.2).
-         synced_at 을 매번 새로 찍어 두면 "이번 회차에 보였는가"를 시각으로 판단할 수 있다.
-         다시 나타난 종목은 is_active 가 1 로 돌아온다 -->
+    <!-- 지우지 않고 갱신한다(2.2). synced_at 이 "이번 회차에 보였는가" 판단 기준이고, 재등장 종목은 is_active 가 1 로 돌아온다 -->
     <insert id="upsert">
         INSERT INTO stocks (symbol, name, exchange, asset_class, fractionable, is_active, synced_at)
         VALUES (#{symbol}, #{name}, #{exchange}, #{assetClass}, #{fractionable}, 1, CURRENT_TIMESTAMP(3))

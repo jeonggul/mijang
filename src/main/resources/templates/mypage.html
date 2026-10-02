@@ -70,9 +70,7 @@
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
 <script th:attr="nonce=${cspNonce}">
-/* 내 정보 (MY-01) · 보유 요약 (MY-02)
-   보유는 포트폴리오 화면과 같은 값이어야 한다(2.5). 별도 조회를 만들지 않고
-   서버가 HoldingService 를 그대로 불러 상위 몇 개만 잘라 준다. */
+/* 내 정보 (MY-01) · 보유 요약 (MY-02) — 보유는 포트폴리오와 같은 HoldingService 값을 상위 몇 개만 잘라 쓴다(2.5). */
 (function () {
   var DASH = "—";
 

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-/** 로그인 입력. 개발명세서(API) AUTH-002 */
+/** 로그인 입력이다. */
 @Getter
 @Setter
 public class LoginForm {
@@ -17,6 +17,6 @@ public class LoginForm {
     @NotBlank
     private String password;
 
-    /** 명세서 2장. 지금은 받기만 하고 쓰지 않는다. 켜지면 refresh 수명을 늘리는 자리다. */
+    /** 로그인 유지 여부다 — 지금은 받기만 하고 쓰지 않는다. */
     private boolean rememberMe;
 }

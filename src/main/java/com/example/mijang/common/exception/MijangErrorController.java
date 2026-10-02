@@ -13,25 +13,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
-/**
- * 컨트롤러에 닿기 전에 끝난 요청의 오류 응답.
- *
- * <p>{@link GlobalExceptionHandler} 는 {@code @RestController} 안에서 던져진 예외만 잡는다.
- * 없는 경로(404)나 허용되지 않은 메서드(405)는 핸들러를 고르는 단계에서 끝나므로 거기에 닿지 않고,
- * 그대로 두면 Spring 기본 오류 응답({@code timestamp} · {@code status} · {@code trace} …)이 나간다.
- * 봉투가 두 종류가 되어 화면 쪽에서 분기해야 하고, 개발 모드에서는 스택 트레이스까지 실려 나간다.
- *
- * <p>그래서 두 갈래로 나눈다. 이 규칙은 templates/error.html 에 이미 적혀 있던 것을 코드로 옮긴 것이다.
- * <ul>
- *   <li>{@code /api/**} 이거나 HTML 을 원하지 않는 요청 → [[미장-API명세서]] 1.1 봉투(JSON)</li>
- *   <li>그 외(브라우저 화면 요청) → templates/error.html</li>
- * </ul>
- */
+/** 컨트롤러에 닿기 전에 끝난 요청(404·405 등)을 API 는 JSON 봉투, 화면은 error.html 로 나눠 응답한다. */
 @Controller
 public class MijangErrorController implements ErrorController {
 
     private static final String API_PREFIX = "/api/";
 
+    /** 오류 요청을 JSON 봉투 또는 error.html 로 응답한다. */
     @RequestMapping("${server.error.path:/error}")
     public Object handleError(HttpServletRequest request) {
         HttpStatus status = resolveStatus(request);
@@ -45,10 +33,7 @@ public class MijangErrorController implements ErrorController {
         return new ModelAndView("error", Map.of("status", status.value()), status);
     }
 
-    /**
-     * API 경로면 무조건 JSON 이다. 그 밖에는 Accept 에 HTML 이 없을 때만 JSON 으로 내려
-     * fetch 로 부른 쪽이 화면 마크업을 받지 않게 한다.
-     */
+    /** API 경로이거나 Accept 에 HTML 이 없으면 JSON 으로 판단한다. */
     private boolean wantsJson(HttpServletRequest request, String uri) {
         if (uri != null && uri.startsWith(API_PREFIX)) {
             return true;

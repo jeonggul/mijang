@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  AdminSettingMapper.xml — 운영 설정 SQL
-
-  이 파일이 하는 일
-    여덟 줄짜리 표를 통째로 읽고, 한 칸씩 덮어쓴다.
-    덮어쓰기는 UPSERT 다 — 키가 나중에 늘어나도 같은 문장이 통한다.
--->
+<!-- AdminSettingMapper.xml — 운영 설정 SQL. 표 전체 읽기와 칸 단위 UPSERT 덮어쓰기를 한다. -->
 <mapper namespace="com.example.mijang.admin.mapper.AdminSettingMapper">
 
     <select id="findAll" resultType="java.util.Map">

@@ -76,9 +76,7 @@
 
 <script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
 <script th:attr="nonce=${cspNonce}">
-/* 소셜 첫 가입 (AUTH-07)
-   이메일과 제공자 신원은 세션에 있다. 여기서는 닉네임과 비밀번호만 보낸다 —
-   본문으로 이메일을 받으면 아무 주소로나 계정을 만들 수 있다. */
+/* 소셜 첫 가입 (AUTH-07). 이메일·제공자 신원은 세션에 있고 닉네임·비밀번호만 보낸다 — 본문으로 이메일을 받으면 아무 주소로나 계정을 만들 수 있다. */
 (function () {
   var email = document.getElementById("ss-email");
   var nick = document.getElementById("ss-nick");

@@ -19,6 +19,7 @@ public class AdminStatsService {
 
     private final AdminStatsMapper mapper;
 
+    /** 기간 코드로 관리자 통계를 만든다. */
     @Transactional(readOnly = true)
     public AdminStatsResponse stats(String periodCode) {
         return stats(periodCode, LocalDate.now(TradingClock.SERVICE_ZONE));

@@ -8,12 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * 종목 마스터 동기화. 미국 장 개장 전 하루 1회.
- *
- * <p>개장 전에 돌리는 이유 — 그날 새로 상장된 종목을 장이 열리기 전에 검색할 수 있어야 한다.
- * 한국시간 21:00 은 서머타임 기준 미국 개장(22:30) 한 시간 반 전이다.
- */
+/** 미국 장 개장 전 하루 1회 종목 마스터를 동기화하는 배치다. */
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "mijang.batch.enabled", havingValue = "true")
@@ -23,7 +18,7 @@ public class StockMasterSyncScheduler {
     private final StockSyncService stockSyncService;
     private final BatchLogWriter batchLogWriter;
 
-    /** 평일만 돈다. 주말에는 상장 변동이 없다. */
+    /** 평일 21:00 에 종목 마스터를 동기화한다. */
     @Scheduled(cron = "0 0 21 * * MON-FRI", zone = "Asia/Seoul")
     public void run() {
         batchLogWriter.run("종목 마스터 동기화", stockSyncService::syncAll);

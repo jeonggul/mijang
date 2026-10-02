@@ -18,22 +18,12 @@ import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * 경제 캘린더.
- *
- * <p>개발명세서(MVC) · 뉴스·정보 · service — 기능명세서 INFO-07
- *
- * <p>출처가 둘이다. 지표 발표는 <b>BLS</b> 가 iCalendar 로 공개하고, FOMC 회의는 통계 발표가
- * 아니라 거기 없어서 <b>연준</b> 일정을 자원 파일로 들고 있다. 둘을 합쳐 한 줄기로 내보낸다.
- *
- * <p>원래 Finnhub {@code /calendar/economic} 을 쓰기로 했으나 무료 티어에서 403(유료 전용)이
- * 확인되어 교체했다. 지금 구성은 원천 기관을 직접 보는 셈이라 키도 필요 없고 지연도 없다.
- */
+/** BLS 지표 발표와 자원 파일의 FOMC 일정을 합쳐 경제 캘린더를 낸다. INFO-07. */
 @Slf4j
 @Service
 public class EconomicCalendarService {
 
-    /** FOMC 결정 발표 시각 — 회의 이틀째 미 동부시각 오후 2시. */
+    /** FOMC 결정 발표 시각(회의 이틀째 미 동부시각 오후 2시). */
     private static final LocalTime FOMC_ANNOUNCE_TIME = LocalTime.of(14, 0);
 
     /** 자원 파일에 남은 일정이 이보다 적게 남으면 갱신하라고 알린다. */
@@ -52,11 +42,7 @@ public class EconomicCalendarService {
         this.fomcMeetings = loadFomcMeetings();
     }
 
-    /**
-     * 기간 안의 발표 일정. 날짜·시각 순.
-     *
-     * @param highOnly true 면 시장이 크게 움직이는 발표만
-     */
+    /** 기간 안의 발표 일정을 날짜·시각 순으로 낸다. highOnly 면 큰 발표만이다. */
     public List<EconomicEventResponse> events(LocalDate from, LocalDate to, boolean highOnly) {
         List<EconomicEventResponse> all = new ArrayList<>(blsEvents());
         all.addAll(fomcMeetings);
@@ -70,16 +56,13 @@ public class EconomicCalendarService {
                 .toList();
     }
 
-    /** 오늘 이후 다가오는 일정. 대시보드 위젯용. */
+    /** 오늘 이후 다가오는 일정을 limit 건까지 낸다. */
     public List<EconomicEventResponse> upcoming(int limit, boolean highOnly) {
         LocalDate today = LocalDate.now();
         return events(today, today.plusYears(2), highOnly).stream().limit(limit).toList();
     }
 
-    /**
-     * BLS 일정은 파일 하나를 통째로 받는 구조라 매 요청마다 부르면 낭비다. 발표 일정이 바뀌는
-     * 빈도를 생각하면 반나절 캐시로 충분하다.
-     */
+    /** BLS 일정을 캐시로 들고 있다가 만료 시에만 다시 받는다. */
     private List<EconomicEventResponse> blsEvents() {
         Instant cachedAt = blsCachedAt;
         if (cachedAt != null
@@ -95,19 +78,14 @@ public class EconomicCalendarService {
                 blsCache = blsClient.fetchAll();
                 blsCachedAt = Instant.now();
             } catch (RuntimeException e) {
-                // BLS 가 죽어도 FOMC 일정은 살아 있어야 한다. 캘린더 전체를 못 쓰게 만들지 않는다.
+                // BLS 가 죽어도 캘린더 전체를 못 쓰게 만들지 않는다
                 log.warn("BLS 일정 갱신 실패. 이전 캐시({}건)로 이어간다.", blsCache.size());
             }
             return blsCache;
         }
     }
 
-    /**
-     * FOMC 일정을 자원 파일에서 읽는다.
-     *
-     * <p>연준 페이지를 긁는 방법도 되지만, 연 8회에 1~2년 앞서 확정되는 데이터라 HTML 구조가
-     * 바뀌면 깨지는 위험을 지느니 파일로 두고 해마다 갱신하는 편이 낫다.
-     */
+    /** FOMC 일정을 자원 파일에서 읽는다. */
     private List<EconomicEventResponse> loadFomcMeetings() {
         try (InputStream in = new ClassPathResource("data/fomc-meetings.json").getInputStream()) {
             JsonNode root = new ObjectMapper().readTree(in);
@@ -126,7 +104,7 @@ public class EconomicCalendarService {
             warnIfSeedRunningOut(meetings);
             return List.copyOf(meetings);
         } catch (Exception e) {
-            // 캘린더가 반쪽이 되더라도 앱은 떠야 한다. BLS 지표 일정은 그대로 나간다.
+            // 캘린더가 반쪽이 되더라도 앱은 떠야 한다
             log.error("FOMC 일정 파일을 읽지 못했다. 경제 캘린더에서 FOMC 가 빠진다: {}", e.getMessage());
             return List.of();
         }

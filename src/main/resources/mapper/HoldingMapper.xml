@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  HoldingMapper.xml — 보유 현황 SQL
-
-  이 파일이 하는 일
-    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
-    손익용 조회는 보유·종목·일봉 세 표를 이어 붙여 계산에 필요한 값을 한 번에 낸다.
--->
+<!-- HoldingMapper.xml — 보유 현황 SQL. 손익용 조회는 보유·종목·일봉 세 표를 이어 붙여 한 번에 낸다. -->
 <mapper namespace="com.example.mijang.portfolio.mapper.HoldingMapper">
 
     <!-- 마지막 일봉 종가를 붙인다. 실시간은 market 범위에서 이 자리를 대체한다.
@@ -24,8 +18,7 @@
                ROUND(h.quantity * p.close * #{fxRate}, 2) AS marketValueKrw,
                ROUND(h.quantity * (p.close * #{fxRate} - h.avg_price * h.avg_fx_rate), 2)
                                   AS evalPnlKrw,
-               <!-- 주가손익 = 수량 × (현재가 − 평단가) × 현재환율
-                    환차손익 = 수량 × 평단가 × (현재환율 − 평균매수환율)
+               <!-- 주가손익 = 수량×(현재가−평단가)×현재환율, 환차손익 = 수량×평단가×(현재환율−평균매수환율).
                     ProfitLossCalculator 와 같은 식이어야 행 합계가 위쪽 총계와 맞는다 -->
                ROUND(h.quantity * (p.close - h.avg_price) * #{fxRate}, 2)      AS pricePnlKrw,
                ROUND(h.quantity * h.avg_price * (#{fxRate} - h.avg_fx_rate), 2) AS fxPnlKrw,
@@ -75,10 +68,8 @@
            AND h.quantity &gt; 0
     </select>
 
-    <!-- ix_holdings_user_symbol 을 탄다. 전량 매도한 행도 표에 남아 있으므로(2.4)
-         "행이 있다" 가 아니라 수량을 그대로 돌려주고 판단은 부르는 쪽이 한다.
-         UNIQUE 는 (portfolio_id, symbol) 이라 한 사람이 포트폴리오를 여럿 두면
-         같은 종목이 여러 행이 된다. SUM 으로 합쳐 두 행이 오는 순간 터지지 않게 한다 -->
+    <!-- 전량 매도 행도 남아 있으므로(2.4) 수량을 그대로 돌려주고 판단은 호출자가 한다.
+         UNIQUE 가 (portfolio_id, symbol) 이라 같은 종목이 여러 행일 수 있어 SUM 으로 합친다 -->
     <select id="findQuantity" resultType="java.math.BigDecimal">
         SELECT SUM(quantity)
           FROM holdings
@@ -105,10 +96,7 @@
          ORDER BY h.symbol
     </select>
 
-    <!--
-      그날 기준 손익 입력값. 위 findForPnl 과 딱 한 줄 다르다 — 종가를 고를 때
-      "그 날짜 이하" 로 자른다. 놓친 날을 메울 때 오늘 종가를 쓰면 과거가 거짓이 된다(report 2.4).
-    -->
+    <!-- 그날 기준 손익 입력값. findForPnl 과 달리 종가를 "그 날짜 이하" 로 자른다 — 오늘 종가로 과거를 메우면 거짓이 된다(report 2.4). -->
     <select id="findForPnlAsOf" resultType="com.example.mijang.portfolio.dto.SymbolPnl">
         SELECT h.symbol,
                h.quantity,

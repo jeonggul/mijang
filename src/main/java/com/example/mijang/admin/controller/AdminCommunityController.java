@@ -1,10 +1,3 @@
-/*
- * AdminCommunityController — 게시글·댓글·신고 관리 API
- *
- * 이 파일이 하는 일
- *   관리자 화면의 커뮤니티 세 탭이 부르는 것들을 내준다.
- *   권한은 SecurityConfig 의 /api/admin/** 규칙이 막는다(2.1).
- */
 package com.example.mijang.admin.controller;
 
 import com.example.mijang.admin.dto.AdminCommentResponse;
@@ -26,9 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 커뮤니티 운영 API. 화면 SR-013 — 4.5 점검 3.1 의 게시글·댓글·신고 탭.
- */
+/** 관리자 커뮤니티 운영 API — 게시글·댓글·신고 탭을 처리한다. */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -54,6 +45,7 @@ public class AdminCommunityController {
         return ApiResponse.ok(null);
     }
 
+    /** 댓글 목록을 조회한다. */
     @GetMapping("/comments")
     public ApiResponse<List<AdminCommentResponse>> comments(
             @RequestParam(defaultValue = "ALL") String status,
@@ -62,6 +54,7 @@ public class AdminCommunityController {
         return ApiResponse.ok(service.comments(status, q, Math.min(limit, 200)));
     }
 
+    /** 댓글을 숨기거나 복원한다. */
     @PatchMapping("/comments/{commentId}/status")
     public ApiResponse<Void> toggleComment(@LoginUser SessionUser me,
                                            @PathVariable Long commentId,

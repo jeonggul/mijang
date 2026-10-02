@@ -1,12 +1,3 @@
-/*
- * StockDividendSyncService — 종목 배당 수집
- *
- * 이 파일이 하는 일
- *   Alpaca Corporate Actions 에서 현금 배당을 받아 stock_dividends 에 채운다.
- *   두 입구가 있다 — 종목 화면이 배당 탭을 열 때(그 종목 전체 이력),
- *   그리고 매일 배치(보유 종목의 최근 구간). 하루 안에 다시 열면
- *   벤더를 부르지 않는다.
- */
 package com.example.mijang.dividend.service;
 
 import com.example.mijang.dividend.domain.StockDividend;
@@ -21,40 +12,29 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-/**
- * 종목 배당 수집. 개발명세서(API) PROFIT-12 · INFO-06
- *
- * <p>전체 이력을 받는 이유 — 배당 요약의 연속 증배는 해마다의 연간 합을
- * 비교해야 해서 최근 몇 건으로는 만들 수 없다. 실측으로 2016년 이력까지
- * 오는 것을 확인했고, 한 종목 전체가 요청 한두 번이면 온다.
- */
+/** Alpaca Corporate Actions 에서 현금 배당을 받아 stock_dividends 에 채운다. PROFIT-12 · INFO-06. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class StockDividendSyncService {
 
-    /** 이력 시작점. 연속 증배를 셀 수 있을 만큼 깊게 받는다. */
+    /** 이력 시작점. 연속 증배를 셀 수 있게 깊게 받는다. */
     private static final LocalDate HISTORY_START = LocalDate.of(2000, 1, 1);
 
     /** 이 시간 안에 다시 물으면 벤더를 부르지 않는다. */
     private static final int FRESH_HOURS = 24;
 
-    /** 배치가 보는 구간 — 정정 반영(과거)과 예정 배당(미래)을 함께 잡는다. */
+    /** 배치가 보는 구간. 정정(과거)과 예정 배당(미래)을 함께 잡는다. */
     private static final int BATCH_LOOKBACK_DAYS = 30;
     private static final int BATCH_LOOKAHEAD_DAYS = 90;
 
-    /** 배치 한 요청에 묶는 종목 수. 일봉 수집과 같은 결이다. */
+    /** 배치 한 요청에 묶는 종목 수. */
     private static final int BATCH_CHUNK = 100;
 
     private final AlpacaStockClient alpacaClient;
     private final StockDividendMapper stockDividendMapper;
 
-    /**
-     * 종목 하나를 신선하게 만든다. 배당 탭이 열릴 때 부른다.
-     *
-     * <p>하루 안에 수집한 적이 있으면 그대로 둔다. 벤더가 죽어 있어도
-     * 이미 받아 둔 것이 있으면 그걸로 답한다 — 탭이 벤더 장애에 같이 죽을 이유가 없다.
-     */
+    /** 종목 하나의 배당을 신선하게 만든다. 하루 안에 수집했으면 넘어가고, 벤더 장애 시 기존 데이터로 버틴다. */
     public void ensureFresh(String symbol) {
         LocalDateTime last = stockDividendMapper.findLastSyncedAt(symbol);
         if (last != null && last.isAfter(LocalDateTime.now().minusHours(FRESH_HOURS))) {
@@ -70,11 +50,7 @@ public class StockDividendSyncService {
         }
     }
 
-    /**
-     * 보유 종목의 최근 구간을 수집한다. 배치와 관리자 수동 실행이 부른다.
-     *
-     * @return 넣거나 고친 이벤트 수
-     */
+    /** 보유 종목의 최근 구간을 수집하고 넣거나 고친 이벤트 수를 반환한다. */
     public int syncHeldSymbols() {
         List<String> symbols = stockDividendMapper.findHeldSymbols();
         if (symbols.isEmpty()) {
@@ -90,7 +66,7 @@ public class StockDividendSyncService {
         return saved;
     }
 
-    /** 받아서 upsert 한다. 페이지가 이어지면 끝까지 따라간다. */
+    /** 벤더에서 받아 upsert 한다. 페이지가 이어지면 끝까지 따라간다. */
     public int syncSymbols(List<String> symbols, LocalDate from, LocalDate to) {
         int saved = 0;
         String pageToken = null;
@@ -106,7 +82,7 @@ public class StockDividendSyncService {
         return saved;
     }
 
-    /** 벤더 응답 한 건 → 우리 행. 응답 필드가 스키마와 1:1 이다(3.11). */
+    /** 벤더 응답 한 건을 우리 행으로 바꾼다. */
     private StockDividend parse(JsonNode event) {
         return new StockDividend(
                 event.path("symbol").asText(),

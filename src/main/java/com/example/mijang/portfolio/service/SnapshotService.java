@@ -1,13 +1,3 @@
-/*
- * SnapshotService — 스냅샷을 찍고 리포트를 만드는 곳
- *
- * 이 파일이 하는 일
- *   두 가지 일을 한다.
- *     ① 배치가 부르면 그날의 평가금액·손익을 계산해 한 줄 찍어 둔다.
- *     ② 화면이 부르면 쌓인 스냅샷을 기간으로 뽑아 추이와 수익률로 만들어 준다.
- *   계산은 대시보드와 같은 ProfitLossCalculator 를 쓴다. 식을 따로 두면
- *   대시보드 숫자와 리포트 숫자가 어긋난다.
- */
 package com.example.mijang.portfolio.service;
 
 import com.example.mijang.common.time.MarketCalendar;
@@ -31,18 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 일별 스냅샷과 기간 리포트. 개발명세서(API) PROFIT-06·09 · 화면 SR-009
- *
- * <p>계산은 {@link ProfitLossCalculator} 를 그대로 쓴다. 별도 식을 두면
- * 대시보드 값과 리포트 값이 어긋난다(2.2).
- */
+/** 일별 스냅샷을 찍고 자산 추이·기간 수익률 리포트를 만드는 서비스다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SnapshotService {
 
-    /** 수익률 자리수. 스키마의 DECIMAL(9,4). */
+    /** 수익률 자리수. 스키마 DECIMAL(9,4). */
     private static final int RATE_SCALE = 4;
 
     private final DailySnapshotMapper snapshotMapper;
@@ -52,25 +37,14 @@ public class SnapshotService {
     private final MarketCalendar marketCalendar;
     private final TradingClock tradingClock;
 
-    /**
-     * 하루치 스냅샷을 전 사용자에 대해 찍는다. 배치가 부른다.
-     *
-     * <p>거래일이 아니면 아무 것도 하지 않는다(2.3). 주말에 찍으면 같은 값이 반복되어
-     * 차트에 평평한 구간이 생긴다.
-     *
-     * <p>날짜를 인자로 받는 이유 — 배치가 실패한 날을 나중에 메울 수 있어야 한다(2.4).
-     *
-     * @param date 찍을 거래일
-     * @return 찍은 사용자 수
-     */
+    /** 해당 날짜의 스냅샷을 전 사용자에 대해 찍는다. 거래일이 아니면 0 을 돌려준다. */
     @Transactional
     public int createDailySnapshot(LocalDate date) {
         if (!marketCalendar.isTradingDay(date)) {
             log.info("[스냅샷] {} 은 거래일이 아니라 건너뛴다", date);
             return 0;
         }
-        /* fx 가 확정값과 시세를 분리한 뒤 FxRateResponse 를 돌려준다([[미장-fx-구현]] v1.1).
-           여기서는 반드시 그날 **확정값**이다 — 오늘 시세로 과거를 찍으면 추이가 거짓이 된다(2.4) */
+        // 반드시 그날 확정 환율을 쓴다. 오늘 시세로 과거를 찍으면 추이가 거짓이 된다
         Optional<FxRateResponse> rate = fxRateService.findByDate(date);
         if (rate.isEmpty()) {
             log.warn("[스냅샷] {} 환율이 없어 찍지 못한다", date);
@@ -88,27 +62,16 @@ public class SnapshotService {
         return done;
     }
 
-    /** 오늘 기준. 배치의 기본 호출이다. */
+    /** 오늘 기준으로 스냅샷을 찍는다. */
     @Transactional
     public int createDailySnapshot() {
         return createDailySnapshot(tradingClock.today());
     }
 
-    /**
-     * 사용자 한 명의 그날 스냅샷을 다시 찍는다. <b>놓친 날을 메우는 입구</b>다(2.4).
-     *
-     * <p>배치가 실패하거나 서버가 꺼져 있으면 그날 행이 빈 채로 남고, 차트에 구멍이 된다.
-     * 날짜를 받아 도는 경로는 있었지만 <b>바깥에서 부를 방법이 없었다</b> — 그래서 여기를 연다.
-     *
-     * <p>전 사용자를 도는 배치와 달리 <b>부른 사람 것만</b> 건드린다. 남의 스냅샷까지
-     * 다시 쓰게 두면 화면에서 누를 수 있는 버튼이 위험해진다.
-     *
-     * @return 찍었으면 true. 거래일이 아니거나 환율·보유가 없으면 false
-     */
+    /** 놓친 날의 본인 스냅샷을 다시 찍는다. 거래일이 아니거나 환율·보유가 없으면 false 다. */
     @Transactional
     public boolean backfill(Long userId, LocalDate date) {
-        /* 아직 오지 않은 날은 메울 것이 없다. 막지 않으면 대체 환율로 미래 스냅샷이 생기고
-           차트가 오지 않은 날까지 뻗는다 */
+        // 미래 날짜는 막는다. 대체 환율로 미래 스냅샷이 생기면 차트가 오지 않은 날까지 뻗는다
         if (date.isAfter(tradingClock.today()) || !marketCalendar.isTradingDay(date)) {
             return false;
         }
@@ -117,16 +80,9 @@ public class SnapshotService {
                 .orElse(false);
     }
 
-    /**
-     * 사용자 한 명의 스냅샷.
-     *
-     * <p>보유가 없으면 찍지 않는다(2.6).
-     *
-     * @return 저장했으면 true
-     */
+    /** 사용자 한 명의 스냅샷을 찍는다. 보유가 없으면 찍지 않는다. */
     private boolean snapshotOne(Long userId, LocalDate date, FxRateResponse rate) {
-        /* 그날 이하의 마지막 종가를 쓴다. findForPnl 은 언제나 최신 종가를 붙이므로
-           놓친 날을 메울 때 그것을 쓰면 과거 추이가 통째로 거짓이 된다(2.4) */
+        // 그날 이하의 마지막 종가를 쓴다. 최신 종가로 과거를 찍으면 추이가 거짓이 된다
         List<SymbolPnl> holdings = holdingMapper.findForPnlAsOf(userId, null, date);
         if (holdings.isEmpty()) {
             return false;
@@ -145,22 +101,13 @@ public class SnapshotService {
         return true;
     }
 
-    /** 자산 추이. {@code PROFIT-09}. 차트가 그대로 쓴다. */
+    /** 기간의 자산 추이를 조회한다. */
     @Transactional(readOnly = true)
     public List<SnapshotResponse> series(Long userId, LocalDate from, LocalDate to) {
         return snapshotMapper.findByRange(userId, from, to);
     }
 
-    /**
-     * 기간 수익률. {@code PROFIT-06}
-     *
-     * <p>스냅샷 <b>두 건만</b> 읽는다(2.1). 시작일에 정확히 스냅샷이 없으면
-     * 그 이후 첫 행을 시작점으로 삼는다 — 주말이 시작일인 경우다.
-     *
-     * <p>중간 추가 매수는 반영하지 않는다(2.7). 그 한계는 8장에 적어 두었다.
-     *
-     * @return 스냅샷이 없으면 null
-     */
+    /** 시작·끝 스냅샷 두 건으로 기간 수익률을 만든다. 스냅샷이 없으면 null 이다. */
     @Transactional(readOnly = true)
     public PeriodReturnResponse periodReturn(Long userId, LocalDate from, LocalDate to) {
         SnapshotResponse start = snapshotMapper.findFirstOnOrAfter(userId, from);

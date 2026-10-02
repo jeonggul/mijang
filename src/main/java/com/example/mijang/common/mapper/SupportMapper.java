@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+/** 공지·FAQ 매퍼다. */
 @Mapper
 public interface SupportMapper {
 
@@ -38,12 +39,12 @@ public interface SupportMapper {
         public boolean isPinned() { return pinned; }
     }
 
-    /** 공지 수정. 지워진 공지는 되살아나지 않는다 — deleted_at IS NULL 이 그 뜻이다. */
+    /** 공지를 수정한다. deleted_at IS NULL 조건으로 지워진 공지는 되살리지 않는다. */
     int updateNotice(@org.apache.ibatis.annotations.Param("id") Long id,
                      @org.apache.ibatis.annotations.Param("title") String title,
                      @org.apache.ibatis.annotations.Param("content") String content,
                      @org.apache.ibatis.annotations.Param("pinned") boolean pinned);
 
-    /** 공지 삭제. 지우지 않고 표시만 한다. */
+    /** 공지를 소프트 삭제한다. */
     int deleteNotice(@org.apache.ibatis.annotations.Param("id") Long id);
 }

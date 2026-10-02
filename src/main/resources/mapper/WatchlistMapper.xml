@@ -20,9 +20,7 @@
         SELECT LAST_INSERT_ID()
     </select>
 
-    <!-- 종가와 직전 종가를 상관 서브쿼리로 붙인다. 관심종목은 많아야 수십 건이라
-         이 방식으로 충분하고, 화면이 종목마다 상세를 다시 부르는 것보다 훨씬 낫다.
-         등락률은 직전 종가가 없거나 0 이면 NULL 이다 -->
+    <!-- 종가·직전 종가를 상관 서브쿼리로 붙인다(관심종목은 수십 건이라 충분). 등락률은 직전 종가가 없거나 0 이면 NULL -->
     <select id="findByUser" parameterType="long"
             resultType="com.example.mijang.stock.dto.WatchlistItemResponse">
         SELECT w.id,

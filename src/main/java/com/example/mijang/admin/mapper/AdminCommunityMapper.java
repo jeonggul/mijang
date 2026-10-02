@@ -1,9 +1,3 @@
-/*
- * AdminCommunityMapper — 관리자용 게시글·댓글·신고 접근
- *
- * 이 파일이 하는 일
- *   커뮤니티 매퍼와 달리 숨김·삭제 상태까지 본다. 되살리려면 보여야 한다.
- */
 package com.example.mijang.admin.mapper;
 
 import com.example.mijang.admin.dto.AdminCommentResponse;
@@ -13,62 +7,44 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-/**
- * 관리자 화면의 커뮤니티 세 탭(4.5 점검 3.1).
- *
- * <p>커뮤니티 쪽 매퍼를 재사용하지 않는 이유 — 그쪽은 전부
- * {@code status = 'PUBLISHED'} 가 박혀 있다. 조건을 파라미터로 풀면 일반 화면이
- * 실수로 숨김 글을 내보낼 길이 생긴다. 보는 범위가 다르면 문도 다르게 둔다.
- */
+/** 관리자용 게시글·댓글·신고 SQL 접근 — 커뮤니티 매퍼와 달리 숨김·삭제 상태까지 본다. */
 @Mapper
 public interface AdminCommunityMapper {
 
-    /**
-     * 게시글 목록. 최신순.
-     *
-     * @param status PUBLISHED·HIDDEN·DELETED. null 이면 전부
-     * @param q      제목·작성자 닉네임 부분 일치. null 이면 전부
-     */
+    /** 게시글을 최신순으로 조회한다. status·q 는 null 이면 전부다. */
     List<AdminPostResponse> findPosts(@Param("status") String status,
                                       @Param("q") String q,
                                       @Param("limit") int limit);
 
+    /** 게시글 한 건을 조회한다. */
     AdminPostResponse findPostById(@Param("postId") Long postId);
 
-    /** 상태 전환. 지우는 경로는 없다(2.6). */
+    /** 게시글 상태를 바꾼다. 지우는 경로는 없다. */
     int updatePostStatus(@Param("postId") Long postId, @Param("status") String status);
 
+    /** 댓글을 최신순으로 조회한다. */
     List<AdminCommentResponse> findComments(@Param("status") String status,
                                             @Param("q") String q,
                                             @Param("limit") int limit);
 
+    /** 댓글 한 건을 조회한다. */
     AdminCommentResponse findCommentById(@Param("commentId") Long commentId);
 
+    /** 댓글 상태를 바꾼다. */
     int updateCommentStatus(@Param("commentId") Long commentId, @Param("status") String status);
 
-    /**
-     * 지금 공개 상태일 때만 바꾼다. 신고 자동 숨김이 쓴다.
-     *
-     * <p>조건 없이 바꾸면 관리자가 손으로 복원해 둔 댓글을 신고 한 건이 다시 끌어내린다.
-     */
+    /** 공개 상태일 때만 댓글 상태를 바꾼다 — 관리자가 복원한 댓글을 신고가 다시 끌어내리지 않게 한다. */
     int updateCommentStatusIfPublished(@Param("commentId") Long commentId,
                                        @Param("status") String status);
 
-    /**
-     * 신고 목록. 오래 기다린 것부터.
-     *
-     * @param status PENDING·RESOLVED·REJECTED. null 이면 전부
-     */
+    /** 신고를 오래 기다린 것부터 조회한다. status 는 null 이면 전부다. */
     List<AdminReportResponse> findReports(@Param("status") String status,
                                           @Param("limit") int limit);
 
+    /** 신고 한 건을 조회한다. */
     AdminReportResponse findReportById(@Param("reportId") Long reportId);
 
-    /**
-     * 신고를 닫는다. PENDING 인 것만 듣는 조건부 갱신이다.
-     *
-     * @return 바뀐 행 수. 0 이면 다른 관리자가 먼저 처리했다는 뜻이다
-     */
+    /** 신고를 닫는다 — PENDING 인 것만 듣는 조건부 갱신이라 0 이면 다른 관리자가 먼저 처리한 것이다. */
     int handleReport(@Param("reportId") Long reportId,
                      @Param("status") String status,
                      @Param("adminId") Long adminId);

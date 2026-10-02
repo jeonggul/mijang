@@ -12,19 +12,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * REST 컨트롤러 전용 예외 처리.
- *
- * <p>개발명세서(MVC) · 공통/설정 · Common.exception
- * <p>화면(Thymeleaf) 쪽 오류는 templates/error.html 이 담당하므로 건드리지 않도록
- * {@code annotations = RestController.class} 로 적용 범위를 좁혔다.
- * <p>응답은 전부 [[미장-API명세서]] 1.1 봉투를 쓴다.
- */
+/** REST 컨트롤러 전용 예외 처리다. annotations 제한을 풀면 화면(Thymeleaf) 오류까지 잡으므로 바꾸면 안 된다. */
 @RestControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** BusinessException 을 API 오류 봉투로 변환한다. */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
         ErrorCode ec = e.errorCode();
@@ -32,10 +26,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(ApiError.of(ec.code(), ec.message(), e.field())));
     }
 
-    /**
-     * Bean Validation 실패. 명세서 1.1 에 따라 첫 번째 위반 필드를 {@code error.field} 로 알려 준다.
-     * 화면이 그 입력만 하이라이트할 수 있게 하려는 것이다.
-     */
+    /** Bean Validation 실패를 첫 번째 위반 필드와 함께 400 으로 내린다. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException e) {
         ErrorCode ec = ErrorCode.COMMON_INVALID_REQUEST;
@@ -49,15 +40,7 @@ public class GlobalExceptionHandler {
                         .orElseGet(() -> ApiResponse.fail(ApiError.of(ec.code(), ec.message()))));
     }
 
-    /**
-     * 마지막 그물. 봉투 모양을 전 API 에서 하나로 유지하기 위해 둔다.
-     *
-     * <p>명세서 1.1 이 "스택 트레이스·내부 용어 금지"를 못박았으므로 원인은 로그에만 남기고
-     * 사용자에게는 일반 문구만 내보낸다. 예외를 삼키지 않도록 로그는 스택까지 남긴다.
-     *
-     * <p>단, Spring MVC 가 이미 상태를 정해 둔 오류(405 · 415 · 필수 파라미터 누락 등)까지
-     * 500 으로 뭉개면 안 된다. {@link ErrorResponse} 를 구현한 예외는 그 상태를 그대로 살린다.
-     */
+    /** 남은 예외를 일반 문구로 감싼다. ErrorResponse 구현 예외는 원래 상태(405 등)를 살려야 한다. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception e) {
         if (e instanceof ErrorResponse er) {

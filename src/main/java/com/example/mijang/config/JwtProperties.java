@@ -3,11 +3,7 @@ package com.example.mijang.config;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * 인증 토큰 설정. application.properties 의 mijang.jwt.* 를 받는다.
- *
- * <p>secret 만 application-secret.properties 에 있고 나머지는 공개 설정이다.
- */
+/** 인증 토큰({@code mijang.jwt.*}) 설정 바인딩이다. secret 만 미추적 secret 파일에 둔다. */
 @ConfigurationProperties(prefix = "mijang.jwt")
 public class JwtProperties {
 

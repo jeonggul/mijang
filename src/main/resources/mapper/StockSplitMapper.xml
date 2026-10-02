@@ -2,12 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<!--
-  stock_splits — 주식 분할.
-
-  레코드는 자리 순서로 매핑되므로 SELECT 컬럼 순서가 StockSplit 선언 순서와 같아야 한다.
-    StockSplit(symbol, exDate, splitType, oldRate, newRate)
--->
+<!-- stock_splits — 주식 분할. 자리 매핑이라 SELECT 컬럼 순서가 StockSplit(symbol, exDate, splitType, oldRate, newRate) 선언 순서와 같아야 한다. -->
 <mapper namespace="com.example.mijang.stock.mapper.StockSplitMapper">
 
     <!-- 기준일 오름차순. 보정은 오래된 것부터 곱해 나가야 순서가 뒤바뀌지 않는다 -->

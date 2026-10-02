@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!--
-  StockDividendMapper — stock_dividends 접근 SQL
-
-  이 파일이 하는 일
-    종목 배당 마스터의 upsert 와 조회. 벤더가 지급일을 정정해 보내는 일이
-    있어 같은 (종목·배당락일·유형)이면 새 값으로 덮는다. synced_at 이 곧
-    신선도 표시다.
--->
+<!-- StockDividendMapper — stock_dividends 접근 SQL. 같은 (종목·배당락일·유형)이면 새 값으로 덮는 upsert. synced_at 이 신선도 표시다. -->
 <mapper namespace="com.example.mijang.dividend.mapper.StockDividendMapper">
 
   <insert id="upsert">

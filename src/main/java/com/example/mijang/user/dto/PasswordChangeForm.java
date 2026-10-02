@@ -6,12 +6,12 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
-/** 로그인 상태에서의 비밀번호 변경. 개발명세서(API) AUTH-05 */
+/** 로그인 상태에서의 비밀번호 변경 입력이다. */
 @Getter
 @Setter
 public class PasswordChangeForm {
 
-    /** 본인 확인용. 형식 검사를 걸지 않는다 — 예전 규칙으로 만든 값일 수 있다. */
+    /** 본인 확인용 현재 비밀번호다 — 예전 규칙 값일 수 있어 형식 검사를 걸지 않는다. */
     @NotBlank
     private String currentPassword;
 
