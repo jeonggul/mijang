@@ -1,4 +1,8 @@
-<h1 align="center">📈 미장 · MIJANG</h1>
+<p align="center">
+  <img src="src/main/resources/static/img/logo.png" alt="미장 로고" width="110"/>
+</p>
+
+<h1 align="center">미장 · MIJANG</h1>
 
 <h3 align="center">미국 주식의 매매 기록과 당시의 판단을 함께 남기는 투자 회고 서비스</h3>
 
