@@ -1,0 +1,368 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 포트폴리오</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="layout no-panel">
+
+  <aside class="card sidebar">
+    <h2 class="sidebar-title">포트폴리오 요약</h2>
+
+    <ul class="stat-list">
+      <li><span class="k">종목 수</span><span class="v num" id="pf-count2">—</span></li>
+      <li><span class="k">주가손익</span><span class="v num" id="pf-price-pnl2">—</span></li>
+      <li><span class="k">환차손익</span><span class="v num" id="pf-fx-pnl2">—</span></li>
+    </ul>
+
+    <p class="nav-label">보유 종목</p>
+    <ul class="holdings-nav" id="pf-nav"><!-- 스크립트가 채운다 --></ul>
+
+    <!-- 화면 설계서가 리포트·배당·양도세를 포트폴리오 영역으로 묶는다.
+         이 링크들이 원래 알림·포트폴리오 드롭다운 목업 안에 있다가 목업을
+         걷어낼 때 같이 사라졌다 — 완성된 화면이 주소로만 닿는 상태였다 -->
+    <p class="nav-label">포트폴리오 화면</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/portfolio}" aria-current="page"><span class="tk">보유 현황</span></a></li>
+      <li><a th:href="@{/report}"><span class="tk">리포트</span></a></li>
+      <li><a th:href="@{/dividend}"><span class="tk">배당</span></a></li>
+      <li><a th:href="@{/tax}"><span class="tk">양도세</span></a></li>
+    </ul>
+
+    <a class="btn-record" th:href="@{/record-new}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      매매 기록 추가
+    </a>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>보유 현황</h1></div>
+      <span class="grow"></span>
+      <!-- data-currency 는 스크립트가 이 그룹을 집어내는 표식이다. 첫 번째 토글 그룹을
+           집는 방식은 화면에 그룹이 하나 더 생기는 순간 조용히 어긋난다 -->
+      <div class="pills" data-toggle-group data-currency>
+        <button type="button" data-value="KRW" aria-pressed="true">원화</button>
+        <button type="button" data-value="USD" aria-pressed="false">달러</button>
+      </div>
+    </div>
+
+    <div class="summary-strip">
+      <div><span class="k">총 평가금액</span><b class="num" id="pf-total">—</b><span class="s num" id="pf-total-usd">—</span></div>
+      <div><span class="k">주가손익</span><b class="num" id="pf-price-pnl">—</b></div>
+      <div><span class="k">환차손익</span><b class="num" id="pf-fx-pnl">—</b></div>
+      <div><span class="k">총손익</span><b class="num" id="pf-pnl">—</b><span class="s num" id="pf-pnl-rate">—</span></div>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">보유 종목 <span class="sub num" id="pf-count">—</span></h2>
+      <div class="table-wrap">
+        <table class="tbl tbl-band">
+          <thead>
+            <tr>
+              <th class="c txt" scope="col">종목</th><th class="c" scope="col">비중</th>
+              <th class="c" scope="col">보유</th><th class="c" scope="col">평단</th>
+              <th class="c" scope="col">현재가</th><th class="c" scope="col">평가금액</th>
+              <th class="c" scope="col">주가손익</th><th class="c" scope="col">환차손익</th>
+              <th class="c" scope="col">수익률</th>
+            </tr>
+          </thead>
+          <tbody id="pf-rows"><!-- 스크립트가 채운다 --></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 보유 현황 (ACCOUNT-04·05) · 총 평가금액 (ACCOUNT-07)
+   표 머리가 9칸이라 행도 9칸을 만들고, 손익은 서버의 확정 환율 계산 결과와 같은 식으로 표시한다. */
+(function () {
+  var tbody = document.getElementById("pf-rows");
+  if (!tbody) return;
+
+  var COLS = 9;
+  var view = localStorage.getItem("mijang-base-currency") === "USD" ? "USD" : "KRW";
+  var held = [];             /* 수량이 남아 있는 종목만 */
+  var totalKrw = null;       /* 서버가 준 총 평가금액(원) */
+  var pnl = null;            /* 서버가 확정 환율로 계산한 손익 분해 */
+  var loaded = false;
+
+  function krw(v) {
+    return v == null ? "—" : Math.round(Number(v)).toLocaleString("ko-KR") + "원";
+  }
+  function usd(v) {
+    return v == null ? "—" : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function signedKrw(v) {
+    if (v == null) return "—";
+    var value = Number(v);
+    return (value > 0 ? "+" : value < 0 ? "−" : "") +
+      Math.abs(Math.round(value)).toLocaleString("ko-KR") + "원";
+  }
+  function signedUsd(v) {
+    if (v == null) return "—";
+    var value = Number(v);
+    return (value > 0 ? "+" : value < 0 ? "−" : "") + "$" +
+      Math.abs(value).toLocaleString("en-US",
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function signedMoney(v) {
+    return view === "USD" ? signedUsd(v) : signedKrw(v);
+  }
+  function pct(v) {
+    if (v == null) return "—";
+    return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "%";
+  }
+  function tone(el, v) {
+    el.classList.remove("rise", "fall");
+    if (v != null && Number(v) !== 0) el.classList.add(Number(v) > 0 ? "rise" : "fall");
+  }
+  function text(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  /* 이 종목의 평가금액(달러). marketValueKrw 는 원화라 달러 보기에서는 다시 만들어야 한다 */
+  function marketValueUsd(h) {
+    if (h.currentPrice == null) return null;
+    return Number(h.quantity) * Number(h.currentPrice);
+  }
+
+  /* 매입 원가(원). 수익률의 분모다 — 원가 대비 얼마가 붙었는지를 본다 */
+  function costKrw(h) {
+    if (h.avgPrice == null || h.avgFxRate == null) return null;
+    return Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+  }
+
+  function rate(h) {
+    var cost = costKrw(h);
+    if (h.evalPnlKrw == null || cost == null || cost === 0) return null;
+    return (Number(h.evalPnlKrw) / cost) * 100;
+  }
+
+  function split(h) {
+    if (!pnl || pnl.appliedFxRate == null || h.currentPrice == null || h.avgPrice == null || h.avgFxRate == null) return { price: null, fx: null };
+    var quantity = Number(h.quantity), currentFx = Number(pnl.appliedFxRate), avg = Number(h.avgPrice);
+    var priceUsd = quantity * (Number(h.currentPrice) - avg);
+    return {
+      price: view === "USD" ? priceUsd : priceUsd * currentFx,
+      fx: view === "USD" ? 0 : quantity * avg * (currentFx - Number(h.avgFxRate))
+    };
+  }
+
+  function pnlValues() {
+    if (!pnl) return { price: null, fx: null, total: null };
+    return view === "USD"
+      ? { price: Number(pnl.pricePnlUsd), fx: 0, total: Number(pnl.totalPnlUsd) }
+      : { price: Number(pnl.pricePnlKrw), fx: Number(pnl.fxPnlKrw), total: Number(pnl.totalPnlKrw) };
+  }
+
+  function row(h, totalForWeight) {
+    var tr = document.createElement("tr");
+    /* 뼈대만 세우고 티커·종목명은 textContent 로 넣는다. 벤더가 준 글자다 */
+    tr.innerHTML =
+      '<td class="c"><a></a> <span class="sub"></span></td>' +
+      '<td class="c num"></td>' +
+      '<td class="c num"></td>' +
+      '<td class="c num"></td>' +
+      '<td class="c num"></td>' +
+      '<td class="c num"></td>' +
+      '<td class="c num"></td>' +
+      '<td class="c num"></td>' +
+      '<td class="c num"></td>';
+
+    var a = tr.children[0].firstChild;
+    a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+    a.textContent = h.symbol;
+    tr.children[0].querySelector(".sub").textContent = h.name || "";
+
+    /* 비중 — 평가금액 기준. 총액을 못 구했으면 비운다 */
+    var mvKrw = h.marketValueKrw == null ? null : Number(h.marketValueKrw);
+    tr.children[1].textContent =
+      (mvKrw == null || !totalForWeight) ? "—" : (mvKrw / totalForWeight * 100).toFixed(1) + "%";
+
+    tr.children[2].textContent = Number(h.quantity).toLocaleString("ko-KR", { maximumFractionDigits: 6 }) + "주";
+    tr.children[3].textContent = usd(h.avgPrice);
+    tr.children[4].textContent = usd(h.currentPrice);
+    tr.children[5].textContent =
+      view === "USD" ? usd(marketValueUsd(h)) : krw(h.marketValueKrw);
+
+    var parts = split(h);
+    tr.children[6].textContent = signedMoney(parts.price);
+    tr.children[7].textContent = signedMoney(parts.fx);
+    tone(tr.children[6], parts.price);
+    tone(tr.children[7], parts.fx);
+
+    var r = rate(h);
+    tr.children[8].textContent = pct(r);
+    tone(tr.children[8], r);
+    return tr;
+  }
+
+  function emptyRow() {
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = COLS;
+    td.className = "sub";
+    td.style.padding = "24px";
+    td.style.textAlign = "center";
+    td.appendChild(document.createTextNode("보유 종목이 없습니다. "));
+    var a = document.createElement("a");
+    a.setAttribute("href", "/record-new");
+    a.textContent = "거래를 기록하면";
+    td.appendChild(a);
+    td.appendChild(document.createTextNode(" 여기에 쌓입니다."));
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function navItem(h) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+    var tk = document.createElement("span");
+    tk.className = "tk";
+    tk.textContent = h.symbol;
+    var pc = document.createElement("span");
+    var r = rate(h);
+    pc.className = "pc";
+    pc.textContent = pct(r);
+    tone(pc, r);
+    a.appendChild(tk);
+    a.appendChild(pc);
+    li.appendChild(a);
+    return li;
+  }
+
+  /* 총손익은 종목별 평가손익의 합이다(ACCOUNT-05). 하나라도 시세를 못 구했으면
+     합계가 반쪽이 되므로 아예 비운다 — 일부만 더한 값은 틀린 값이다 */
+  function totals() {
+    var pnlKrw = 0, costTotalKrw = 0, costUsd = 0, usdSum = 0, missing = false;
+    held.forEach(function (h) {
+      if (h.evalPnlKrw == null || costKrw(h) == null) { missing = true; return; }
+      pnlKrw += Number(h.evalPnlKrw);
+      costTotalKrw += costKrw(h);
+      costUsd += Number(h.quantity) * Number(h.avgPrice);
+      var mv = marketValueUsd(h);
+      if (mv == null) missing = true; else usdSum += mv;
+    });
+    return { pnlKrw: missing ? null : pnlKrw, costKrw: costTotalKrw, costUsd: costUsd, usd: missing ? null : usdSum };
+  }
+
+  function render() {
+    var t = totals();
+    var values = pnlValues();
+
+    tbody.replaceChildren();
+    if (held.length === 0) {
+      tbody.appendChild(emptyRow());
+    } else {
+      held.forEach(function (h) { tbody.appendChild(row(h, totalKrw)); });
+    }
+
+    var nav = document.getElementById("pf-nav");
+    if (nav) {
+      nav.replaceChildren();
+      held.forEach(function (h) { nav.appendChild(navItem(h)); });
+    }
+
+    text("pf-count", held.length + "종목");
+    text("pf-count2", String(held.length));
+    text("pf-price-pnl", signedMoney(values.price));
+    text("pf-fx-pnl", signedMoney(values.fx));
+    text("pf-price-pnl2", signedMoney(values.price));
+    text("pf-fx-pnl2", signedMoney(values.fx));
+    tone(document.getElementById("pf-price-pnl"), values.price);
+    tone(document.getElementById("pf-fx-pnl"), values.fx);
+    tone(document.getElementById("pf-price-pnl2"), values.price);
+    tone(document.getElementById("pf-fx-pnl2"), values.fx);
+
+    /* 총 평가금액 — 토글에 따라 큰 글씨와 작은 글씨가 자리를 바꾼다 */
+    if (view === "USD") {
+      text("pf-total", usd(t.usd));
+      text("pf-total-usd", krw(totalKrw));
+    } else {
+      text("pf-total", krw(totalKrw));
+      text("pf-total-usd", usd(t.usd));
+    }
+    var pnlEl = document.getElementById("pf-pnl");
+    if (pnlEl) { pnlEl.textContent = signedMoney(values.total); tone(pnlEl, values.total); }
+    var rateEl = document.getElementById("pf-pnl-rate");
+    if (rateEl) {
+      var r = view === "USD"
+        ? (values.total == null || !t.costUsd ? null : values.total / t.costUsd * 100)
+        : (values.total == null || !t.costKrw ? null : values.total / t.costKrw * 100);
+      rateEl.textContent = pct(r);
+      tone(rateEl, r);
+    }
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (res.status === 401) { location.href = "/login"; return undefined; }
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  async function load() {
+    var holdings = await api("/api/portfolio/holdings");
+    if (holdings === undefined) return;
+
+    /* 수량 0 인 행은 감춘다. 지우지는 않는다 — 실현손익이 거기 남아 있다(2.4) */
+    held = (holdings || []).filter(function (h) { return Number(h.quantity) > 0; });
+
+    var total = await api("/api/portfolio/total");
+    if (total === undefined) return;
+    totalKrw = total;
+    pnl = await api("/api/portfolio/pnl");
+
+    loaded = true;
+    render();
+  }
+
+  /* 원화/달러 토글. 표시 단위만 바꾸는 것이라 다시 불러오지 않고 그리기만 한다 */
+  var group = document.querySelector("[data-currency]");
+  if (group) {
+    group.querySelectorAll("button").forEach(function (button) {
+      button.setAttribute("aria-pressed", String(button.dataset.value === view));
+    });
+    group.addEventListener("mj:change", function (e) {
+      view = e.detail === "USD" ? "USD" : "KRW";
+      if (loaded) render();
+    });
+  }
+
+  document.addEventListener("mijang:currency-change", function (event) {
+    view = event.detail === "USD" ? "USD" : "KRW";
+    if (group) {
+      group.querySelectorAll("button").forEach(function (button) {
+        button.setAttribute("aria-pressed", String(button.dataset.value === view));
+      });
+    }
+    if (loaded) render();
+  });
+
+  load();
+})();
+</script>
+
+</body>
+</html>

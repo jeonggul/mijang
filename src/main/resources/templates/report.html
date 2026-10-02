@@ -1,0 +1,393 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 수익률 리포트</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="layout no-panel">
+
+  <aside class="card sidebar">
+    <div class="menu-anchor">
+      <button class="switcher" type="button" data-open="pf-menu">
+        전체 포트폴리오<span class="spacer"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="dropdown pf-menu" id="pf-menu" hidden>
+        <!-- MVP 는 사용자마다 기본 하나만 쓴다(portfolio 2.8). 복수 포트폴리오는 확장이라
+             고를 것이 없으므로 나머지 항목과 "추가" 를 두지 않는다 -->
+        <button class="row" type="button" aria-current="true">
+          <span class="ttl">전체 포트폴리오</span><span class="meta" id="rp-menu-meta">—</span>
+        </button>
+      </div>
+    </div>
+
+    <ul class="stat-list">
+      <li><span class="k">종목 수</span><span class="v num" id="rp-count">—</span></li>
+      <li><span class="k">주가손익</span><span class="v num" id="rp-price2">—</span></li>
+      <li><span class="k">환차손익</span><span class="v num" id="rp-fx2">—</span></li>
+    </ul>
+
+    <p class="nav-label">보유 종목</p>
+    <ul class="holdings-nav" id="rp-nav"><!-- 스크립트가 채운다 --></ul>
+
+    <!-- 화면 설계서가 리포트·배당·양도세를 포트폴리오 영역으로 묶는다.
+         이 링크들이 원래 알림·포트폴리오 드롭다운 목업 안에 있다가 목업을
+         걷어낼 때 같이 사라졌다 — 완성된 화면이 주소로만 닿는 상태였다 -->
+    <p class="nav-label">포트폴리오 화면</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/portfolio}"><span class="tk">보유 현황</span></a></li>
+      <li><a th:href="@{/report}" aria-current="page"><span class="tk">리포트</span></a></li>
+      <li><a th:href="@{/dividend}"><span class="tk">배당</span></a></li>
+      <li><a th:href="@{/tax}"><span class="tk">양도세</span></a></li>
+    </ul>
+
+    <a class="btn-record" th:href="@{/record-new}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      매매 기록 추가
+    </a>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1>수익률 리포트</h1></div>
+      <span class="grow"></span>
+      <div class="pills" data-toggle-group>
+        <button type="button" data-value="1M" aria-pressed="false">1개월</button>
+        <button type="button" data-value="3M" aria-pressed="false">3개월</button>
+        <button type="button" data-value="6M" aria-pressed="true">6개월</button>
+        <button type="button" data-value="1Y" aria-pressed="false">1년</button>
+        <button type="button" data-value="ALL" aria-pressed="false">전체</button>
+      </div>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:14px">
+      <p class="total-label">총 평가금액</p>
+      <p class="total-row"><span class="total-krw" id="rp-value">—</span><span class="total-usd" id="rp-value-usd">—</span></p>
+      <p class="note">예수금·현금 자산은 포함되지 않습니다</p>
+      <hr class="rule">
+      <div class="section-row"><h2 style="margin:0;font-size:var(--fs-card)">손익 요인 분해</h2>
+        <span class="chip" id="rp-chip" hidden>상쇄</span></div>
+      <div class="kv" style="margin-top:12px">
+        <div><span class="k">주가 요인</span><span class="v" id="rp-price">—</span></div>
+        <div><span class="k">환율 요인</span><span class="v" id="rp-fx">—</span></div>
+      </div>
+      <hr class="rule">
+      <div class="total-pnl">
+        <span class="lab"><strong>총손익</strong><small>주가 + 환율</small></span>
+        <span class="amt"><b id="rp-total">—</b><i id="rp-rate">—</i></span>
+      </div>
+    </section>
+
+    <section class="card card-pad" style="margin-bottom:14px">
+      <div class="row-between" style="margin-bottom:14px">
+        <h2 style="margin:0;font-size:var(--fs-card)">누적 손익 추이</h2>
+        <span class="spacer" style="flex:1"></span>
+        <p class="legend"><span class="sw sw-price"></span>주가 요인<span class="sw sw-fx"></span>환율 요인<span class="sw sw-total"></span>합계</p>
+      </div>
+      <div class="chart-box" style="padding:0">
+        <svg viewBox="0 0 1040 250" width="100%" height="250" preserveAspectRatio="none" role="img" aria-label="누적 손익 추이">
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="0" y1="50" x2="1040" y2="50"/><line x1="0" y1="100" x2="1040" y2="100"/>
+            <line x1="0" y1="150" x2="1040" y2="150"/><line x1="0" y1="200" x2="1040" y2="200"/>
+          </g>
+          <!-- 스크립트가 d 를 채운다. 색과 굵기는 범례와 짝이라 마크업에 둔다 -->
+          <path id="ln-price" d="" fill="none" stroke="var(--rise)" stroke-width="2.4"/>
+          <path id="ln-fx"    d="" fill="none" stroke="var(--fall)" stroke-width="2.4"/>
+          <path id="ln-total" d="" fill="none" stroke="var(--record)" stroke-width="2.4" stroke-dasharray="5 4"/>
+          <text id="ln-empty" x="520" y="125" text-anchor="middle" fill="var(--text-sub)" hidden></text>
+        </svg>
+      </div>
+      <p class="axis-dates" id="rp-axis"></p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-head">월별 손익 <span class="sub" id="rp-span">—</span></h2>
+      <div class="table-wrap">
+        <table class="tbl tbl-band">
+          <thead><tr>
+            <th scope="col">기간</th><th class="r" scope="col">주가손익</th>
+            <th class="r" scope="col">환차손익</th><th class="r" scope="col">총손익</th>
+            <th class="r" scope="col">수익률</th>
+          </tr></thead>
+          <tbody id="rp-rows"><!-- 스크립트가 채운다 --></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="info info-accent" style="margin-top:14px">환차손익은 6개월 내내 손실이었습니다. 원화 기준 수익률이 달러 기준보다 낮은 이유입니다.</p>
+  </main>
+</div>
+
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 수익률 리포트 (PROFIT-06 · PROFIT-09)
+   스냅샷 배치가 찍어 둔 값을 읽기만 한다. 손익 계산은 여기서 하지 않는다 —
+   대시보드와 같은 ProfitLossCalculator 가 이미 계산해 스냅샷에 박아 두었다(2.2).
+   화면이 만드는 것은 월별로 접는 뺄셈뿐이고, 그건 저장되는 값이 아니다. */
+(function () {
+  var rows = document.getElementById("rp-rows");
+  if (!rows) return;
+
+  var CHART_W = 1040, CHART_H = 250, PAD = 20;
+
+  function krw(v) { return v == null ? "—" : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function signed(v) {
+    if (v == null) return "—";
+    return (Number(v) >= 0 ? "+" : "−") + Math.abs(Math.round(Number(v))).toLocaleString("ko-KR");
+  }
+  function pct(v) {
+    if (v == null) return "—";
+    return (Number(v) >= 0 ? "+" : "−") + Math.abs(Number(v) * 100).toFixed(2) + "%";
+  }
+  function usd(v) {
+    return v == null ? "—" : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function tone(el, v) {
+    el.classList.remove("rise", "fall");
+    if (v != null) el.classList.add(Number(v) >= 0 ? "rise" : "fall");
+  }
+  function text(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (res.status === 401) { location.href = "/login"; return undefined; }
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  function iso(d) {
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+  function monthsAgo(months) {
+    var d = new Date();
+    d.setMonth(d.getMonth() - months);
+    return iso(d);
+  }
+
+  /* ── 상단 카드 — 지금 시점의 손익 분해 ──────────────────────
+     스냅샷이 아니라 손익 분해 API 를 쓴다. 오늘치 스냅샷은 장 마감 배치가 돌기 전까지
+     없어서, 스냅샷으로 채우면 오늘 화면이 어제 값을 보여준다 */
+  function drawSummary(pnl) {
+    var chip = document.getElementById("rp-chip");
+    if (!pnl) {
+      ["rp-value", "rp-value-usd", "rp-price", "rp-fx", "rp-total", "rp-rate"]
+        .forEach(function (id) { text(id, "—"); });
+      chip.hidden = true;
+      return;
+    }
+    text("rp-value", krw(pnl.totalValueKrw));
+    text("rp-value-usd", usd(pnl.totalValueUsd));
+
+    var price = document.getElementById("rp-price");
+    price.textContent = signed(pnl.pricePnlKrw) + "원"; tone(price, pnl.pricePnlKrw);
+    var fx = document.getElementById("rp-fx");
+    fx.textContent = signed(pnl.fxPnlKrw) + "원"; tone(fx, pnl.fxPnlKrw);
+
+    var total = document.getElementById("rp-total");
+    total.textContent = signed(pnl.totalPnlKrw) + "원"; tone(total, pnl.totalPnlKrw);
+    var rate = document.getElementById("rp-rate");
+    rate.textContent = pct(pnl.returnRate); tone(rate, pnl.returnRate);
+
+    /* 상쇄 판정은 서버가 한다(dashboard 2.3). 화면이 부호를 다시 비교하지 않는다 */
+    chip.hidden = pnl.state !== "OFFSET";
+  }
+
+  /* ── 누적 손익 추이 — 선 세 개 ──────────────────────────────
+     세 선을 같은 축에 놓아야 서로 비교가 된다. 각자 최대값으로 늘리면
+     환차손익이 주가손익만큼 커 보인다 */
+  function drawChart(series) {
+    var empty = document.getElementById("ln-empty");
+    var ids = { "ln-price": "pricePnlKrw", "ln-fx": "fxPnlKrw", "ln-total": "totalPnlKrw" };
+
+    if (!series || series.length === 0) {
+      Object.keys(ids).forEach(function (id) { document.getElementById(id).setAttribute("d", ""); });
+      empty.textContent = "아직 스냅샷이 없습니다";
+      empty.hidden = false;
+      text("rp-axis", "");
+      return;
+    }
+    empty.hidden = true;
+
+    var all = [];
+    series.forEach(function (p) {
+      Object.values(ids).forEach(function (k) { all.push(Number(p[k])); });
+    });
+    all.push(0);                                   // 0 선을 항상 축 안에 둔다
+    var max = Math.max.apply(null, all), min = Math.min.apply(null, all);
+    var span = (max - min) || 1;
+    var stepX = series.length > 1 ? (CHART_W / (series.length - 1)) : 0;
+    var y = function (v) { return CHART_H - PAD - (v - min) / span * (CHART_H - PAD * 2); };
+
+    Object.keys(ids).forEach(function (id) {
+      var key = ids[id];
+      var d = series.map(function (p, i) {
+        return (i === 0 ? "M" : "L") + (i * stepX).toFixed(1) + " " + y(Number(p[key])).toFixed(1);
+      }).join(" ");
+      /* 점이 하나뿐이면 선이 그려지지 않는다. 짧은 가로선으로 그 자리를 보여준다 */
+      if (series.length === 1) d += " L" + (CHART_W).toFixed(1) + " " + y(Number(series[0][key])).toFixed(1);
+      document.getElementById(id).setAttribute("d", d);
+    });
+
+    /* 축 라벨은 다섯 개면 충분하다. 그보다 촘촘하면 겹친다 */
+    var axis = document.getElementById("rp-axis");
+    axis.replaceChildren();
+    var picks = [];
+    var n = Math.min(5, series.length);
+    for (var i = 0; i < n; i++) {
+      picks.push(series[Math.round(i * (series.length - 1) / Math.max(1, n - 1))]);
+    }
+    picks.forEach(function (p) {
+      var sp = document.createElement("span");
+      sp.textContent = p.snapshotDate.slice(2, 7).replace("-", ".");
+      axis.appendChild(sp);
+    });
+  }
+
+  /* ── 월별 손익 ──────────────────────────────────────────────
+     스냅샷의 손익은 그 시점의 **누적** 값이다. 월별 손익은 월말 누적에서
+     전월말 누적을 뺀 값이고, 수익률은 평가액 기준으로 그 달의 변화를 본다.
+     구간의 첫 달은 비교할 전월이 구간 밖이라 — 로 둔다. 0 으로 두면 그 달에
+     아무 일도 없었던 것처럼 보인다. */
+  function monthlyRows(series) {
+    var lastOfMonth = {};
+    series.forEach(function (p) { lastOfMonth[p.snapshotDate.slice(0, 7)] = p; });
+
+    var months = Object.keys(lastOfMonth).sort();
+    return months.map(function (m, i) {
+      var cur = lastOfMonth[m];
+      var prev = i === 0 ? null : lastOfMonth[ months[i - 1] ];
+      var diff = function (key) {
+        return prev == null ? null : Number(cur[key]) - Number(prev[key]);
+      };
+      var prevValue = prev == null ? null : Number(prev.marketValueKrw);
+      return {
+        month: m.replace("-", "."),
+        price: diff("pricePnlKrw"),
+        fx: diff("fxPnlKrw"),
+        total: diff("totalPnlKrw"),
+        rate: (prevValue == null || prevValue === 0)
+          ? null : (Number(cur.marketValueKrw) - prevValue) / prevValue,
+      };
+    }).reverse();          // 최근 달이 위로
+  }
+
+  function drawRows(series) {
+    rows.replaceChildren();
+    if (!series || series.length === 0) {
+      var tr = document.createElement("tr");
+      var td = document.createElement("td");
+      td.colSpan = 5; td.className = "sub";
+      td.style.padding = "24px"; td.style.textAlign = "center";
+      td.textContent = "스냅샷이 쌓이면 여기에 표시됩니다";
+      tr.appendChild(td); rows.appendChild(tr);
+      return;
+    }
+    monthlyRows(series).forEach(function (r) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td></td><td class="r num"></td><td class="r num"></td>' +
+                     '<td class="r num"></td><td class="r num"></td>';
+      tr.children[0].textContent = r.month;
+      /* 대괄호 두 개가 잇달아 붙는 표기를 쓰지 않는다 — Thymeleaf 가 그것을 인라인 표현식
+         여는 기호로 읽어 템플릿 파싱이 통째로 깨진다. 응답이 렌더 도중 끊겨 브라우저는
+         빈 화면만 보여주고, 콘솔에도 원인이 남지 않아 찾기가 어렵다 */
+      var values = [r.price, r.fx, r.total];
+      values.forEach(function (v, i) {
+        tr.children[i + 1].textContent = v == null ? "—" : signed(v);
+        tone(tr.children[i + 1], v);
+      });
+      tr.children[4].textContent = pct(r.rate);
+      tone(tr.children[4], r.rate);
+      rows.appendChild(tr);
+    });
+  }
+
+  /* 사이드바 — 대시보드와 같은 값을 같은 출처에서 읽는다.
+     주가·환차손익 합계를 보유 목록에서 더하면 종목별 분해가 없어 0 이 된다(dashboard 5.7.4) */
+  function drawSidebar(pnl, holdings) {
+    var held = (holdings || []).filter(function (h) { return Number(h.quantity) > 0; });
+    text("rp-count", String(held.length));
+
+    var price = document.getElementById("rp-price2");
+    var fx = document.getElementById("rp-fx2");
+    if (price) { price.textContent = pnl ? signed(pnl.pricePnlKrw) : "—"; tone(price, pnl && pnl.pricePnlKrw); }
+    if (fx) { fx.textContent = pnl ? signed(pnl.fxPnlKrw) : "—"; tone(fx, pnl && pnl.fxPnlKrw); }
+    text("rp-menu-meta", held.length + "종목 · " + (pnl ? krw(pnl.totalValueKrw) : "—"));
+
+    var nav = document.getElementById("rp-nav");
+    if (!nav) return;
+    nav.replaceChildren();
+    held.forEach(function (h) {
+      var cost = (h.avgPrice == null || h.avgFxRate == null) ? null
+        : Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+      var r = (h.evalPnlKrw == null || !cost) ? null : Number(h.evalPnlKrw) / cost;
+
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+      var tk = document.createElement("span");
+      tk.className = "tk"; tk.textContent = h.symbol;
+      var pc = document.createElement("span");
+      pc.className = "pc"; pc.textContent = pct(r); tone(pc, r);
+      a.appendChild(tk); a.appendChild(pc);
+      li.appendChild(a); nav.appendChild(li);
+    });
+  }
+
+  var PERIOD = { "1M": 1, "3M": 3, "6M": 6, "1Y": 12, "ALL": 120 };
+  var LABEL = { "1M": "최근 1개월", "3M": "최근 3개월", "6M": "최근 6개월",
+                "1Y": "최근 1년", "ALL": "전체 기간" };
+
+  async function load(key) {
+    var months = PERIOD[key] || 6;
+    var from = monthsAgo(months);
+    var to = iso(new Date());
+
+    var series = await api("/api/reports/series?from=" + from + "&to=" + to);
+    if (series === undefined) return;
+    drawChart(series || []);
+    drawRows(series || []);
+    text("rp-span", LABEL[key] || "최근 6개월");
+
+    /* 상단 카드와 사이드바는 지금 값이라 기간과 무관하다. 처음 한 번만 채운다 */
+    if (!load.summaryDone) {
+      var pnl = await api("/api/portfolio/pnl");
+      if (pnl === undefined) return;
+      drawSummary(pnl);
+      drawSidebar(pnl, await api("/api/portfolio/holdings"));
+      load.summaryDone = true;
+    }
+  }
+
+  var group = document.querySelector("[data-toggle-group]");
+  if (group) {
+    group.addEventListener("mj:change", function (e) { load(e.detail); });
+  }
+
+  load("6M");     // 마크업의 기본 선택과 같다
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1829 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 종목</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="stock-detail-page">
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <div class="grid-2">
+    <div>
+
+    <!-- PriceHeader — 상단에서도 손익을 주가/환율로 분해한다 (화면설계서 SR-005) -->
+    <section class="card card-pad price-header">
+      <div class="sym-row">
+        <span class="tk" id="sym-ticker">—</span>
+        <span class="nm" id="sym-name">—</span>
+        <span class="badge badge-line" id="sym-exchange">—</span>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" type="button" id="sym-star" aria-pressed="false">관심 등록</button>
+        <a class="btn btn-sm btn-primary" th:href="@{/record-new}">매매 기록 추가</a>
+      </div>
+
+      <p class="price-row"><b class="px" id="sym-price">—</b><span class="krw" id="sym-krw">—</span></p>
+
+      <p class="meta-row">
+        <span class="ch" id="sym-change">—</span>
+        <span class="basis sub" id="sym-basis"></span>
+        <span class="tag" id="sym-feed"><i class="dot"></i>종가 기준</span>
+        <span class="spacer"></span>
+        <time class="asof" id="sym-asof">—</time>
+      </p>
+
+      <div class="hold-strip">
+        <div class="info">
+          <span class="k">내 보유</span>
+          <span class="v" id="hold-qty">—</span>
+        </div>
+        <div class="pnl">
+          <b class="num" id="hold-pnl">—</b>
+          <span class="split sub" id="hold-note">매매를 기록하면 표시됩니다</span>
+        </div>
+      </div>
+    </section>
+
+  <div class="tabs" role="tablist" aria-label="종목 상세 탭">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">시세 · 차트</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">기업 정보</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">재무</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">배당</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">뉴스</button>
+    <button role="tab" id="t6" aria-controls="p6" aria-selected="false">공시</button>
+    <!-- 커뮤니티는 탭이 아니라 링크다. 게시판은 이 화면 안에 접어 넣기에는 큰 화면이고,
+         종목별 커뮤니티에 이미 목록 · 정렬 · 글쓰기가 다 있다. role="tab" 을 주지 않아서
+         탭 전환 스크립트가 잡지 않고 그대로 이동한다 -->
+    <a id="community-link" th:href="@{/community}">커뮤니티</a>
+  </div>
+
+  <!-- 시세 · 차트 -->
+  <section role="tabpanel" id="p1" aria-labelledby="t1">
+    <div class="stack-v">
+      <div class="card card-pad">
+        <div class="row-between" style="margin-bottom:14px">
+          <h2 style="margin:0;font-size:var(--fs-section)">차트 <span class="sub num" id="chart-label">—</span></h2>
+          <span class="spacer" style="flex:1"></span>
+          <div class="pills" id="chart-type" data-toggle-group>
+            <button type="button" data-value="LINE" aria-pressed="true">선</button>
+            <button type="button" data-value="CANDLE" aria-pressed="false">캔들</button>
+          </div>
+          <div class="pills" id="chart-range" data-toggle-group>
+            <button type="button" data-value="LIVE" aria-pressed="true">실시간</button>
+            <button type="button" data-value="1D" aria-pressed="false">1일</button>
+            <button type="button" data-value="1W" aria-pressed="false">1주</button>
+            <button type="button" data-value="3M" aria-pressed="false">3달</button>
+            <button type="button" data-value="1Y" aria-pressed="false">1년</button>
+            <button type="button" data-value="5Y" aria-pressed="false">5년</button>
+            <button type="button" data-value="ALL" aria-pressed="false">전체</button>
+          </div>
+        </div>
+
+        <div class="chart-box" style="padding:0">
+          <svg id="candle-chart" viewBox="0 0 1012 300" width="100%" height="300" preserveAspectRatio="none" role="img" aria-label="일봉 차트">
+            <g stroke="var(--line)" stroke-width="1">
+              <line x1="0" y1="60"  x2="1012" y2="60"/>
+              <line x1="0" y1="120" x2="1012" y2="120"/>
+              <line x1="0" y1="180" x2="1012" y2="180"/>
+              <line x1="0" y1="240" x2="1012" y2="240"/>
+            </g>
+            <g id="candle-body"></g>
+          </svg>
+
+          <!-- 마지막 값 표시. SVG 안에 글자를 넣으면 preserveAspectRatio="none" 때문에
+               가로로 늘어난다. 그래서 HTML 로 얹고 위치만 백분율로 맞춘다 -->
+          <span class="chart-last" id="chart-last" hidden></span>
+          <span class="chart-last-line" id="chart-last-line" hidden></span>
+        </div>
+
+        <p class="axis-dates" id="axis-dates"></p>
+        <p class="note" id="chart-note">—</p>
+        <p class="note">스크롤로 확대·축소 · 끌어서 이동 · 두 번 누르면 전체</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card card-pad">
+          <h2 style="margin:0 0 12px;font-size:var(--fs-section)">내 보유 현황</h2>
+          <div class="kv">
+            <div><span class="k">보유 수량</span><span class="v" id="mh-qty">—</span></div>
+            <div><span class="k">평균 단가</span><span class="v" id="mh-avg">—</span></div>
+            <div><span class="k">평균 매수 환율</span><span class="v" id="mh-fx">—</span></div>
+            <div><span class="k">평가금액</span><span class="v" id="mh-value">—</span></div>
+            <div><span class="k">주가손익</span><span class="v" id="mh-price">—</span></div>
+            <div><span class="k">환차손익</span><span class="v" id="mh-fxpnl">—</span></div>
+          </div>
+          <a class="btn btn-block" th:href="@{/record-list}" style="margin-top:12px">매매 기록 보기</a>
+        </div>
+
+        <div class="card card-pad">
+          <h2 style="margin:0 0 12px;font-size:var(--fs-section)">내 판단 기록</h2>
+          <div id="judgment-list"><!-- 스크립트가 채운다. 기록이 없으면 아래 안내가 남는다 --></div>
+          <p class="memo sub" id="judgment-empty">매수 사유를 기록하면 여기에 표시됩니다.</p>
+          <a class="btn btn-block btn-sm" th:href="@{/retrospect}" style="margin-top:10px">회고 작성</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 기업 정보 -->
+  <section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+    <div class="stack-v">
+      <div class="card card-pad">
+        <h2 class="form-sec">기업 정보</h2>
+        <div data-company-only>
+          <div class="metrics">
+            <div><span class="k">산업</span><span class="v" id="ci-industry">—</span></div>
+            <div><span class="k">상장일</span><span class="v" id="ci-ipo">—</span></div>
+            <div><span class="k">국가</span><span class="v" id="ci-country">—</span></div>
+            <div><span class="k">발행주식수</span><span class="v" id="ci-shares">—</span></div>
+            <div><span class="k">시가총액</span><span class="v" id="ci-cap">—</span></div>
+            <div><span class="k">홈페이지</span><span class="v" id="ci-web">—</span></div>
+          </div>
+          <p class="note" style="margin-top:14px">출처: Finnhub · 일 1회 갱신</p>
+        </div>
+        <div class="asset-empty" data-etf-only hidden>
+          <span class="badge badge-line">ETF</span>
+          <h3>ETF에는 기업 정보가 없습니다</h3>
+          <p>이 종목은 상장지수상품이라 산업·발행주식수·기업 홈페이지 같은 기업용 프로필을 표시하지 않습니다.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-head">재무제표 <span class="sub">SEC EDGAR · 연간</span></h2>
+        <div data-company-only>
+          <div class="table-wrap">
+            <table class="tbl tbl-band">
+              <thead><tr id="fin-head">
+                <th class="txt" scope="col">항목</th>
+              </tr></thead>
+              <tbody id="fin-rows"><!-- 스크립트가 채운다 --></tbody>
+            </table>
+          </div>
+          <p class="note" style="padding:12px 18px 16px">
+            SEC EDGAR companyfacts(XBRL)에서 직접 조회합니다 · 벤더 호출 한도를 쓰지 않습니다
+          </p>
+        </div>
+        <div class="asset-empty" data-etf-only hidden>
+          <span class="badge badge-line">ETF</span>
+          <h3>ETF에는 기업 재무제표가 없습니다</h3>
+          <p>기업의 매출·영업이익·순이익을 공시하는 대상이 아니므로 SEC 기업 재무 지표를 조회하지 않습니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 재무 -->
+  <section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+    <div class="card">
+      <h2 class="card-head">주요 재무 지표 <span class="sub">최근 4개 분기</span></h2>
+      <div data-company-only>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr id="q-head">
+              <th class="txt" scope="col">항목</th>
+            </tr></thead>
+            <tbody id="q-rows"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+        <p class="note" style="padding:12px 18px">SEC EDGAR XBRL 원문 기준. 회계 기준 차이로 벤더 집계와 다를 수 있습니다.</p>
+      </div>
+      <div class="asset-empty" data-etf-only hidden>
+        <span class="badge badge-line">ETF</span>
+        <h3>ETF에는 분기 재무 지표가 없습니다</h3>
+        <p>기업 실적 대신 기초자산과 운용 구조로 평가하는 상품이므로 기업용 분기 지표를 조회하지 않습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 배당 (INFO-06) -->
+  <section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+    <div class="grid-2">
+      <div class="card">
+        <h2 class="card-head">배당 이력</h2>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th scope="col">배당락일</th><th scope="col">지급일</th>
+              <th class="r" scope="col">주당 배당금</th><th class="r" scope="col">내 수령액(세후)</th>
+            </tr></thead>
+            <tbody id="dvh-rows"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <h2 style="margin:0 0 12px;font-size:var(--fs-section)">배당 요약</h2>
+        <div class="kv">
+          <div><span class="k">배당수익률</span><span class="v" id="dvh-yield">—</span></div>
+          <div><span class="k">연간 배당금</span><span class="v" id="dvh-annual">—</span></div>
+          <div><span class="k">배당 주기</span><span class="v" id="dvh-freq">—</span></div>
+          <div><span class="k">연속 증배</span><span class="v" id="dvh-streak">—</span></div>
+        </div>
+        <p class="info info-warn">배당락일이 지나지 않은 건은 예상값입니다. 실제 지급액은 원천징수 15%와 지급일 환율에 따라 달라집니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 뉴스 -->
+  <!-- 뉴스 -->
+  <section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
+    <div class="card">
+      <h2 class="card-head">종목 뉴스 <span class="sub" id="news-meta">—</span></h2>
+      <ul class="news-list" id="news-list">
+        <!-- 스크립트가 채운다 -->
+      </ul>
+      <p class="note" style="padding:12px 18px 16px">
+        제목과 요약, 원문 링크만 제공합니다. 본문은 저작권상 저장하지 않습니다
+      </p>
+    </div>
+  </section>
+  <!-- 공시 (SEC EDGAR) -->
+  <!-- 공시 (SEC EDGAR) -->
+  <section role="tabpanel" id="p6" aria-labelledby="t6" hidden>
+    <div class="card">
+      <h2 class="card-head">SEC 공시 <span class="sub" id="filings-count">—</span></h2>
+      <div class="table-wrap">
+        <table class="tbl tbl-band">
+          <thead><tr>
+            <th scope="col">양식</th><th scope="col">제출일</th>
+            <th class="txt" scope="col">내용</th><th scope="col">원문</th>
+          </tr></thead>
+          <tbody id="filings-rows"><!-- 스크립트가 채운다 --></tbody>
+        </table>
+      </div>
+      <p class="note" style="padding:12px 18px 16px">
+        SEC EDGAR submissions API · 무료·키 불필요·초당 10회
+      </p>
+    </div>
+  </section>
+
+
+    </div>
+
+    <aside class="stack-v">
+      <section class="card card-pad">
+        <h2 style="margin:0 0 12px;font-size:var(--fs-card)">시세 정보</h2>
+        <ul class="kv-list">
+          <li><span class="k">시가</span><span class="v num" id="q-open">—</span></li>
+          <li><span class="k">당일 최고</span><span class="v num" id="q-high">—</span></li>
+          <li><span class="k">당일 최저</span><span class="v num" id="q-low">—</span></li>
+          <li><span class="k">전일종가</span><span class="v num" id="q-prev">—</span></li>
+          <li><span class="k">거래량</span><span class="v num" id="q-volume">—</span></li>
+        </ul>
+      </section>
+
+      <section class="card card-pad">
+        <h2 style="margin:0 0 12px;font-size:var(--fs-card)">투자 지표</h2>
+        <ul class="kv-list">
+          <li><span class="k">시가총액</span><span class="v num" id="m-cap">—</span></li>
+          <li><span class="k">PER</span><span class="v num" id="m-per">—</span></li>
+          <li><span class="k">PBR</span><span class="v num" id="m-pbr">—</span></li>
+          <li><span class="k">EPS</span><span class="v num" id="m-eps">—</span></li>
+          <li><span class="k">52주 최고</span><span class="v num" id="m-w52h">—</span></li>
+          <li><span class="k">52주 최저</span><span class="v num" id="m-w52l">—</span></li>
+          <li><span class="k">배당수익률</span><span class="v num" id="m-div">—</span></li>
+          <li><span class="k">산업</span><span class="v" id="m-industry">—</span></li>
+        </ul>
+        <p class="note" id="next-events" hidden style="margin-top:10px"></p>
+        <p class="note" style="margin-top:10px">Finnhub · 일 1회 갱신</p>
+      </section>
+
+      <section class="card card-pad">
+        <h2 style="margin:0 0 12px;font-size:var(--fs-card);display:flex;align-items:center">관련 뉴스
+          <span class="spacer" style="flex:1"></span>
+          <button class="news-more sub" type="button" id="related-news-more" hidden>더보기</button>
+        </h2>
+        <ul class="news related-news" id="related-news-list" aria-live="polite" aria-busy="true">
+          <li class="news-empty">뉴스를 불러오는 중입니다</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 종목 상세 (PRICE-02·04) · 일봉 차트 (PRICE-05) · 관심종목 토글 (WATCH-01)
+   티커는 주소의 ?symbol= 에서 읽는다. 서버가 심볼 없는 진입을 검색으로 돌려보내므로
+   여기 오면 심볼이 있다. 그래도 없으면(직접 조작 등) 검색으로 보낸다 — 기본 종목은 없다. */
+(function () {
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "").toUpperCase();
+  if (!symbol) { location.replace("/search"); return; }
+  var chart = document.getElementById("candle-body");
+  var star = document.getElementById("sym-star");
+  var watchId = null;
+  var displayCurrency = localStorage.getItem("mijang-base-currency") === "USD" ? "USD" : "KRW";
+  var fxRate = null;
+  var currentPrice = null;
+  var previousClose = null;
+  var quoteBox = null;
+
+  /* 커뮤니티 메뉴는 이 종목의 게시판으로 간다. 티커를 여기서 알기 때문에
+     서버가 미리 링크를 만들어 둘 수 없다 */
+  document.getElementById("community-link").href = "/community/" + encodeURIComponent(symbol);
+
+  function $(id) { return document.getElementById(id); }
+  function text(id, value) { var el = $(id); if (el) el.textContent = value; }
+
+  /* 값이 없으면 — 로 둔다. 0 으로 쓰면 "0달러"와 구분되지 않는다 */
+  function money(v) {
+    return v == null ? "—" : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function krw(v) { return v == null ? "—" : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function priceKrw(v) { return v == null || fxRate == null ? null : Number(v) * fxRate; }
+  function displayMoney(v) { return displayCurrency === "KRW" ? krw(priceKrw(v)) : money(v); }
+  function secondaryMoney(v) { return displayCurrency === "KRW" ? money(v) : krw(priceKrw(v)); }
+  function count(v) { return v == null ? "—" : Number(v).toLocaleString("ko-KR"); }
+  function percent(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + Number(v).toFixed(2) + "%"; }
+
+  function renderPrices() {
+    text("sym-price", displayMoney(currentPrice));
+    text("sym-krw", secondaryMoney(currentPrice));
+    text("q-prev", displayMoney(previousClose));
+    if (quoteBox) {
+      text("q-open", displayMoney(quoteBox.open));
+      text("q-high", displayMoney(quoteBox.high));
+      text("q-low", displayMoney(quoteBox.low));
+    }
+  }
+
+  /* 응답 봉투를 벗겨 {성공 여부, 값} 으로 돌려준다.
+     값만 돌려주면 안 된다 — 담기·빼기는 성공해도 data 가 null 이라
+     값으로 성공을 판단하면 성공을 실패로 읽는다 */
+  async function call(url, options) {
+    var res = await fetch(url, options);
+    if (res.status === 401) { location.href = "/login"; return { ok: false, data: null }; }
+    var body = await res.json();
+    return { ok: body.success === true, data: body.data };
+  }
+
+  /* 상세를 받아 헤더와 사이드바를 채운다 */
+  /**
+   * 등락률을 세션 이름과 함께 보여준다.
+   *
+   * "정규장 +1.03%" 와 "시간외 +0.15%" 는 기준가가 다른 값이다.
+   * 이름 없이 숫자만 두면 두 값이 같은 것으로 읽힌다.
+   *
+   * 장이 닫혀 있으면 "정규장 마감" 으로 적어 지금 움직이는 값이 아님을 알린다.
+   */
+  function showChange(rate) {
+    var ch = $("sym-change");
+    if (!ch) return;
+    var name = session === "CLOSED" ? "정규장 마감" : sessionLabel;
+    ch.textContent = rate == null ? "—" : name + " " + percent(rate);
+    /* 국내 관례 — 상승 빨강, 하락 파랑 */
+    ch.className = "ch " + (rate == null ? "sub" : (rate >= 0 ? "rise" : "fall"));
+
+    /* 무엇에 견준 값인지 함께 적는다.
+       "정규장 +1.03%" 와 "시간외 +0.15%" 는 기준가가 다른 값이라,
+       이름만으로는 같은 잣대로 읽힐 수 있다 */
+    var basis = $("sym-basis");
+    if (basis) {
+      basis.textContent = (rate == null || basePrice == null) ? ""
+          : (session === "AFTER" ? "정규장 종가" : "전일 종가") + " " + displayMoney(basePrice) + " 대비";
+    }
+  }
+
+  async function loadDetail() {
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol));
+    var d = r.data;
+    if (!r.ok || !d) {
+      text("sym-ticker", symbol);
+      text("sym-name", "찾을 수 없는 종목입니다");
+      return;
+    }
+
+    document.title = "미장 — " + d.symbol;
+    text("sym-ticker", d.symbol);
+    /* 한글명이 있으면 앞에 세우고 영문명을 괄호로 덧붙인다.
+       티커만으로는 무슨 회사인지 모르는 사람이 많고, 영문명은 기록·검색의 근거라 지우지 않는다 */
+    text("sym-name", d.nameKo ? d.nameKo + " (" + d.name + ")" : d.name);
+    text("sym-exchange", d.exchange || "—");
+    currentPrice = d.currentPrice == null ? null : Number(d.currentPrice);
+    previousClose = d.previousClose == null ? null : Number(d.previousClose);
+    fxRate = currentPrice && d.priceKrw != null ? Number(d.priceKrw) / currentPrice : null;
+    renderPrices();
+    text("sym-asof", d.asOf || "—");
+    /* 기준가는 서버가 세션을 보고 정한다(2.15).
+       정규장이면 전일 종가, 시간외면 당일 정규장 종가다 */
+    session = d.session;
+    sessionLabel = d.sessionLabel;
+    basePrice = d.basePrice == null ? null : Number(d.basePrice);
+    stockActive = d.active;
+    renderAssetInformation(d.assetClass);
+    document.dispatchEvent(new CustomEvent("mijang:stock-detail-loaded", {
+      detail: { symbol: d.symbol, assetClass: d.assetClass }
+    }));
+    loadMetrics();
+    loadNextEvents();
+    loadJudgments();
+
+    /* 상장폐지·거래정지는 이유까지 보여준다. 배지만으로는 왜인지 알 수 없다 */
+    if (!d.active) {
+      text("sym-feed", d.inactiveReason || "거래할 수 없는 종목입니다");
+      $("sym-feed").classList.add("badge-err");
+    }
+
+    showChange(d.dayChangeRate);
+  }
+
+  /* ── 차트 ────────────────────────────────────────────────────────────
+     한 벌의 점으로 선과 캔들 둘 다 그린다. 기간이 바뀌면 다시 받고,
+     종류만 바뀌면 받아 둔 것을 다시 그린다. */
+  var SVG = "http://www.w3.org/2000/svg";
+  var W = 1012, H = 300, PAD = 20;      // 위아래 여백. 꼭짓점이 잘리지 않게 둔다
+  var KST_DATE = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit"
+  });
+  var range = "LIVE";
+  var chartType = "LINE";
+  var points = [];
+  var meta = null;
+
+  /* 보이는 구간. points 안의 인덱스다. 확대·축소·좌우 이동이 이 둘만 바꾼다 */
+  var i0 = 0, i1 = 0;
+  var MIN_POINTS = 10;              // 이보다 좁히면 봉 몇 개만 남아 형태를 알 수 없다
+
+  /** 지금 화면에 그릴 점들 */
+  function view() {
+    return points.slice(i0, i1 + 1);
+  }
+
+  /** 구간을 전체로 되돌린다. 기간을 새로 받을 때마다 부른다 */
+  function resetView() {
+    i0 = 0;
+    i1 = Math.max(0, points.length - 1);
+  }
+
+  function el(name, attrs) {
+    var node = document.createElementNS(SVG, name);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    return node;
+  }
+
+  function note(message) {
+    chart.replaceChildren();
+    var tag = $("chart-last"), lastLine = $("chart-last-line");
+    if (tag) tag.hidden = true;
+    if (lastLine) lastLine.hidden = true;
+    var t = el("text", { x: W / 2, y: H / 2, "text-anchor": "middle", fill: "var(--text-sub)" });
+    t.textContent = message;
+    chart.appendChild(t);
+    var axis = $("axis-dates");
+    if (axis) axis.replaceChildren();
+  }
+
+  /* 값의 위아래 폭을 구한다.
+     선은 종가만 보면 되지만 캔들은 꼬리까지 들어가야 해서 고가·저가를 본다 */
+  function bounds(vs) {
+    var hi = -Infinity, lo = Infinity;
+    vs.forEach(function (p) {
+      var top = chartType === "CANDLE" && p.high != null ? Number(p.high) : Number(p.close);
+      var bot = chartType === "CANDLE" && p.low != null ? Number(p.low) : Number(p.close);
+      if (top > hi) hi = top;
+      if (bot < lo) lo = bot;
+    });
+    /* 전 구간이 같은 값이면 0 으로 나누게 된다. 폭을 1 로 둬 가운데에 직선을 긋는다 */
+    return { hi: hi, lo: lo, span: (hi - lo) || 1 };
+  }
+
+  function drawLine(b, vs) {
+    var stepX = vs.length > 1 ? W / (vs.length - 1) : 0;
+    var coords = vs.map(function (p, i) {
+      return (i * stepX).toFixed(1) + "," +
+             ((H - PAD) - (Number(p.close) - b.lo) / b.span * (H - PAD * 2)).toFixed(1);
+    }).join(" ");
+    var up = Number(vs[vs.length - 1].close) >= Number(vs[0].close);
+    var stroke = up ? "var(--rise)" : "var(--fall)";
+
+    /* 면을 먼저, 선을 나중에. 순서가 바뀌면 면이 선을 덮는다 */
+    chart.appendChild(el("polygon", { points: coords + " " + W + "," + H + " 0," + H,
+                                      fill: stroke, opacity: ".08" }));
+    chart.appendChild(el("polyline", { points: coords, fill: "none", stroke: stroke,
+                                       "stroke-width": "2.4", "stroke-linejoin": "round" }));
+  }
+
+  /**
+   * 캔들.
+   *
+   * 봉마다 선과 사각형을 하나씩 만들면 800봉에 1,600개가 된다. 확대할 때마다 그것을
+   * 전부 지우고 다시 만들게 되어 스크롤이 끊긴다.
+   *
+   * 그래서 <b>네 개의 path 로 합친다</b> — 오르는 꼬리·오르는 몸통·내리는 꼬리·내리는 몸통.
+   * 몇 백 봉이든 요소는 네 개뿐이라 확대가 부드럽다.
+   */
+  function drawCandle(b, vs) {
+    var slot = W / vs.length;
+    /* 봉이 촘촘하면 몸통이 사라진다. 최소 1px 는 남긴다 */
+    var body = Math.max(1, slot * 0.62);
+    var y = function (v) { return (H - PAD) - (Number(v) - b.lo) / b.span * (H - PAD * 2); };
+
+    var d = { riseWick: "", riseBody: "", fallWick: "", fallBody: "" };
+
+    vs.forEach(function (p, i) {
+      if (p.open == null || p.close == null) return;
+      var x = i * slot + slot / 2;
+      var up = Number(p.close) >= Number(p.open);
+
+      /* 꼬리. 고가에서 저가까지 */
+      d[up ? "riseWick" : "fallWick"] +=
+        "M" + x.toFixed(1) + " " + y(p.high).toFixed(1) + "V" + y(p.low).toFixed(1);
+
+      /* 몸통. 시가와 종가 사이. 두 값이 같으면 높이가 0 이라 1px 로 둔다 */
+      var top = Math.min(y(p.open), y(p.close));
+      var height = Math.max(1, Math.abs(y(p.open) - y(p.close)));
+      var left = x - body / 2;
+      d[up ? "riseBody" : "fallBody"] +=
+        "M" + left.toFixed(1) + " " + top.toFixed(1) +
+        "h" + body.toFixed(1) + "v" + height.toFixed(1) + "h-" + body.toFixed(1) + "Z";
+    });
+
+    /* 국내 관례 — 오르면 빨강, 내리면 파랑 */
+    if (d.fallWick) chart.appendChild(el("path", { d: d.fallWick, stroke: "var(--fall)", "stroke-width": "1", fill: "none" }));
+    if (d.fallBody) chart.appendChild(el("path", { d: d.fallBody, fill: "var(--fall)" }));
+    if (d.riseWick) chart.appendChild(el("path", { d: d.riseWick, stroke: "var(--rise)", "stroke-width": "1", fill: "none" }));
+    if (d.riseBody) chart.appendChild(el("path", { d: d.riseBody, fill: "var(--rise)" }));
+  }
+
+  /* 가로축. 분봉이면 시각을, 일봉 이상이면 날짜를 쓴다 */
+  /**
+   * 가로축.
+   *
+   * 눈금은 늘 다섯 개지만 <b>보이는 구간에서 뽑는다.</b> 확대하면 같은 다섯 칸이
+   * 좁은 시간을 가리키게 되어 저절로 세분화된다 — 1분 단위까지 내려간다.
+   *
+   * 구간이 하루를 넘어가면 시각만으로는 어느 날인지 알 수 없어 날짜를 붙인다.
+   */
+  function drawAxis(vs) {
+    var axis = $("axis-dates");
+    if (!axis) return;
+    axis.replaceChildren();
+    if (vs.length === 0) return;
+
+    var first = vs[0].at, last = vs[vs.length - 1].at;
+    function kstDate(value) {
+      var values = {};
+      KST_DATE.formatToParts(new Date(value)).forEach(function (part) { values[part.type] = part.value; });
+      return values.year + "-" + values.month + "-" + values.day;
+    }
+    /* 분봉은 날짜가 넘어갈 때, 일봉 이상은 해가 바뀔 때만 앞자리를 붙인다.
+       늘 붙이면 좁은 축에 글자가 넘쳐 읽히지 않는다 */
+    var wide = (meta && meta.intraday)
+        ? kstDate(first) !== kstDate(last)
+        : first.slice(0, 4) !== last.slice(0, 4);
+
+    /* 눈금은 다섯 개다. 간격을 나눗셈으로 잡으면 여섯 개가 되는 경우가 생긴다 */
+    var TICKS = 5;
+    for (var k = 0; k < TICKS; k++) {
+      var i = vs.length === 1 ? 0 : Math.round(k * (vs.length - 1) / (TICKS - 1));
+      var at = vs[i].at;
+      var span = document.createElement("span");
+      if (meta && meta.intraday) {
+        var time = new Date(at).toLocaleTimeString("ko-KR", {
+          timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false
+        });
+        span.textContent = wide ? kstDate(at).slice(5) + " " + time : time;
+      } else {
+        span.textContent = wide ? at.slice(2, 10) : at.slice(5, 10);
+      }
+      axis.appendChild(span);
+      if (vs.length === 1) break;
+    }
+  }
+
+  /* 스크롤은 한 번 굴릴 때 이벤트를 여러 번 쏜다. 그때마다 그리면 같은 프레임에
+     같은 일을 반복하게 되어 끊긴다. 프레임당 한 번으로 묶는다 */
+  var pending = false;
+  function draw() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () { pending = false; paint(); });
+  }
+
+  /**
+   * 그래프 끝이 얼마인지 보여준다.
+   *
+   * 차트만 보면 "지금 얼마" 를 눈금에서 짐작해야 한다. 마지막 값을 그 높이에 직접 붙인다.
+   *
+   * SVG 안에 글자를 넣지 않는다. viewBox 가 preserveAspectRatio="none" 이라
+   * 화면 폭에 따라 가로로 늘어나 글자가 찌그러진다. HTML 로 얹고 위치만 백분율로 맞춘다 —
+   * 늘어나도 같은 지점을 가리킨다.
+   */
+  function drawLast(b, vs) {
+    var tag = $("chart-last");
+    var line = $("chart-last-line");
+    if (!tag || !line) return;
+
+    var last = vs[vs.length - 1];
+    if (!last || last.close == null) {
+      tag.hidden = true;
+      line.hidden = true;
+      return;
+    }
+
+    var value = Number(last.close);
+    var y = (H - PAD) - (value - b.lo) / b.span * (H - PAD * 2);
+    var topPercent = (y / H * 100).toFixed(2) + "%";
+
+    /* 구간 첫 값보다 올랐는지로 색을 정한다. 화면에 보이는 구간 기준이다 */
+    var up = Number(last.close) >= Number(vs[0].close);
+    var tone = up ? "rise" : "fall";
+
+    tag.textContent = displayMoney(value);
+    tag.className = "chart-last " + tone;
+    tag.style.top = topPercent;
+    tag.hidden = false;
+
+    line.className = "chart-last-line " + tone;
+    line.style.top = topPercent;
+    line.hidden = false;
+  }
+
+  function paint() {
+    if (!chart) return;
+    if (points.length === 0) { note("표시할 값이 없습니다"); return; }
+    var vs = view();
+    if (vs.length === 0) { note("표시할 값이 없습니다"); return; }
+    chart.replaceChildren();
+    var b = bounds(vs);
+    if (chartType === "CANDLE") drawCandle(b, vs); else drawLine(b, vs);
+    drawAxis(vs);
+    drawLast(b, vs);
+
+    /* 전체를 보고 있으면 개수만, 확대 중이면 몇 개 중 몇 개인지 알린다 */
+    var label = $("chart-label");
+    if (label) {
+      label.textContent = (vs.length === points.length)
+        ? points.length + "개"
+        : vs.length + " / " + points.length + "개";
+    }
+    /* 어디서 온 값인지 그대로 적는다. 구간마다 출처가 다르다 */
+    var n = $("chart-note");
+    if (n) {
+      var tf = meta ? meta.timeframe : "";
+      n.textContent =
+        meta && meta.intraday ? "분봉입니다. 시각은 한국시간(KST)이며 프리마켓·애프터마켓을 포함합니다. 손익 계산에는 일봉 종가를 씁니다."
+        : tf === "1Day"       ? "일봉 종가 기준입니다. 손익 계산 기준가와 같습니다."
+        :                       "벤더가 집계한 " + (tf === "1Week" ? "주봉" : "월봉") + "입니다. 손익 계산에는 쓰지 않습니다.";
+    }
+  }
+
+  /**
+   * 사이드바의 시세 정보를 채운다.
+   *
+   * 고른 기간과 무관하게 <b>늘 당일 세션</b>을 보여준다. 5년 차트를 보고 있다고
+   * "오늘 시세" 자리에 5년 전 시가가 뜨면 안 된다.
+   *
+   * 그래서 차트와 별도로 1일치를 한 번 더 받는다. 서버가 캐시하고 있어 실제 호출은
+   * 대개 한 번뿐이다.
+   *
+   * 최고·최저는 프리마켓·애프터마켓을 포함한다 — 미국 장은 정규장 밖에도 거래된다(2.16).
+   */
+  async function fillQuoteBox() {
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/chart?range=1D");
+    if (!r.ok || !r.data || r.data.points.length === 0) return;
+    var day = r.data.points;
+
+    var high = -Infinity, low = Infinity, volume = 0;
+    day.forEach(function (p) {
+      if (p.high != null && Number(p.high) > high) high = Number(p.high);
+      if (p.low != null && Number(p.low) < low) low = Number(p.low);
+      volume += Number(p.volume || 0);
+    });
+
+    quoteBox = {
+      open: day[0].open,
+      high: high === -Infinity ? null : high,
+      low: low === Infinity ? null : low
+    };
+    renderPrices();
+    text("q-volume", count(volume));
+  }
+
+  /**
+   * 차트를 받아 그린다.
+   *
+   * keepView 를 주면 보고 있던 구간을 지킨다. 실시간 구간은 1분마다 다시 받는데,
+   * 그때마다 전체로 되돌리면 확대해서 들여다보던 화면이 손 안에서 튕겨 나간다.
+   *
+   * 구간은 인덱스가 아니라 시각으로 기억한다 — 새로 받은 목록은 길이가 달라
+   * 같은 인덱스가 다른 시각을 가리킨다.
+   */
+  async function loadChart(keepView) {
+    var keep = null;
+    if (keepView && points.length && !(i0 === 0 && i1 >= points.length - 1)) {
+      keep = { from: String(points[i0].at), to: String(points[i1].at) };
+    }
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/chart?range=" + range);
+    if (!r.ok || !r.data) { points = []; meta = null; note("차트를 불러오지 못했습니다"); return; }
+    meta = r.data;
+    points = r.data.points || [];
+    if (keep) restoreView(keep); else resetView();
+    if (points.length === 0 && range === "LIVE" && session && session !== "CLOSED") {
+      note(session === "REGULAR" ? "실시간 체결을 기다리는 중입니다" : "15분 지연 시세를 기다리는 중입니다");
+      return;
+    }
+    draw();
+  }
+
+  /** 시각으로 기억해 둔 구간을 새 목록의 인덱스로 되돌린다 */
+  function restoreView(keep) {
+    resetView();
+    if (points.length === 0) return;
+    var a = indexAtTime(keep.from);
+    var b = indexAtTime(keep.to);
+    if (b > a) { i0 = a; i1 = b; }
+  }
+
+  /**
+   * 그 시각 이후 첫 점의 자리. 시각 문자열은 ISO 라 그대로 견주면 된다.
+   *
+   * 아래에 마우스 위치를 자리로 바꾸는 indexAt(event) 이 따로 있다. 같은 이름을 쓰면
+   * 나중 선언이 이겨서 이 함수가 통째로 사라진다 — 실제로 그렇게 죽어 있었다.
+   */
+  function indexAtTime(t) {
+    for (var i = 0; i < points.length; i++) {
+      if (String(points[i].at) >= t) return i;
+    }
+    return points.length - 1;
+  }
+
+  /* 담은 목록에서 이 종목을 찾아 별표 상태를 맞춘다 */
+  async function loadWatch() {
+    if (!(await window.mijangSignedIn())) return;   // 비로그인은 담은 목록이 없다
+    try {
+      var res = await fetch("/api/watchlists");
+      if (!res.ok) return;                      // 그새 만료됐을 수 있다
+      var body = await res.json();
+      if (!body.success) return;
+      var hit = body.data.find(function (w) { return w.symbol === symbol; });
+      watchId = hit ? hit.id : null;
+      if (star) {
+        star.textContent = hit ? "관심 해제" : "관심 등록";
+        star.setAttribute("aria-pressed", String(!!hit));
+      }
+    } catch (e) { /* 버튼만 기본 상태로 남는다 */ }
+  }
+
+  if (star) {
+    star.addEventListener("click", async function () {
+      star.disabled = true;
+      if (watchId) {
+        /* 해제는 DELETE 다. 메서드를 안 주면 GET 이 나가고 아무 일도 일어나지 않는다 */
+        await call("/api/watchlists/items/" + watchId, { method: "DELETE" });
+      } else {
+        await call("/api/watchlists/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol: symbol })
+        });
+      }
+      await loadWatch();
+      star.disabled = false;
+    });
+  }
+
+  /* ── 확대·축소·이동 ──────────────────────────────────────────────────
+     스크롤로 구간을 좁히고 넓힌다. 끌면 좌우로 움직인다.
+     서버를 다시 부르지 않는다 — 이미 받아 둔 점 안에서 어디를 볼지만 바꾼다. */
+  var box = chart ? chart.ownerSVGElement : null;
+
+  /** 커서가 차트의 몇 번째 점 위에 있는지. 그 점을 붙잡고 확대한다 */
+  function indexAt(event) {
+    if (!box) return (i0 + i1) / 2;
+    var rect = box.getBoundingClientRect();
+    var ratio = rect.width ? (event.clientX - rect.left) / rect.width : 0.5;
+    ratio = Math.max(0, Math.min(1, ratio));
+    return i0 + ratio * (i1 - i0);
+  }
+
+  /**
+   * 구간을 배율만큼 조절한다.
+   *
+   * 커서 아래 점이 제자리에 남도록 양쪽을 다르게 줄인다. 가운데 기준으로 줄이면
+   * 보고 있던 자리가 손에서 빠져나간다.
+   */
+  function zoom(factor, anchor) {
+    var span = i1 - i0;
+    var next = Math.round(span * factor);
+    if (next < MIN_POINTS) next = MIN_POINTS;
+    if (next > points.length - 1) next = points.length - 1;
+    if (next === span) return;
+
+    var left = (anchor - i0) / (span || 1);
+    var start = Math.round(anchor - left * next);
+    var end = start + next;
+
+    if (start < 0) { start = 0; end = next; }
+    if (end > points.length - 1) { end = points.length - 1; start = end - next; }
+    i0 = Math.max(0, start);
+    i1 = Math.min(points.length - 1, end);
+    draw();
+  }
+
+  /** 구간 폭은 그대로 두고 좌우로 민다 */
+  function pan(steps) {
+    var span = i1 - i0;
+    var start = Math.max(0, Math.min(points.length - 1 - span, i0 + steps));
+    i0 = start;
+    i1 = start + span;
+    draw();
+  }
+
+  if (box) {
+    box.addEventListener("wheel", function (e) {
+      if (points.length < MIN_POINTS) return;
+      e.preventDefault();                       // 차트 위에서는 페이지가 스크롤되지 않는다
+      /* 위로 굴리면 확대(구간이 좁아진다), 아래로 굴리면 축소 */
+      zoom(e.deltaY < 0 ? 0.85 : 1.18, indexAt(e));
+    }, { passive: false });
+
+    /* 끌어서 이동. 왼쪽으로 끌면 뒤(더 최근)로 간다 */
+    var dragFrom = null;
+    box.addEventListener("pointerdown", function (e) {
+      dragFrom = { x: e.clientX, i0: i0 };
+      box.setPointerCapture(e.pointerId);
+      box.style.cursor = "grabbing";
+    });
+    box.addEventListener("pointermove", function (e) {
+      if (!dragFrom) return;
+      var rect = box.getBoundingClientRect();
+      var perPixel = (i1 - i0 + 1) / (rect.width || 1);
+      var moved = Math.round((dragFrom.x - e.clientX) * perPixel);
+      var span = i1 - i0;
+      var start = Math.max(0, Math.min(points.length - 1 - span, dragFrom.i0 + moved));
+      if (start !== i0) { i0 = start; i1 = start + span; draw(); }
+    });
+    var endDrag = function () { dragFrom = null; box.style.cursor = ""; };
+    box.addEventListener("pointerup", endDrag);
+    box.addEventListener("pointercancel", endDrag);
+
+    /* 두 번 누르면 전체로 되돌린다. 확대하다 길을 잃었을 때 나가는 문이다 */
+    box.addEventListener("dblclick", function () { resetView(); draw(); });
+
+    /* 키보드로도 되어야 한다. 마우스가 없으면 확대할 방법이 없어진다 */
+    box.setAttribute("tabindex", "0");
+    box.addEventListener("keydown", function (e) {
+      var span = i1 - i0;
+      if (e.key === "ArrowLeft") { pan(-Math.max(1, Math.round(span / 10))); e.preventDefault(); }
+      else if (e.key === "ArrowRight") { pan(Math.max(1, Math.round(span / 10))); e.preventDefault(); }
+      else if (e.key === "+" || e.key === "=") { zoom(0.8, (i0 + i1) / 2); e.preventDefault(); }
+      else if (e.key === "-") { zoom(1.25, (i0 + i1) / 2); e.preventDefault(); }
+      else if (e.key === "0") { resetView(); draw(); e.preventDefault(); }
+    });
+  }
+
+  /* 기간 버튼. 바뀌면 다시 받는다 */
+  var rangeGroup = document.getElementById("chart-range");
+  if (rangeGroup) {
+    rangeGroup.addEventListener("mj:change", function (e) { range = e.detail; loadChart(); });
+  }
+
+  /* 종류 버튼. 같은 점을 다시 그리기만 하면 되므로 서버를 부르지 않는다 */
+  var typeGroup = document.getElementById("chart-type");
+  if (typeGroup) {
+    typeGroup.addEventListener("mj:change", function (e) { chartType = e.detail; draw(); });
+  }
+
+  /**
+   * 투자 지표.
+   *
+   * 시세와 벤더가 다르다(Finnhub). 그래서 상세와 따로 부른다 —
+   * 지표가 막혀도 시세와 차트는 보여야 한다.
+   *
+   * ETF 는 PER·PBR 이 없고 무배당 종목은 배당수익률이 없다. 없는 값은 — 로 둔다.
+   */
+  async function loadMetrics() {
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/metrics");
+    if (!r.ok || !r.data) return;
+    var m = r.data;
+
+    /* 시가총액은 자릿수가 커서 그대로 쓰면 못 읽는다. 조·억 단위로 접는다 */
+    text("m-cap", m.marketCap == null ? "—" : compactUsd(Number(m.marketCap)));
+    text("m-per", m.per == null ? "—" : Number(m.per).toFixed(2));
+    text("m-pbr", m.pbr == null ? "—" : Number(m.pbr).toFixed(2));
+    text("m-eps", m.eps == null ? "—" : money(m.eps));
+    /* 52주 최고·최저 (PRICE-04). 같은 metrics 응답에 이미 실려 온다 */
+    text("m-w52h", m.week52High == null ? "—" : money(m.week52High));
+    text("m-w52l", m.week52Low == null ? "—" : money(m.week52Low));
+    text("m-div", m.dividendYield == null ? "—" : Number(m.dividendYield).toFixed(2) + "%");
+    text("m-industry", m.industry || "—");
+    fillCompany(m);
+  }
+
+  /* 내 판단 기록 — 이 종목 매매기록의 매수 사유·목표가·심리. 최신 5건.
+     기록이 하나도 없거나 비로그인이면 안내 문구를 그대로 둔다.
+     라벨은 record-list 와 같은 사전을 쓴다 — 화면마다 번역이 다르면 헷갈린다 */
+  var SENTIMENT = { CONFIDENT: "확신", NEUTRAL: "중립", ANXIOUS: "불안", FOMO: "조급" };
+  async function loadJudgments() {
+    var r = await call("/api/transactions?symbol=" + encodeURIComponent(symbol) + "&size=20");
+    if (!r.ok || !r.data || !r.data.content) return;
+    var notes = r.data.content.filter(function (tx) {
+      return tx.buyReason || tx.targetPrice != null || tx.sentiment;
+    }).slice(0, 5);
+    if (!notes.length) return;
+
+    var box = document.getElementById("judgment-list");
+    notes.forEach(function (tx) {
+      var memo = document.createElement("p");
+      memo.className = "memo";
+      var head = document.createElement("span");
+      head.className = "sub";
+      head.style.display = "block";
+      head.textContent = (tx.side === "BUY" ? "매수" : "매도") + " · " + (tx.tradeDate || "");
+      memo.appendChild(head);
+      if (tx.buyReason) {
+        var why = document.createElement("span");
+        why.style.display = "block";
+        why.textContent = tx.buyReason;
+        memo.appendChild(why);
+      }
+      if (tx.targetPrice != null) {
+        var tg = document.createElement("span");
+        tg.className = "badge badge-line";
+        tg.textContent = "목표 $" + money(tx.targetPrice, 2);
+        memo.appendChild(tg);
+      }
+      if (tx.sentiment) {
+        var st = document.createElement("span");
+        st.className = "badge";
+        st.textContent = SENTIMENT[tx.sentiment] || tx.sentiment;
+        memo.appendChild(st);
+      }
+      box.appendChild(memo);
+    });
+    document.getElementById("judgment-empty").hidden = true;
+  }
+
+  /* 다음 실적·배당락 (4.14). 둘 다 없으면 줄을 숨긴 채로 둔다 — 52주처럼 */
+  async function loadNextEvents() {
+    var r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/next-events");
+    if (!r.ok || !r.data) return;
+    var fmt = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" });
+    function d(s) { return fmt.format(new Date(s + "T00:00:00")); }
+    var parts = [];
+    var e = r.data.earnings, v = r.data.dividend;
+    if (e) parts.push("다음 실적 " + d(e.date) + (e.note ? " (" + e.note + ")" : ""));
+    if (v) parts.push("다음 배당락 " + d(v.date) + (v.note ? " (" + v.note + ")" : ""));
+    if (parts.length) {
+      var line = $("next-events");
+      line.textContent = parts.join(" · ");
+      line.hidden = false;
+    }
+  }
+
+  /**
+   * $4.46T · $376.1B 처럼 접는다.
+   *
+   * 배열을 중첩해서 쓰지 않는다. Thymeleaf 는 대괄호 두 개를 자기 문법(인라인 출력)으로 읽어
+   * 템플릿 파싱 자체가 깨진다 — 자바스크립트로는 멀쩡한 코드인데 화면이 안 뜬다.
+   */
+  function compactUsd(v) {
+    var SCALE = { T: 1e12, B: 1e9, M: 1e6 };
+    var keys = ["T", "B", "M"];
+    for (var i = 0; i < keys.length; i++) {
+      var unit = SCALE[keys[i]];
+      if (v >= unit) return "$" + (v / unit).toFixed(2) + keys[i];
+    }
+    return money(v);
+  }
+
+  /**
+   * 발행주식수를 읽을 수 있는 단위로.
+   *
+   * 벤더는 백만 주 단위로 준다 — AAPL 이 14687.36 이면 146억 8736만 주다.
+   * 이걸 그대로 "만 주" 로 붙이면 100배가 어긋난다.
+   */
+  function shares(v) {
+    if (v == null) return "—";
+    var n = Number(v) * 1e6;
+    if (!isFinite(n) || n <= 0) return "—";
+    if (n >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, "") + "억 주";
+    if (n >= 1e4) return Math.round(n / 1e4).toLocaleString("ko-KR") + "만 주";
+    return Math.round(n).toLocaleString("ko-KR") + "주";
+  }
+
+  /**
+   * 기업 정보. 투자 지표와 같은 응답을 쓴다 — 둘 다 Finnhub 프로필에서 온다.
+   *
+   * 설립년도·본사·임직원·CEO 는 벤더가 주지 않아 화면에서 뺐다.
+   * 없는 값을 지어내느니 있는 값만 보여준다.
+   */
+  function fillCompany(m) {
+    text("ci-industry", m.industry || "—");
+    text("ci-ipo", m.ipoDate || "—");
+    text("ci-country", m.country || "—");
+    text("ci-shares", shares(m.sharesOutstanding));
+    text("ci-cap", m.marketCap == null ? "—" : compactUsd(Number(m.marketCap)));
+
+    var web = $("ci-web");
+    if (web) {
+      web.replaceChildren();
+      /* 벤더가 준 주소다. 뉴스 링크와 같은 이유로 스킴을 확인한다 */
+      var homepage = safeUrl(m.webUrl);
+      if (m.webUrl && homepage !== "#") {
+        var a = document.createElement("a");
+        a.href = homepage;
+        a.target = "_blank";
+        a.rel = "noreferrer noopener";
+        a.textContent = m.webUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+        web.appendChild(a);
+      } else {
+        web.textContent = "—";
+      }
+    }
+  }
+
+  /** ETF 에 기업용 프로필과 SEC 재무제표를 빈 칸으로 보여주지 않는다. */
+  function renderAssetInformation(assetClass) {
+    var etf = assetClass === "ETF";
+    document.querySelectorAll("[data-company-only]").forEach(function (el) {
+      el.hidden = etf;
+    });
+    document.querySelectorAll("[data-etf-only]").forEach(function (el) {
+      el.hidden = !etf;
+    });
+  }
+
+  /**
+   * 종목 뉴스.
+   *
+   * 본문은 담지 않는다. 제목·요약과 원문 링크만 보여주고 읽는 것은 원문에서 하게 한다.
+   *
+   * 제목과 요약은 벤더 문자열이라 textContent 로 넣는다. 그대로 HTML 에 붙이지 않는다.
+   */
+  async function loadNews() {
+    var box = $("news-list");
+    var meta = $("news-meta");
+    if (!box) return;
+
+    var r;
+    try {
+      r = await call("/api/stocks/" + encodeURIComponent(symbol) + "/news");
+    } catch (e) {
+      r = { ok: false, data: null };
+    }
+    var items = r.ok && Array.isArray(r.data) ? r.data : [];
+    box.replaceChildren();
+    box.setAttribute("aria-busy", "false");
+
+    if (meta) {
+      meta.textContent = items.length === 0 ? "—"
+          : "최근 30일 · " + items.length + "건"
+            + (items.length > NEWS_VISIBLE ? " · 스크롤" : "");
+    }
+    if (items.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "sub";
+      empty.style.padding = "22px";
+      empty.textContent = r.ok ? "관련 뉴스가 없습니다" : "뉴스를 불러오지 못했습니다";
+      box.appendChild(empty);
+      renderRelatedNews(items, r.ok);
+      return;
+    }
+
+    items.forEach(function (n) {
+      var li = document.createElement("li");
+      li.className = "news-item";
+
+      var metaLine = document.createElement("p");
+      metaLine.className = "meta";
+      var src = document.createElement("span");
+      src.className = "src";
+      src.textContent = n.source || "";
+      var when = document.createElement("time");
+      when.textContent = ago(n.publishedAt);
+      var spacer = document.createElement("span");
+      spacer.className = "spacer";
+      var link = document.createElement("a");
+      link.href = safeUrl(n.url);
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
+      link.textContent = "원문 보기";
+      metaLine.append(src, when, spacer, link);
+
+      var title = document.createElement("p");
+      title.className = "ttl";
+      title.textContent = n.headline;
+
+      li.append(metaLine, title);
+
+      if (n.summary) {
+        var sum = document.createElement("p");
+        sum.className = "sum";
+        sum.textContent = n.summary;
+        li.appendChild(sum);
+      }
+      box.appendChild(li);
+    });
+
+    fitNews(box, items.length);
+    renderRelatedNews(items, true);
+  }
+
+  /** 오른쪽 카드는 같은 응답에서 상위 세 건만 추려 보여준다. 별도 호출은 하지 않는다. */
+  function renderRelatedNews(items, loaded) {
+    var box = $("related-news-list");
+    var more = $("related-news-more");
+    if (!box) return;
+
+    box.replaceChildren();
+    box.setAttribute("aria-busy", "false");
+    if (more) more.hidden = items.length === 0;
+
+    if (items.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "news-empty";
+      empty.textContent = loaded ? "관련 뉴스가 없습니다" : "뉴스를 불러오지 못했습니다";
+      box.appendChild(empty);
+      return;
+    }
+
+    items.slice(0, 3).forEach(function (n) {
+      var li = document.createElement("li");
+      var metaLine = document.createElement("p");
+      metaLine.className = "meta";
+      var when = document.createElement("time");
+      when.dateTime = n.publishedAt || "";
+      when.textContent = ago(n.publishedAt);
+      metaLine.appendChild(when);
+      if (n.source) {
+        var source = document.createElement("span");
+        source.textContent = n.source;
+        metaLine.prepend(source);
+      }
+
+      var title = document.createElement("p");
+      title.className = "headline";
+      var url = safeUrl(n.url);
+      if (url !== "#") {
+        var link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noreferrer noopener";
+        link.textContent = n.headline;
+        title.appendChild(link);
+      } else {
+        title.textContent = n.headline;
+      }
+      li.append(metaLine, title);
+      box.appendChild(li);
+    });
+  }
+
+  var relatedMore = $("related-news-more");
+  if (relatedMore) {
+    relatedMore.addEventListener("click", function () {
+      var newsTab = $("t5");
+      if (!newsTab) return;
+      newsTab.click();
+      newsTab.focus();
+      newsTab.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  /** 상세 화면에서 한 번에 펼치는 뉴스 건수. 나머지는 상자 안에서 굴려 본다 */
+  var NEWS_VISIBLE = 6;
+
+  /**
+   * 뉴스 상자의 높이를 여섯 건에 맞춘다.
+   *
+   * 항목마다 요약 길이가 달라 높이가 제각각이다. 그래서 고정 높이로는 여섯 건에 딱 맞지 않는다.
+   * <b>여섯째 항목이 시작하는 자리</b>를 재서 그만큼만 보이게 한다.
+   *
+   * 레이아웃을 잴 수 없는 환경에서는 재지 않고 넘어간다 — 그때는 CSS 의 기본 높이가 쓰인다.
+   */
+  function fitNews(box, count) {
+    box.classList.toggle("scrollable", count > NEWS_VISIBLE);
+    box.style.removeProperty("--news-max");
+    if (count <= NEWS_VISIBLE) return;
+
+    var kids = box.children;
+    if (kids.length <= NEWS_VISIBLE) return;
+    var height = kids[NEWS_VISIBLE].offsetTop - kids[0].offsetTop;
+    if (height > 0) {
+      box.style.setProperty("--news-max", height + "px");
+    }
+  }
+
+  /** "2시간 전" 처럼. 날짜만 보여주면 얼마나 지난 소식인지 감이 안 온다 */
+  /**
+   * 링크에 걸어도 되는 주소인지 본다.
+   *
+   * 벤더가 준 문자열을 href 에 그대로 넣으면 javascript: 로 시작하는 주소가 들어올 수 있다.
+   * 지금은 CSP 가 그것을 막아 주지만, 막아 주는 것이 CSP 하나뿐인 상태로 두지 않는다 —
+   * script-src 에 unsafe-inline 이 들어가는 순간 되살아난다.
+   *
+   * 웹소켓 프레임에서 "대문자 변환 하나에 기대지 않는다" 고 판단한 것과 같은 기준이다.
+   */
+  function safeUrl(url) {
+    if (!url) return "#";
+    try {
+      var u = new URL(url, location.origin);
+      return (u.protocol === "http:" || u.protocol === "https:") ? u.href : "#";
+    } catch (e) {
+      return "#";                      // 주소로 읽히지 않는 값
+    }
+  }
+
+  function ago(iso) {
+    var then = new Date(iso).getTime();
+    if (!then) return "";
+    var min = Math.max(0, Math.round((Date.now() - then) / 60000));
+    if (min < 60) return min + "분 전";
+    var hour = Math.round(min / 60);
+    if (hour < 24) return hour + "시간 전";
+    var day = Math.round(hour / 24);
+    return day < 7 ? day + "일 전" : new Date(iso).toLocaleDateString("ko-KR");
+  }
+
+  /* ── 실시간 ──────────────────────────────────────────────────────────
+     SSE 로 체결가를 받아 ① 헤더의 현재가와 ② 실시간 차트의 마지막 봉을 갱신한다.
+     웹소켓이 아니라 SSE 인 이유는 서버가 일방적으로 밀어 주기만 하면 되기 때문이다. */
+  var source = null;
+  var basePrice = null;      // 이 세션의 등락률 기준가. 서버가 세션을 보고 정해 준다
+  var session = null;        // PRE·REGULAR·AFTER·CLOSED
+  var sessionLabel = "";
+  var stockActive = true;
+
+  function applyLive(quote) {
+    if (quote.symbol !== symbol) return;
+
+    var price = Number(quote.price);
+    currentPrice = price;
+    renderPrices();
+
+    /* 등락률은 서버가 체결마다 주지 않는다. 세션 기준가로 화면에서 구한다 */
+    if (basePrice) {
+      showChange((price - basePrice) / basePrice * 100);
+    }
+
+    var feed = $("sym-feed");
+    if (feed) {
+      /* 세 가지 상태를 구분한다. 지연값을 실시간인 척 보여 주면 지금 값으로 오해한다 */
+      feed.innerHTML = session === "CLOSED" ? '<i class="dot"></i>휴장'
+        : !quote.live && session !== "REGULAR" ? '<i class="dot"></i>SIP 15분 지연 대기'
+        : !quote.live ? '<i class="dot"></i>종가 기준'
+        : quote.delayed ? '<i class="dot"></i>SIP 15분 지연'
+        : '<i class="dot"></i>IEX 실시간';
+      feed.classList.toggle("stale", !quote.live || quote.delayed);
+    }
+
+    if (quote.live) appendLive(price, quote.at);
+  }
+
+  /**
+   * 실시간 차트에 체결을 얹는다.
+   *
+   * 같은 분이면 마지막 봉의 종가를 바꾸고 고가·저가를 늘린다.
+   * 분이 바뀌면 새 봉을 하나 붙인다. 분봉이 만들어지는 방식 그대로다.
+   */
+  function appendLive(price, at) {
+    if (range !== "LIVE") return;
+
+    /* 세션은 열렸지만 지연 피드의 첫 분봉이 아직 없었던 경우다.
+       첫 체결로 새 차트를 시작해야 다음 1분 새로고침까지 빈 화면에 머물지 않는다. */
+    if (points.length === 0) {
+      points.push({ at: at, open: price, high: price, low: price, close: price, volume: 0 });
+      resetView();
+      draw();
+      return;
+    }
+
+    var minute = String(at).slice(0, 16);              // "2026-08-13T13:31"
+    var last = points[points.length - 1];
+
+    /* 오른쪽 끝을 보고 있었는지 먼저 기억한다.
+       확대해서 과거를 들여다보는 중이라면 새 봉이 왔다고 화면을 끌고 가면 안 된다 */
+    var atEnd = i1 >= points.length - 1;
+    var whole = atEnd && i0 === 0;          // 전체를 보고 있었나
+
+    if (String(last.at).slice(0, 16) === minute) {
+      last.close = price;
+      if (price > Number(last.high)) last.high = price;
+      if (price < Number(last.low)) last.low = price;
+    } else {
+      points.push({ at: at, open: price, high: price, low: price, close: price, volume: 0 });
+      /* 하루치만 들고 있는다. 계속 쌓으면 화면이 점점 느려진다.
+         앞을 버리면 인덱스가 하나씩 당겨지므로 보이는 구간도 같이 당긴다 */
+      if (points.length > 1000) {
+        points.shift();
+        i0 = Math.max(0, i0 - 1);
+        i1 = Math.max(0, i1 - 1);
+      }
+      /* 전체를 보고 있었으면 새 봉까지 포함해 계속 전체를 보여준다.
+         확대한 채 오른쪽 끝에 있었다면 폭은 그대로 두고 창만 민다 */
+      if (whole) {
+        i0 = 0;
+        i1 = points.length - 1;
+      } else if (atEnd) {
+        var span = i1 - i0;
+        i1 = points.length - 1;
+        i0 = Math.max(0, i1 - span);
+      }
+    }
+    draw();
+  }
+
+  function openStream() {
+    /* 장이 닫혀 있으면 붙지 않는다. 값이 올 리도 없고, 와도 화면이 멈춰 있어야 한다 —
+       휴장일에 숫자가 조금씩 흔들리면 사용자는 "지금 거래되고 있다" 로 읽는다 */
+    if (session === "CLOSED") return;
+    /* 아주 오래된 브라우저에는 EventSource 가 없다. 그때는 실시간만 빠지고
+       종가 기준 화면은 그대로 돌아야 한다 */
+    if (typeof EventSource === "undefined") return;
+    if (source) return;
+    source = new EventSource("/api/market/stream?symbols=" + encodeURIComponent(symbol));
+    source.addEventListener("quote", function (e) { applyLive(JSON.parse(e.data)); });
+    /* 끊기면 브라우저가 알아서 다시 붙는다. 여기서 할 일이 없다 */
+  }
+
+  /* 다른 탭을 보고 있으면 끊는다. 동시 구독이 30종목뿐이라 자리를 비워 준다 */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (source) { source.close(); source = null; }
+    } else if (!source) {
+      openStream();
+    }
+  });
+
+  /**
+   * 페이지를 계속 열어 둔 채 장 시작 시각을 지나도 처음 받은 CLOSED 상태에 머물지 않게 한다.
+   * 상태가 바뀔 때만 상세를 다시 받아 등락률 기준가까지 새 세션에 맞춘다.
+   */
+  async function refreshSession() {
+    try {
+      var r = await call("/api/market/session");
+      if (!r.ok || !r.data || r.data.session === session) return false;
+
+      session = r.data.session;
+      sessionLabel = r.data.label;
+      await loadDetail();
+
+      if (session === "CLOSED") {
+        if (source) { source.close(); source = null; }
+        if (stockActive) {
+          var feed = $("sym-feed");
+          feed.innerHTML = '<i class="dot"></i>휴장';
+          feed.classList.add("stale");
+        }
+      } else {
+        openStream();
+      }
+
+      if (range === "LIVE") await loadChart();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* 실시간 구간의 앞부분은 15분 지연된 SIP 라 체결만으로는 채워지지 않는다.
+     주기적으로 다시 받아 그 구간을 메운다. 다른 기간은 값이 확정돼 있어 부르지 않는다 */
+  setInterval(async function () {
+    var changed = await refreshSession();
+    if (!changed && range === "LIVE" && session !== "CLOSED" && !document.hidden) loadChart(true);
+  }, 60000);
+
+  document.addEventListener("mijang:currency-change", function (event) {
+    displayCurrency = event.detail === "USD" ? "USD" : "KRW";
+    renderPrices();
+    showChange(basePrice == null || currentPrice == null ? null
+      : (currentPrice - basePrice) / basePrice * 100);
+    draw();
+  });
+
+  loadDetail().then(function () {
+    openStream();
+    fillQuoteBox();
+    loadChart();
+  });
+  loadNews();
+  loadWatch();
+})();
+
+/* 재무제표 (SEC EDGAR)
+   기업 정보 옆에 붙어 있는데 값이 박혀 있었다. 회계연도는 종목마다 다르므로
+   머리글도 응답에서 만든다 — 2024·2023·2022 를 박아 두면 9월 결산 종목에서 틀린다. */
+(function () {
+  var head = document.getElementById("fin-head");
+  var rows = document.getElementById("fin-rows");
+  if (!head || !rows) return;
+
+  var symbol = new URLSearchParams(location.search).get("symbol");
+  if (!symbol) return;
+
+  /* 표에 올릴 항목. 순서가 곧 행 순서다 */
+  var METRICS = ["revenue", "operatingIncome", "netIncome", "eps"];
+  var LABEL = { revenue: "매출", operatingIncome: "영업이익", netIncome: "순이익", eps: "EPS" };
+
+  /* $391.0B 처럼 줄여 쓴다. 억 단위 숫자를 그대로 늘어놓으면 읽히지 않는다 */
+  function money(v) {
+    if (v == null) return "—";
+    var n = Number(v), sign = n < 0 ? "−" : "";
+    n = Math.abs(n);
+    if (n >= 1e9) return sign + "$" + (n / 1e9).toFixed(1) + "B";
+    if (n >= 1e6) return sign + "$" + (n / 1e6).toFixed(1) + "M";
+    return sign + "$" + n.toLocaleString("en-US");
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (!res.ok) return null;
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  /* EPS 는 주당 금액이라 B·M 로 줄이면 안 된다. $1.65 그대로 보여준다 */
+  function amount(key, v) {
+    if (v == null) return "—";
+    return key === "eps" ? "$" + Number(v).toFixed(2) : money(v);
+  }
+
+  function empty(message) {
+    rows.replaceChildren();
+    var tr = rows.insertRow();
+    var td = tr.insertCell();
+    td.colSpan = 4; td.className = "sub";
+    td.style.padding = "20px"; td.style.textAlign = "center";
+    td.textContent = message;
+  }
+
+  /* 분기 표(재무 탭). 기간 이름도 응답에서 만든다 — 회계 분기는 달력 분기와 다르다 */
+  function drawQuarterly(byMetric) {
+    var qhead = document.getElementById("q-head");
+    var qrows = document.getElementById("q-rows");
+    if (!qhead || !qrows) return;
+
+    /* 라벨은 기간이 끝난 달로 만든다. 응답의 fiscalYear·fiscalPeriod 는 분기 행에서
+       신뢰할 수 없다 — 실제로 서로 다른 기간이 둘 다 "2026 Q3" 로 온다 */
+    var periods = byMetric.revenue.slice(0, 4).map(function (f) {
+      return { key: f.end, label: f.end.slice(0, 7).replace("-", ".") };
+    });
+    qrows.replaceChildren();
+    if (periods.length === 0) {
+      var tr = qrows.insertRow();
+      var td = tr.insertCell();
+      td.colSpan = 5; td.className = "sub";
+      td.style.padding = "20px"; td.style.textAlign = "center";
+      td.textContent = "분기 재무 정보를 불러오지 못했습니다";
+      return;
+    }
+    while (qhead.cells.length > 1) { qhead.deleteCell(1); }
+    periods.forEach(function (p) {
+      var th = document.createElement("th");
+      th.className = "r"; th.scope = "col"; th.textContent = p.label;
+      qhead.appendChild(th);
+    });
+
+    function pick(key, end) {
+      return byMetric[key].filter(function (f) { return f.end === end; })[0];
+    }
+    METRICS.forEach(function (key) {
+      var tr = qrows.insertRow();
+      var name = tr.insertCell();
+      name.className = "txt"; name.textContent = LABEL[key];
+      periods.forEach(function (p) {
+        var td = tr.insertCell();
+        td.className = "r";
+        var f = pick(key, p.key);
+        td.textContent = amount(key, f ? f.value : null);
+      });
+    });
+    var tr2 = qrows.insertRow();
+    var n2 = tr2.insertCell();
+    n2.className = "txt"; n2.textContent = "영업이익률";
+    periods.forEach(function (p) {
+      var op = pick("operatingIncome", p.key), rev = pick("revenue", p.key);
+      var td = tr2.insertCell();
+      td.className = "r";
+      td.textContent = (op && rev && Number(rev.value))
+        ? (Number(op.value) / Number(rev.value) * 100).toFixed(1) + "%" : "—";
+    });
+  }
+
+  async function loadFinancials() {
+    var byMetric = {}, quarterly = {};
+    for (var i = 0; i < METRICS.length; i++) {
+      var list = await api("/api/stocks/" + encodeURIComponent(symbol)
+        + "/financials?metric=" + METRICS[i] + "&limit=24") || [];
+      /* 연간 총계만 쓴다. quarterly 가 false 인 것에는 "3분기까지 누적" 같은 값도 섞여 있어
+         그것으로 거르면 같은 해가 여러 번, 그것도 반쪽 금액으로 나온다. FY 만 고른다 */
+      byMetric[METRICS[i]] = list.filter(function (f) { return f.fiscalPeriod === "FY"; });
+      /* 분기 표는 반대로 quarterly 인 것만 쓰고, 끝난 날 기준 최신순으로 본다 */
+      quarterly[METRICS[i]] = list.filter(function (f) { return f.quarterly; })
+        .sort(function (a, b) { return a.end < b.end ? 1 : -1; });
+    }
+    drawQuarterly(quarterly);
+
+    /* 회계연도는 응답이 알려 준다. 매출 기준으로 최근 세 해를 고른다 */
+    var years = byMetric.revenue.map(function (f) { return f.fiscalYear; })
+      .filter(function (y) { return y != null; });
+    years = Array.from(new Set(years)).sort(function (a, b) { return b - a; }).slice(0, 3);
+
+    if (years.length === 0) { empty("재무 정보를 불러오지 못했습니다"); return; }
+
+    while (head.cells.length > 1) { head.deleteCell(1); }
+    years.forEach(function (y) {
+      var th = document.createElement("th");
+      th.className = "r"; th.scope = "col"; th.textContent = y;
+      head.appendChild(th);
+    });
+
+    rows.replaceChildren();
+    METRICS.forEach(function (key) {
+      var tr = rows.insertRow();
+      var name = tr.insertCell();
+      name.className = "txt"; name.textContent = LABEL[key];
+      years.forEach(function (y) {
+        var fact = byMetric[key].filter(function (f) { return f.fiscalYear === y; })[0];
+        var td = tr.insertCell();
+        td.className = "r";
+        td.textContent = amount(key, fact ? fact.value : null);
+      });
+    });
+
+    /* 영업이익률은 응답에 없다. 두 값이 다 있는 해만 만든다 — 없는 해를 0%로 두면 거짓이다 */
+    var tr = rows.insertRow();
+    var name = tr.insertCell();
+    name.className = "txt"; name.textContent = "영업이익률";
+    years.forEach(function (y) {
+      var op = byMetric.operatingIncome.filter(function (f) { return f.fiscalYear === y; })[0];
+      var rev = byMetric.revenue.filter(function (f) { return f.fiscalYear === y; })[0];
+      var td = tr.insertCell();
+      td.className = "r";
+      td.textContent = (op && rev && Number(rev.value))
+        ? (Number(op.value) / Number(rev.value) * 100).toFixed(1) + "%" : "—";
+    });
+  }
+
+  /* 상세 API 가 알려 준 자산 유형을 기다린다. ETF 면 SEC 기업 재무 API를 부르지 않는다. */
+  document.addEventListener("mijang:stock-detail-loaded", function (event) {
+    if (event.detail && event.detail.assetClass === "ETF") return;
+    loadFinancials();
+  }, { once: true });
+})();
+
+/* SEC 공시 (INFO-02)
+   백엔드(/api/stocks/{symbol}/filings)는 이미 있었고 화면만 목업이었다(4.5 점검 3.4).
+   EDGAR 링크 여섯 개가 전부 같은 주소를 가리키던 자리다. */
+(function () {
+  var rows = document.getElementById("filings-rows");
+  if (!rows) return;
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "").toUpperCase();
+
+  /* SEC 양식 번호는 아는 사람만 안다. 자주 나오는 것만 한국어로 풀고 나머지는 그대로 둔다 —
+     모르는 양식을 어설프게 번역하면 틀린 설명이 붙는다 */
+  var FORM_LABEL = {
+    "10-K": "연차보고서", "10-Q": "분기보고서", "8-K": "주요 사건 보고",
+    "DEF 14A": "주주총회 위임장 권유", "4": "임원·주요주주 지분 변동", "3": "임원·주요주주 최초 지분 신고",
+    "5": "임원·주요주주 연간 지분 보고", "S-8": "임직원 보상용 증권 등록",
+    "SC 13G": "대량보유 보고(수동)", "SC 13D": "대량보유 보고", "144": "제한 증권 매도 예고",
+    "N-CSR": "펀드 연차·반기 보고서", "N-Q": "펀드 분기 보유 보고", "485BPOS": "펀드 설명서 갱신"
+  };
+  function label(form) {
+    if (!form) return "—";
+    var base = FORM_LABEL[form] || FORM_LABEL[form.replace(/\/A$/, "")];
+    /* /A 가 붙으면 정정 공시다. 원 양식 설명에 그 사실을 붙인다 */
+    if (/\/A$/.test(form)) return (base ? base + " " : "") + "정정";
+    return base || form;
+  }
+  /* 서버가 CIK·접수번호로 조립한 주소지만, href 에 넣는 값은 전부 같은 문으로 거른다(2.11) */
+  function safeUrl(url) {
+    if (!url) return null;
+    try {
+      var u = new URL(url, location.origin);
+      return (u.protocol === "http:" || u.protocol === "https:") ? u.href : null;
+    } catch (e) { return null; }
+  }
+  function notice(message) {
+    rows.replaceChildren();
+    var td = rows.insertRow().insertCell();
+    td.colSpan = 4; td.className = "sub";
+    td.style.cssText = "padding:24px;text-align:center";
+    td.textContent = message;
+  }
+
+  fetch("/api/stocks/" + encodeURIComponent(symbol) + "/filings?limit=20")
+    .then(function (res) { return res.ok ? res.json() : null; })
+    .then(function (body) {
+      var list = body && body.success ? body.data : null;
+      var count = document.getElementById("filings-count");
+      if (!list) { notice("공시를 불러오지 못했습니다"); return; }
+      if (list.length === 0) {
+        if (count) count.textContent = "0건";
+        notice("최근 공시가 없습니다");
+        return;
+      }
+      if (count) count.textContent = "최근 " + list.length + "건";
+      rows.replaceChildren();
+      list.forEach(function (f) {
+        var tr = rows.insertRow();
+        tr.insertCell().textContent = f.form || "—";
+        tr.insertCell().textContent = f.filingDate || "—";
+        var txt = tr.insertCell();
+        txt.className = "txt";
+        /* 보고 대상 기간이 제출일과 따로 있는 양식(10-K·10-Q)은 그 기간을 함께 적는다 */
+        txt.textContent = label(f.form)
+          + (f.reportDate && f.reportDate !== f.filingDate ? " · 대상 " + f.reportDate : "");
+        var linkCell = tr.insertCell();
+        var url = safeUrl(f.documentUrl);
+        if (url) {
+          var a = document.createElement("a");
+          a.href = url; a.target = "_blank"; a.rel = "noreferrer noopener";
+          a.textContent = "EDGAR";
+          linkCell.appendChild(a);
+        } else {
+          linkCell.textContent = "—";
+        }
+      });
+    })
+    .catch(function () { notice("공시를 불러오지 못했습니다"); });
+})();
+
+/* 배당 탭 (INFO-06 · 4.5 점검 3.5)
+   이력·요약은 공개 API 에서, "내 수령액" 만 로그인일 때 /api/dividends 를
+   따로 읽어 지급일로 맞춰 붙인다 — 종목 정보 API 에 내 계좌가 섞이지 않게. */
+(function () {
+  var rows = document.getElementById("dvh-rows");
+  if (!rows) return;
+  var symbol = (new URLSearchParams(location.search).get("symbol") || "").toUpperCase();
+  var DASH = "—";
+
+  function usd(v, digits) {
+    if (v == null) return DASH;
+    var d = digits == null ? 2 : digits;
+    return "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function put(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = v;
+  }
+  function notice(message) {
+    rows.replaceChildren();
+    var td = rows.insertRow().insertCell();
+    td.colSpan = 4; td.className = "sub";
+    td.style.cssText = "padding:24px;text-align:center";
+    td.textContent = message;
+  }
+  /* 배당 주기는 최근 1년 횟수로 짐작한다. 어중간한 횟수는 단정하지 않고 횟수 그대로 적는다 */
+  function freqLabel(n) {
+    if (n >= 11) return "월";
+    if (n >= 4 && n <= 5) return "분기";
+    if (n === 2) return "반기";
+    if (n === 1) return "연";
+    return n > 0 ? "연 " + n + "회" : DASH;
+  }
+
+  function draw(tab, mineByPayDate) {
+    rows.replaceChildren();
+    if (!tab.history.length) {
+      notice("배당 이력이 없습니다");
+    }
+    tab.history.forEach(function (d) {
+      var tr = rows.insertRow();
+      tr.insertCell().textContent = d.exDate || DASH;
+      var payCell = tr.insertCell();
+      if (d.upcoming) {
+        payCell.className = "txt";
+        var badge = document.createElement("span");
+        badge.className = "badge badge-warn"; badge.textContent = "예정";
+        payCell.appendChild(badge);
+        if (d.payDate) payCell.appendChild(document.createTextNode(" " + d.payDate));
+      } else {
+        payCell.textContent = d.payDate || DASH;
+      }
+      var amount = tr.insertCell();
+      amount.className = "r";
+      amount.textContent = usd(d.amountPerShare, 4) + (d.special ? " 특별" : "");
+      var mineCell = tr.insertCell();
+      mineCell.className = "r";
+      var mine = d.payDate && mineByPayDate[d.payDate];
+      if (mine) {
+        mineCell.textContent = usd(mine.netAmountUsd);
+        if (mine.status === "ESTIMATED") mineCell.classList.add("sub");
+      } else {
+        mineCell.textContent = DASH;
+      }
+    });
+
+    put("dvh-yield", tab.yieldPct == null ? DASH : Number(tab.yieldPct).toFixed(2) + "%");
+    put("dvh-annual", tab.annualAmountUsd > 0 ? usd(tab.annualAmountUsd) : DASH);
+    put("dvh-freq", freqLabel(tab.perYear));
+    put("dvh-streak", tab.streakYears > 0 ? tab.streakYears + "년" : DASH);
+  }
+
+  Promise.all([
+    fetch("/api/stocks/" + encodeURIComponent(symbol) + "/dividends")
+      .then(function (res) { return res.ok ? res.json() : null; }),
+    /* 내 수령액은 로그인해야 답이 온다. 비로그인이면 아예 부르지 않고 그 열을 비운다 —
+       불러 봐야 401 이고, 공개 화면 콘솔만 빨개진다(2026-09-03 점검 5.2) */
+    window.mijangSignedIn().then(function (signedIn) {
+      if (!signedIn) return null;
+      return fetch("/api/dividends")
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .catch(function () { return null; });
+    }),
+  ]).then(function (results) {
+    var tab = results[0] && results[0].success ? results[0].data : null;
+    if (!tab) { notice("배당 정보를 불러오지 못했습니다"); return; }
+    var mineByPayDate = {};
+    var mine = results[1] && results[1].success ? results[1].data : [];
+    (mine || []).forEach(function (d) {
+      if (d.symbol === symbol) mineByPayDate[d.payDate] = d;
+    });
+    draw(tab, mineByPayDate);
+  }).catch(function () { notice("배당 정보를 불러오지 못했습니다"); });
+})();
+
+</script>
+<script th:attr="nonce=${cspNonce}">
+/* 이 종목의 내 보유 현황 (PROFIT-07 종목별 손익)
+   손익 분해는 종목별로도 같은 코드로 나온다(dashboard 2.4). 전체를 부르고 걸러 쓰지 않고
+   symbol 을 줘서 그 종목만 계산시킨다 — 보유가 많아도 계산이 한 종목으로 끝난다. */
+(function () {
+  var strip = document.getElementById("hold-qty");
+  if (!strip) return;
+
+  var symbol = new URLSearchParams(location.search).get("symbol");
+  if (!symbol) return;
+  var DASH = "—";
+  var displayCurrency = localStorage.getItem("mijang-base-currency") === "USD" ? "USD" : "KRW";
+
+  function put(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = v;
+  }
+  function tone(id, v) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("rise", "fall");
+    if (v != null) el.classList.add(Number(v) >= 0 ? "rise" : "fall");
+  }
+  function krw(v) { return v == null ? DASH : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function signed(v) {
+    if (v == null) return DASH;
+    return (Number(v) >= 0 ? "+" : "−") + Math.abs(Math.round(Number(v))).toLocaleString("ko-KR") + "원";
+  }
+  function usd(v) {
+    return v == null ? DASH : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function shares(v) {
+    return v == null ? DASH : Number(v).toLocaleString("ko-KR", { maximumFractionDigits: 6 }) + "주";
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (res.status === 401) return undefined;      // 비로그인은 조용히 넘어간다. 종목 화면은 열려 있다
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  (async function () {
+    /* 내 보유는 로그인해야 답이 온다. 비로그인이면 마크업의 안내를 그대로 둔다 */
+    if (!(await window.mijangSignedIn())) return;
+    var holdings = await api("/api/portfolio/holdings");
+    if (holdings === undefined) return;
+
+    var mine = (holdings || []).filter(function (h) {
+      return h.symbol === symbol && Number(h.quantity) > 0;
+    })[0];
+    if (!mine) return;                             // 안 들고 있으면 마크업의 안내를 그대로 둔다
+
+    put("hold-qty", shares(mine.quantity));
+    put("mh-qty", shares(mine.quantity));
+    put("mh-avg", displayCurrency === "KRW"
+      ? krw(mine.avgPrice == null || mine.avgFxRate == null ? null : Number(mine.avgPrice) * Number(mine.avgFxRate))
+      : usd(mine.avgPrice));
+    put("mh-fx", mine.avgFxRate == null ? DASH
+      : Number(mine.avgFxRate).toLocaleString("ko-KR", { maximumFractionDigits: 2 }) + "원");
+    put("mh-value", displayCurrency === "KRW" ? krw(mine.marketValueKrw)
+      : usd(mine.currentPrice == null ? null : Number(mine.quantity) * Number(mine.currentPrice)));
+    put("hold-pnl", signed(mine.evalPnlKrw));
+    tone("hold-pnl", mine.evalPnlKrw);
+
+    /* 주가·환차 분해는 이 종목만 계산시킨다(PROFIT-07) */
+    var pnl = await api("/api/portfolio/pnl?symbol=" + encodeURIComponent(symbol));
+    if (pnl === undefined || !pnl) return;
+    put("mh-price", signed(pnl.pricePnlKrw)); tone("mh-price", pnl.pricePnlKrw);
+    put("mh-fxpnl", signed(pnl.fxPnlKrw)); tone("mh-fxpnl", pnl.fxPnlKrw);
+
+    var note = document.getElementById("hold-note");
+    if (note) {
+      note.textContent = "주가 " + signed(pnl.pricePnlKrw) + " · 환율 " + signed(pnl.fxPnlKrw);
+    }
+  })();
+})();
+</script>
+</body>
+</html>

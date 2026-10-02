@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  BatchLogMapper.xml — 배치 기록 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    작업별 마지막 기록만 뽑는 조회가 관리자 화면의 배치 상태 표를 만든다.
+-->
+<mapper namespace="com.example.mijang.admin.mapper.BatchLogMapper">
+
+    <!-- 시작 시점에는 결과를 모른다. status 는 일단 FAILED 로 두고 끝날 때 고친다.
+         이렇게 하면 서버가 중간에 죽어도 "실패"로 남아 눈에 띈다 -->
+    <insert id="insertStart">
+        INSERT INTO batch_logs (job_name, started_at, status)
+        VALUES (#{jobName}, #{startedAt}, 'FAILED')
+    </insert>
+
+    <select id="findLastInsertedId" resultType="java.lang.Long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+    <update id="finish">
+        UPDATE batch_logs
+           SET finished_at     = #{finishedAt},
+               duration_ms     = #{durationMs},
+               processed_count = #{processedCount},
+               status          = #{status},
+               message         = #{message}
+         WHERE id = #{id}
+    </update>
+
+    <!-- 잡마다 가장 최근 한 건. id 가 AUTO_INCREMENT 라 최대 id 가 곧 최근이다 -->
+    <select id="findLatestPerJob" resultType="com.example.mijang.admin.dto.BatchLogResponse">
+        SELECT b.job_name, b.started_at, b.finished_at, b.duration_ms,
+               b.processed_count, b.status, b.message
+          FROM batch_logs b
+          JOIN (SELECT job_name, MAX(id) AS max_id FROM batch_logs GROUP BY job_name) m
+            ON m.max_id = b.id
+         ORDER BY b.job_name
+    </select>
+
+</mapper>

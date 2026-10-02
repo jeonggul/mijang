@@ -1,0 +1,331 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 마이페이지</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <section class="card card-pad profile-head">
+    <span class="ava-lg" aria-hidden="true"><img id="my-avatar" alt="" hidden></span>
+    <div class="info">
+      <h1 id="my-nick">—</h1>
+      <p class="note"><span id="my-email">—</span> · <span id="my-joined">—</span> 가입</p>
+      <ul class="stats">
+        <li><span class="k">매매 기록</span><span class="v num" id="my-tx">—</span></li>
+        <li><span class="k">보유 종목</span><span class="v num" id="my-holding-count">—</span></li>
+        <li><span class="k">작성 글</span><span class="v num" id="my-post-count">—</span></li>
+        <li><span class="k">작성 댓글</span><span class="v num" id="my-comment-count">—</span></li>
+        <li><span class="k">기준 통화</span><span class="v" id="my-currency">—</span></li>
+      </ul>
+    </div>
+    <a class="btn btn-sm" th:href="@{/profile-edit}">프로필 수정</a>
+  </section>
+
+  <div class="grid-2">
+    <div>
+      <section class="card">
+        <h2 class="card-head">보유 요약 <span class="sub num" id="my-holding-label">—</span></h2>
+        <ul class="watch" style="padding:0 18px 16px" id="my-holdings"><!-- 스크립트가 채운다 --></ul>
+      </section>
+
+      <section class="card">
+        <h2 class="card-head">최근 매매 <span class="sub num" id="my-trades-label">—</span></h2>
+        <ul class="list my-writing" id="my-trades"><!-- 스크립트가 채운다 --></ul>
+        <a class="watch-more" id="my-trades-more" th:href="@{/record-list}" hidden>전체 기록 보기</a>
+      </section>
+    </div>
+
+    <div>
+      <section class="card">
+        <h2 class="card-head">작성 글 <span class="sub num" id="my-post-label">—</span></h2>
+        <ul class="list my-writing" id="my-posts"><!-- 스크립트가 채운다 --></ul>
+        <a class="watch-more" id="my-posts-more" th:href="@{/community}" hidden>커뮤니티에서 보기</a>
+      </section>
+
+      <section class="card">
+        <h2 class="card-head">작성 댓글 <span class="sub num" id="my-comments-label">—</span></h2>
+        <ul class="list my-writing" id="my-comments"><!-- 스크립트가 채운다 --></ul>
+      </section>
+
+      <section class="card">
+        <h2 class="card-head">스크랩한 글 <span class="sub num" id="my-scraps-label">—</span></h2>
+        <ul class="list my-writing" id="my-scraps"><!-- 스크립트가 채운다 --></ul>
+        <button class="watch-more" id="my-scraps-more" type="button" hidden>더보기</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 내 정보 (MY-01) · 보유 요약 (MY-02)
+   보유는 포트폴리오 화면과 같은 값이어야 한다(2.5). 별도 조회를 만들지 않고
+   서버가 HoldingService 를 그대로 불러 상위 몇 개만 잘라 준다. */
+(function () {
+  var DASH = "—";
+
+  function api(url) {
+    return fetch(url).then(function (res) {
+      if (res.status === 401) { location.href = "/login"; return null; }
+      return res.json().then(function (b) { return b.success ? b.data : null; });
+    });
+  }
+  function put(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function krw(v) { return v == null ? DASH : Math.round(Number(v)).toLocaleString("ko-KR") + "원"; }
+  function pct(v) {
+    if (v == null) return DASH;
+    return (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(1) + "%";
+  }
+
+  api("/api/users/me").then(function (me) {
+    if (!me) return;
+    put("my-nick", me.nickname);
+    put("my-email", me.email);
+    /* joinedAt 은 ISO 문자열이다. 날짜 부분만 쓴다 — 가입 시각까지는 필요 없다 */
+    put("my-joined", me.joinedAt ? me.joinedAt.slice(0, 10) : DASH);
+    put("my-currency", me.baseCurrency === "USD" ? "달러" : "원화");
+
+    /* 프로필 이미지가 없으면 마크업의 기본 아바타를 그대로 둔다 */
+    var img = document.getElementById("my-avatar");
+    if (img && me.profileImageUrl) { img.src = me.profileImageUrl; img.hidden = false; }
+  });
+
+  var PREVIEW = 5;   // 카드에 늘어놓을 최대 줄 수. 나머지는 커뮤니티에서 본다
+
+  /* 숨김·삭제된 내 글·댓글에 붙는 꼬리표.
+     남에게 안 보인다는 사실을 밝히지 않으면 "왜 목록에 없지" 로 남는다 */
+  function statusBadge(status) {
+    if (status === "HIDDEN") return ["숨김", "badge-warn"];
+    if (status === "DELETED") return ["삭제됨", "badge-err"];
+    return null;
+  }
+
+  function when(iso) {
+    return iso ? iso.slice(0, 10) : "";
+  }
+
+  /* 한 줄. 제목과 시각, 필요하면 상태 꼬리표를 단다.
+     제목·본문은 사용자가 쓴 문자열이라 전부 textContent 로 넣는다 */
+  function writingRow(href, title, meta, status) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.href = href;
+    a.className = "row";
+
+    var head = document.createElement("span");
+    head.className = "ttl";
+    head.textContent = title;
+    var badge = statusBadge(status);
+    if (badge) {
+      var b = document.createElement("span");
+      b.className = "badge " + badge[1];
+      b.style.marginLeft = "6px";
+      b.textContent = badge[0];
+      head.appendChild(b);
+    }
+
+    var sub = document.createElement("span");
+    sub.className = "sub";
+    sub.textContent = meta;
+
+    a.append(head, sub);
+    li.appendChild(a);
+    return li;
+  }
+
+  function emptyRow(message) {
+    var li = document.createElement("li");
+    li.className = "note";
+    li.style.padding = "8px 0 12px";
+    li.textContent = message;
+    return li;
+  }
+
+  api("/api/users/me/posts?page=0&size=" + PREVIEW).then(function (page) {
+    if (!page) return;
+    var total = page.totalElements || 0;
+    put("my-post-count", total + "건");
+    put("my-post-label", total + "건");
+
+    var box = document.getElementById("my-posts");
+    if (!box) return;
+    box.replaceChildren();
+    if (total === 0) {
+      box.appendChild(emptyRow("아직 쓴 글이 없습니다"));
+      return;
+    }
+    (page.content || []).forEach(function (post) {
+      var where = post.symbol ? post.symbol
+                : post.board === "QNA" ? "질문" : "자유";
+      box.appendChild(writingRow("/community-post/" + post.id, post.title,
+                                 where + " · " + when(post.createdAt), post.status));
+    });
+    /* 미리 보여 준 것보다 많을 때만 더 볼 자리를 준다 */
+    var more = document.getElementById("my-posts-more");
+    if (more) more.hidden = total <= PREVIEW;
+  });
+
+  /* 스크랩은 전용 목록 페이지가 없어, 카드 안에서 "더보기" 로 다음 쪽을 이어 붙인다.
+     작성 글·매매는 갈 곳(/community·/record-list)이 있어 링크로 보내지만 여기는 없다 */
+  (function () {
+    var box = document.getElementById("my-scraps");
+    var more = document.getElementById("my-scraps-more");
+    if (!box) return;
+    var loaded = 0;
+
+    function render(page) {
+      if (!page) return;
+      var total = page.totalElements || 0;
+      put("my-scraps-label", total + "건");
+      if (loaded === 0 && total === 0) {
+        box.appendChild(emptyRow("스크랩한 글이 없습니다"));
+        return;
+      }
+      (page.content || []).forEach(function (post) {
+        var where = post.symbol ? post.symbol
+                  : post.board === "QNA" ? "질문" : "자유";
+        box.appendChild(writingRow("/community-post/" + post.id, post.title,
+                                   where + " · " + when(post.createdAt), post.status));
+        loaded += 1;
+      });
+      /* 아직 더 남았을 때만 버튼을 보여 준다 */
+      if (more) more.hidden = loaded >= total;
+    }
+
+    function load(pageIndex) {
+      return api("/api/users/me/scraps?page=" + pageIndex + "&size=" + PREVIEW).then(render);
+    }
+
+    if (more) {
+      more.addEventListener("click", function () {
+        more.disabled = true;
+        /* 실패해도 버튼을 되살린다 — 안 그러면 네트워크 오류 한 번에 영영 눌리지 않는다 */
+        load(Math.floor(loaded / PREVIEW))["finally"](function () { more.disabled = false; });
+      });
+    }
+    load(0);
+  })();
+
+  api("/api/users/me/comments?page=0&size=" + PREVIEW).then(function (page) {
+    if (!page) return;
+    var total = page.totalElements || 0;
+    put("my-comment-count", total + "건");
+    put("my-comments-label", total + "건");
+
+    var box = document.getElementById("my-comments");
+    if (!box) return;
+    box.replaceChildren();
+    if (total === 0) {
+      box.appendChild(emptyRow("아직 쓴 댓글이 없습니다"));
+      return;
+    }
+    (page.content || []).forEach(function (c) {
+      /* 글이 지워졌으면 제목이 없다. 눌러도 갈 곳이 없다는 것을 문구로 밝힌다 */
+      var title = c.postTitle == null ? "삭제된 글" : c.postTitle;
+      box.appendChild(writingRow("/community-post/" + c.postId, c.content,
+                                 title + " · " + when(c.createdAt), c.status));
+    });
+  });
+
+  /* 최근 매매. 헤더의 매매 기록 건수도 이 응답의 총건수로 채운다 — 한 번만 부른다 */
+  api("/api/transactions?page=0&size=" + PREVIEW).then(function (page) {
+    if (!page) return;
+    var total = page.totalElements || 0;
+    put("my-tx", total + "건");
+    put("my-trades-label", total + "건");
+
+    var box = document.getElementById("my-trades");
+    if (!box) return;
+    box.replaceChildren();
+    if (total === 0) {
+      box.appendChild(emptyRow("아직 매매 기록이 없습니다"));
+      return;
+    }
+    (page.content || []).forEach(function (tx) {
+      var buy = tx.side === "BUY";
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.href = "/record-list";
+      a.className = "row";
+
+      var head = document.createElement("span");
+      head.className = "ttl";
+      var badge = document.createElement("span");
+      badge.className = "badge " + (buy ? "badge-rise" : "badge-fall");
+      badge.style.marginRight = "8px";
+      badge.textContent = buy ? "매수" : "매도";
+      head.appendChild(badge);
+      head.appendChild(document.createTextNode(tx.symbol));
+
+      /* 원화 환산 = 수량 × 체결가 × 환율. 기록 화면과 같은 식이다 */
+      var amount = (tx.price == null || tx.quantity == null || tx.fxRate == null) ? DASH
+        : krw(Number(tx.price) * Number(tx.quantity) * Number(tx.fxRate));
+      var sub = document.createElement("span");
+      sub.className = "sub";
+      sub.textContent = amount + " · " + when(tx.tradedAt);
+
+      a.append(head, sub);
+      li.appendChild(a);
+      box.appendChild(li);
+    });
+    var more = document.getElementById("my-trades-more");
+    if (more) more.hidden = total <= PREVIEW;
+  });
+
+  api("/api/users/me/holdings").then(function (list) {
+    if (!list) return;
+    put("my-holding-count", list.length + "종목");
+    put("my-holding-label", list.length + "종목");
+
+    var box = document.getElementById("my-holdings");
+    if (!box) return;
+    box.replaceChildren();
+    if (list.length === 0) {
+      var p = document.createElement("li");
+      p.className = "note";
+      p.style.padding = "8px 0 12px";
+      p.textContent = "보유 종목이 없습니다";
+      box.appendChild(p);
+      return;
+    }
+    list.forEach(function (h) {
+      /* 수익률은 평가손익 ÷ 매입원가. 포트폴리오 화면과 같은 식이다 */
+      var cost = (h.avgPrice == null || h.avgFxRate == null) ? null
+        : Number(h.quantity) * Number(h.avgPrice) * Number(h.avgFxRate);
+      var rate = (h.evalPnlKrw == null || !cost) ? null : Number(h.evalPnlKrw) / cost;
+
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.setAttribute("href", "/stock?symbol=" + encodeURIComponent(h.symbol));
+
+      var tk = document.createElement("span");
+      tk.className = "tk"; tk.textContent = h.symbol;
+      var px = document.createElement("span");
+      px.className = "px"; px.textContent = krw(h.marketValueKrw);
+      var pc = document.createElement("span");
+      pc.className = "pc" + (rate == null ? "" : (rate >= 0 ? " rise" : " fall"));
+      pc.textContent = pct(rate);
+
+      a.appendChild(tk); a.appendChild(px); a.appendChild(pc);
+      li.appendChild(a); box.appendChild(li);
+    });
+  });
+})();
+</script>
+</body>
+</html>

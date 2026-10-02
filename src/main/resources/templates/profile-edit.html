@@ -1,0 +1,178 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 프로필 수정</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <section class="card card-pad profile-head">
+    <span class="ava-lg" aria-hidden="true"><img id="profile-avatar" alt="" hidden></span>
+    <div class="info">
+      <h1 id="profile-name">—</h1>
+      <p class="note"><span id="profile-email">—</span> · <span id="profile-joined">—</span> 가입</p>
+      <ul class="stats">
+        <li><span class="k">매매 기록</span><span class="v num" id="profile-tx-count">—</span></li>
+        <li><span class="k">보유 종목</span><span class="v num" id="profile-holding-count">—</span></li>
+        <li><span class="k">작성 글</span><span class="v num" id="profile-post-count">—</span></li>
+        <li><span class="k">기준 통화</span><span class="v" id="profile-currency">—</span></li>
+      </ul>
+    </div>
+    <!-- 여기가 이미 프로필 수정 화면이다. 같은 곳으로 보내는 버튼은 눌러도 제자리라
+         돌아갈 곳을 준다 -->
+    <a class="btn btn-sm" th:href="@{/mypage}">마이페이지</a>
+  </section>
+
+  <section class="card card-pad">
+    <h2 class="form-sec">프로필 수정</h2>
+
+    <!-- 저장이 링크였다. 눌러도 마이페이지로 이동만 하고 아무 것도 바뀌지 않는다.
+         실제로 보내려면 폼이어야 한다 -->
+    <form id="profile-form">
+      <div class="img-row">
+        <span class="ava-lg" aria-hidden="true"><img id="img-preview" alt="" hidden></span>
+        <div class="info">
+          <p class="ttl">프로필 이미지</p>
+          <!-- 파일 업로드는 저장소·크기·확장자 검증이 따라오는 별도 작업이다(2.3).
+               스키마도 profile_image_url 로 URL 을 전제한다 -->
+          <p class="note">이미지 주소(URL)를 넣습니다. 업로드는 아직 지원하지 않습니다</p>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:12px">
+        <label for="img-url">이미지 주소</label>
+        <input id="img-url" type="url" maxlength="512" placeholder="https://">
+        <p class="hint">비우면 기본 아바타를 씁니다</p>
+      </div>
+
+      <div class="field" style="margin-top:18px">
+        <label for="nick">닉네임</label>
+        <input id="nick" type="text" maxlength="10">
+        <p class="hint"><span class="count num" id="nick-count">0 / 10</span>커뮤니티 글과 댓글에 표시됩니다</p>
+      </div>
+
+      <div class="modal-actions" style="margin-top:18px">
+        <a class="btn" th:href="@{/mypage}">취소</a>
+        <button class="btn btn-primary" type="submit" id="profile-save">저장</button>
+        <p class="form-error" id="profile-error" role="alert" hidden></p>
+        <p class="hint ok" id="profile-ok" role="status" hidden>저장했습니다</p>
+      </div>
+    </form>
+  </section>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 프로필 수정 (MY-01)
+   이메일은 바꿀 수 없다(2.1) — 폼에 아예 두지 않는다. */
+(function () {
+  var form = document.getElementById("profile-form");
+  if (!form) return;
+  var err = document.getElementById("profile-error");
+  var ok = document.getElementById("profile-ok");
+  var save = document.getElementById("profile-save");
+  var nick = document.getElementById("nick");
+  var url = document.getElementById("img-url");
+
+  function put(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function count() {
+    var el = document.getElementById("nick-count");
+    if (el) el.textContent = nick.value.trim().length + " / 10";
+  }
+  nick.addEventListener("input", count);
+
+  /* 현재 값을 먼저 채운다. 빈 폼을 그대로 보내면 아무 것도 안 바뀐다 */
+  fetch("/api/users/me").then(function (res) {
+    if (res.status === 401) { location.href = "/login"; return null; }
+    return res.json();
+  }).then(function (body) {
+    if (!body || !body.success) return;
+    var me = body.data;
+    nick.value = me.nickname || "";
+    url.value = me.profileImageUrl || "";
+    put("profile-name", me.nickname || "—");
+    put("profile-email", me.email || "—");
+    put("profile-joined", me.joinedAt ? me.joinedAt.slice(0, 10) : "—");
+    put("profile-currency", me.baseCurrency === "USD" ? "달러" : "원화");
+    count();
+    var img = document.getElementById("img-preview");
+    if (img && me.profileImageUrl) { img.src = me.profileImageUrl; img.hidden = false; }
+    var avatar = document.getElementById("profile-avatar");
+    if (avatar && me.profileImageUrl) { avatar.src = me.profileImageUrl; avatar.hidden = false; }
+  });
+
+  /* 작성 글 수. 커뮤니티가 붙기 전에는 셀 수 없어 비워 뒀던 자리다 */
+  fetch("/api/users/me/posts?page=0&size=1").then(function (res) {
+    return res.ok ? res.json() : null;
+  }).then(function (body) {
+    if (body && body.success) put("profile-post-count", (body.data.totalElements || 0) + "건");
+  });
+
+  fetch("/api/transactions?page=0&size=1").then(function (res) {
+    return res.ok ? res.json() : null;
+  }).then(function (body) {
+    if (body && body.success) put("profile-tx-count", (body.data.totalElements || 0) + "건");
+  });
+
+  fetch("/api/users/me/holdings").then(function (res) {
+    return res.ok ? res.json() : null;
+  }).then(function (body) {
+    if (body && body.success) put("profile-holding-count", body.data.length + "종목");
+  });
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    err.hidden = true; ok.hidden = true;
+    save.disabled = true;
+
+    /* 서버는 null 을 "안 바꿈" 으로 읽는다. 빈 문자열은 값으로 읽히므로 null 로 바꿔 보낸다 */
+    var res = await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nickname: nick.value.trim() || null,
+        profileImageUrl: url.value.trim() || null,
+      }),
+    });
+    save.disabled = false;
+    if (res.status === 401) { location.href = "/login"; return; }
+
+    var out = await res.json();
+    /* 닉네임 중복·금지어는 서버가 문구를 준다(2.2). 화면에서 다시 판단하지 않는다 */
+    if (!out.success) {
+      err.textContent = out.error ? out.error.message : "저장하지 못했습니다";
+      err.hidden = false;
+      return;
+    }
+    put("profile-name", out.data.nickname || "—");
+    ok.hidden = false;
+    var img = document.getElementById("img-preview");
+    if (img) {
+      if (out.data.profileImageUrl) { img.src = out.data.profileImageUrl; img.hidden = false; }
+      var top = document.getElementById("profile-avatar");
+      if (top) {
+        top.hidden = !out.data.profileImageUrl;
+        if (out.data.profileImageUrl) top.src = out.data.profileImageUrl;
+      }
+      else { img.hidden = true; }
+    }
+  });
+})();
+</script>
+</body>
+</html>

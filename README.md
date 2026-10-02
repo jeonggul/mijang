@@ -26,7 +26,6 @@
 | **DB** | MySQL 8 · MyBatis |
 | **외부 연동** | Alpaca 시세 WebSocket · Open Exchange Rates 환율 · OAuth · 메일 |
 | **배포** | AWS EC2 · Nginx · HTTPS |
-| **소스** | 코드는 [`develop`](https://github.com/jeonggul/mijang/tree/develop) 브랜치에서 관리 |
 
 **담당 범위** — 기획 · DB 설계 · 백엔드 · 화면 · 테스트 · 배포 전부.
 
@@ -68,7 +67,7 @@ flowchart LR
 계산기 두 개는 **DB도 스프링도 모르는 순수 계산** — 입력과 출력만 있어 단위 테스트가 쉬운 모양으로 분리.
 이 서비스에서 가장 틀리면 안 되는 코드이기 때문.
 
-> 📄 [`HoldingCalculator`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java) · [`ProfitLossCalculator`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/portfolio/service/ProfitLossCalculator.java)
+> 📄 [`HoldingCalculator`](src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java) · [`ProfitLossCalculator`](src/main/java/com/example/mijang/portfolio/service/ProfitLossCalculator.java)
 
 <br/>
 
@@ -95,7 +94,6 @@ flowchart LR
 
 ```bash
 git clone https://github.com/jeonggul/mijang.git && cd mijang
-git switch develop
 cp src/main/resources/application-secret.properties.example \
    src/main/resources/application-secret.properties
 ```
@@ -121,7 +119,7 @@ cp src/main/resources/application-secret.properties.example \
 ```
 
 주요 검증 대상 — 손익 분해 합계 · 이동평균 · 거래 수정 · 주식 분할 기준일 · 인증.
-[`ProfitLossCalculatorTest`](https://github.com/jeonggul/mijang/blob/develop/src/test/java/com/example/mijang/portfolio/ProfitLossCalculatorTest.java) · [`HoldingCalculatorTest`](https://github.com/jeonggul/mijang/blob/develop/src/test/java/com/example/mijang/portfolio/HoldingCalculatorTest.java) · [`TransactionUpdateTest`](https://github.com/jeonggul/mijang/blob/develop/src/test/java/com/example/mijang/portfolio/TransactionUpdateTest.java) · [`StockSplitAdjustTest`](https://github.com/jeonggul/mijang/blob/develop/src/test/java/com/example/mijang/portfolio/StockSplitAdjustTest.java)
+[`ProfitLossCalculatorTest`](src/test/java/com/example/mijang/portfolio/ProfitLossCalculatorTest.java) · [`HoldingCalculatorTest`](src/test/java/com/example/mijang/portfolio/HoldingCalculatorTest.java) · [`TransactionUpdateTest`](src/test/java/com/example/mijang/portfolio/TransactionUpdateTest.java) · [`StockSplitAdjustTest`](src/test/java/com/example/mijang/portfolio/StockSplitAdjustTest.java)
 
 <br/>
 
@@ -208,7 +206,7 @@ src/main/resources/
 - **배운 점** — 시계열 데이터의 검증은 "지금 상태"가 아니라 **"전체 이력을 다시 재생한 결과"** 로 해야 함.
   최종값 검사는 중간이 깨진 이력을 통과시킴
 
-> 📄 [`HoldingCalculator.calculateAll()`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java#L163-L217) · [`TransactionService`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/portfolio/service/TransactionService.java#L99-L104) — 재계산을 같은 트랜잭션에 묶는 지점
+> 📄 [`HoldingCalculator.calculateAll()`](src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java#L163-L217) · [`TransactionService`](src/main/java/com/example/mijang/portfolio/service/TransactionService.java#L99-L104) — 재계산을 같은 트랜잭션에 묶는 지점
 
 <br/>
 
@@ -231,7 +229,7 @@ src/main/resources/
 - **배운 점** — 평균을 구할 때 **무엇으로 가중하는가**가 곧 그 숫자의 의미.
   공식을 코드로 옮기기 전에 "이 평균이 답해야 할 질문"을 먼저 정의해야 함
 
-> 📄 [`HoldingCalculator.weightedFx()`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java#L219-L236) · [`ProfitLossCalculator`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/portfolio/service/ProfitLossCalculator.java#L54-L108) — 분리 공식
+> 📄 [`HoldingCalculator.weightedFx()`](src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java#L219-L236) · [`ProfitLossCalculator`](src/main/java/com/example/mijang/portfolio/service/ProfitLossCalculator.java#L54-L108) — 분리 공식
 
 <br/>
 
@@ -254,7 +252,7 @@ src/main/resources/
 - **배운 점** — **원장은 사실의 기록, 보유 현황은 해석의 결과.** 사실을 고치는 대신 해석 단계에서 환산하면
   "언제 무엇을 기록했는가"가 영원히 남음
 
-> 📄 [`HoldingCalculator.adjustForSplits()`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java#L116-L155) · [`StockSplitAdjustTest`](https://github.com/jeonggul/mijang/blob/develop/src/test/java/com/example/mijang/portfolio/StockSplitAdjustTest.java)
+> 📄 [`HoldingCalculator.adjustForSplits()`](src/main/java/com/example/mijang/portfolio/service/HoldingCalculator.java#L116-L155) · [`StockSplitAdjustTest`](src/test/java/com/example/mijang/portfolio/StockSplitAdjustTest.java)
 
 <br/>
 
@@ -268,7 +266,7 @@ src/main/resources/
 - **결과** — 동시 접속자 수와 무관하게 벤더 연결은 1개, 구독은 최대 30종목으로 고정
 - **배운 점** — 외부 자원의 한도는 **한 곳에서만** 지켜져야 함. 판단이 흩어지면 한 곳만 고쳐지는 날이 옴
 
-> 📄 [`SubscriptionPoolManager`](https://github.com/jeonggul/mijang/blob/develop/src/main/java/com/example/mijang/market/pool/SubscriptionPoolManager.java)
+> 📄 [`SubscriptionPoolManager`](src/main/java/com/example/mijang/market/pool/SubscriptionPoolManager.java)
 
 <br/>
 

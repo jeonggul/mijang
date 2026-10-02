@@ -1,0 +1,68 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko" data-theme="dark" data-theme-lock>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 기록하는 투자</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="landing">
+
+<div class="hero-band">
+<section class="hero">
+  <div class="card hero-copy">
+    <h1>기록하는 투자</h1>
+    <p class="lead">미국 주식을 살 때 남긴 이유와 목표가를 시세 옆에 같이 둡니다.
+수익은 주가와 환율로 나눠서 보여주기 때문에, 종목을 고른 판단이 맞았는지 환율이 도운 것인지 구분됩니다.</p>
+    <div class="cta">
+      <a class="btn btn-primary" th:href="@{/login}">로그인</a>
+      <a class="btn" th:href="@{/search}">종목 먼저 둘러보기</a>
+    </div>
+    <p class="fine">가입 없이도 종목 검색과 시세 조회는 가능합니다</p>
+  </div>
+
+  <div class="card chart-box">
+    <!-- 상승 추세 캔들 데모. 값은 장식이며 실데이터가 아니다. -->
+    <svg viewBox="0 0 516 320" width="100%" height="320" role="img" aria-label="상승 추세 주가 차트">
+      <g stroke="var(--line)" stroke-width="1">
+        <line x1="0" y1="0"   x2="516" y2="0"/>
+        <line x1="0" y1="80"  x2="516" y2="80"/>
+        <line x1="0" y1="160" x2="516" y2="160"/>
+        <line x1="0" y1="240" x2="516" y2="240"/>
+        <line x1="0" y1="320" x2="516" y2="320"/>
+      </g>
+      <g id="demo-candles"></g>
+    </svg>
+  </div>
+</section>
+</div>
+
+<div class="features">
+  <article>
+    <h2>시세와 환율</h2>
+    <div>
+      <p>보유 종목과 관심 종목의 가격을 원화로 환산해 같이 보여줍니다. 달러 가격과 그날의 환율이 같은 줄에 놓입니다.</p>
+    </div>
+  </article>
+  <article>
+    <h2>수익률 리포트</h2>
+    <div>
+      <p>일별 자산 스냅샷을 쌓아 기간 수익률을 냅니다.</p>
+      <ul><li>기간별 수익률</li><li>자산 변화</li><li>주가·환율 기여도</li></ul>
+    </div>
+  </article>
+  <article>
+    <h2>기록과 회고</h2>
+    <div>
+      <p>매수 이유와 목표가, 그때의 판단을 함께 남깁니다. 몇 달 뒤 결과가 나왔을 때 당시 기록과 나란히 놓고 볼 수 있습니다.</p>
+    </div>
+  </article>
+</div>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+</body>
+</html>

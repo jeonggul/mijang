@@ -1,0 +1,93 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 글쓰기</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<!-- 글쓰기에는 사이드바가 없다. 다른 게시판으로 옮겨 가는 자리가 아니라
+     지금 쓰는 글에만 집중하는 화면이다 -->
+<div class="page" style="max-width:760px">
+
+  <div class="page-head">
+    <div>
+      <h1 th:if="${symbol} == null">글쓰기</h1>
+      <h1 th:if="${symbol} != null" th:text="${symbol} + ' 게시판에 글쓰기'">AAPL 게시판에 글쓰기</h1>
+    </div>
+  </div>
+
+  <form class="card card-pad" id="write-form">
+    <h2 class="form-sec">내용</h2>
+
+    <!-- 게시판 선택은 일반 커뮤니티에만 있다. 종목별은 경로가 이미 게시판을 정했다 -->
+    <div class="field" style="margin-bottom:14px" th:if="${symbol} == null">
+      <label for="board">게시판</label>
+      <select id="board">
+        <option value="FREE" selected>자유</option>
+        <option value="QNA">질문</option>
+      </select>
+    </div>
+
+    <div class="field" style="margin-bottom:14px">
+      <label for="ttl">제목</label>
+      <input id="ttl" type="text" maxlength="150" data-count="ttl-count" required>
+      <p class="hint"><span class="count num" id="ttl-count">0 / 150</span></p>
+    </div>
+
+    <div class="field" style="margin-bottom:14px">
+      <label for="bd">본문</label>
+      <textarea id="bd" rows="9" maxlength="2000" data-count="bd-count" required></textarea>
+      <p class="hint"><span class="count num" id="bd-count">0 / 2,000</span></p>
+    </div>
+
+    <!-- 매매 붙이기도 종목별에만 있다. 자유 · 질문 글에는 종목이 없어서
+         어느 종목의 매매인지 읽는 사람이 알 수 없다 -->
+    <th:block th:if="${symbol} != null">
+      <div class="field" style="margin-bottom:14px">
+        <label for="trade">매매 붙이기</label>
+        <select id="trade">
+          <option value="">붙이지 않음</option>
+        </select>
+        <p class="hint" th:text="'이 게시판 종목(' + ${symbol} + ')의 내 매매만 고를 수 있습니다'">
+          이 게시판 종목의 내 매매만 고를 수 있습니다</p>
+        <p class="note" id="trade-empty" hidden>이 종목의 매매 기록이 아직 없습니다</p>
+      </div>
+
+      <div id="trade-preview" style="margin-bottom:14px" hidden></div>
+
+      <div class="setting-row" style="padding-left:0;padding-right:0">
+        <span class="txt"><b>주주 배지 표시</b>
+          <small>보유 중이면 글에 "주주" 배지가 붙습니다. 수량은 보이지 않습니다</small></span>
+        <span class="val"><label class="switch"><input id="badge" type="checkbox" checked><span></span></label></span>
+      </div>
+
+      <!-- .info 는 flex 라 자식이 나란히 선다. 두 줄로 보이려면 한 덩이로 감싸야 한다 -->
+      <p class="info info-accent"><span>작성 시점 주가가 함께 저장됩니다<br>
+        <span class="note">등록 후 수정되지 않습니다. 나중에 이 글이 얼마나 맞았는지 대조할 수 있습니다</span></span></p>
+    </th:block>
+
+    <div class="modal-actions" style="margin:0">
+      <a class="btn" th:href="${symbol} != null ? @{/community/{s}(s=${symbol})} : @{/community}">취소</a>
+      <button class="btn btn-primary" type="submit">등록</button>
+    </div>
+  </form>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:inline="javascript">
+  window.MIJANG_BOARD = { board: /*[[${board}]]*/ 'FREE', symbol: /*[[${symbol}]]*/ null };
+</script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/community.js}" defer></script>
+</body>
+</html>

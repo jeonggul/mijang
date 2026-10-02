@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  CommentMapper.xml — 댓글 SQL
+
+  이 파일이 하는 일
+    한 글의 댓글을 원댓글 → 그 대댓글 순으로 꺼낸다.
+    COALESCE(parent_id, id) 로 묶으면 원댓글과 그 답글이 같은 값을 가지므로
+    한 번 정렬로 무리가 지어진다. 애플리케이션에서 다시 묶을 필요가 없다.
+
+  개발명세서(MVC): "CommentMapper XML id 일치"
+-->
+<mapper namespace="com.example.mijang.community.mapper.CommentMapper">
+
+    <insert id="insert">
+        INSERT INTO comments (post_id, user_id, parent_id, content)
+        VALUES (#{postId}, #{userId}, #{parentId}, #{content})
+    </insert>
+
+    <select id="findLastInsertedId" resultType="java.lang.Long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+    <!-- 탈퇴한 작성자는 이름을 가린다(4.12). PostMapper 와 같은 규칙 -->
+    <sql id="authorName">
+        CASE WHEN u.status = 'WITHDRAWN' THEN '탈퇴한 사용자' ELSE u.nickname END
+    </sql>
+
+    <!-- record 는 선언 순서로 매핑된다. CommentResponse 순서와 같아야 한다 -->
+    <select id="findByPost" resultType="com.example.mijang.community.dto.CommentResponse">
+        SELECT c.id, c.parent_id, <include refid="authorName"/> AS nickname, c.content, c.created_at
+          FROM comments c
+          JOIN users u ON u.id = c.user_id
+         WHERE c.post_id = #{postId}
+           AND c.status  = 'PUBLISHED'
+         ORDER BY COALESCE(c.parent_id, c.id), c.id
+    </select>
+
+    <!--
+      내가 쓴 댓글. 마이페이지가 쓴다.
+
+      글 제목을 함께 가져온다 — 어느 글에 단 댓글인지 모르면 목록이 쓸모없다.
+      글이 지워졌으면 LEFT JOIN 이라 제목이 NULL 로 나가고 화면이 그렇게 밝힌다.
+      숨김·삭제된 내 댓글도 함께 돌려준다. 남에게 안 보여도 내가 왜 사라졌는지는 알아야 한다.
+    -->
+    <select id="findByUser" resultType="com.example.mijang.community.dto.MyCommentResponse">
+        SELECT c.id, c.post_id, p.title, c.content, c.created_at, c.status
+          FROM comments c
+          LEFT JOIN posts p ON p.id = c.post_id
+         WHERE c.user_id = #{userId}
+         ORDER BY c.created_at DESC, c.id DESC
+         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM comments WHERE user_id = #{userId}
+    </select>
+
+    <!-- parent_id IS NULL 조건이 깊이를 1단계로 묶는다. 대댓글은 여기서 걸러져
+         null 이 나가고, 서비스가 그걸 거절로 읽는다 -->
+    <select id="findRepliableParentPostId" resultType="java.lang.Long">
+        SELECT post_id
+          FROM comments
+         WHERE id        = #{commentId}
+           AND parent_id IS NULL
+           AND status    = 'PUBLISHED'
+    </select>
+
+
+</mapper>

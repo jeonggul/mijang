@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  MarketDayMapper.xml — 거래일 달력 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    조회 컬럼 순서가 MarketDay record 의 선언 순서와 같아야 한다 —
+    이름이 아니라 자리로 매핑되므로 하나만 어긋나도 값이 뒤바뀐다.
+-->
+<mapper namespace="com.example.mijang.market.mapper.MarketDayMapper">
+
+    <sql id="cols">
+        trade_date, open_time, close_time, session_open, session_close
+    </sql>
+
+    <select id="findByDate" resultType="com.example.mijang.market.domain.MarketDay">
+        SELECT <include refid="cols"/> FROM market_days WHERE trade_date = #{tradeDate}
+    </select>
+
+    <!-- 휴장일·주말에 "마지막으로 열렸던 날" 을 찾는다 -->
+    <select id="findLatestOnOrBefore" resultType="com.example.mijang.market.domain.MarketDay">
+        SELECT <include refid="cols"/>
+          FROM market_days
+         WHERE trade_date &lt;= #{tradeDate}
+         ORDER BY trade_date DESC
+         LIMIT 1
+    </select>
+
+    <!-- 그날은 빼고 그 앞. 전일 종가의 날짜다 -->
+    <select id="findPreviousBefore" resultType="com.example.mijang.market.domain.MarketDay">
+        SELECT <include refid="cols"/>
+          FROM market_days
+         WHERE trade_date &lt; #{tradeDate}
+         ORDER BY trade_date DESC
+         LIMIT 1
+    </select>
+
+    <select id="findByRange" resultType="com.example.mijang.market.domain.MarketDay">
+        SELECT <include refid="cols"/>
+          FROM market_days
+         WHERE trade_date BETWEEN #{from} AND #{to}
+         ORDER BY trade_date
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO market_days
+            (trade_date, open_time, close_time, session_open, session_close, synced_at)
+        VALUES
+            (#{tradeDate}, #{openTime}, #{closeTime}, #{sessionOpen}, #{sessionClose}, CURRENT_TIMESTAMP(3))
+        ON DUPLICATE KEY UPDATE
+            open_time     = VALUES(open_time),
+            close_time    = VALUES(close_time),
+            session_open  = VALUES(session_open),
+            session_close = VALUES(session_close),
+            synced_at     = CURRENT_TIMESTAMP(3)
+    </insert>
+
+    <select id="count" resultType="_int">SELECT COUNT(*) FROM market_days</select>
+
+    <select id="findMaxDate" resultType="java.time.LocalDate">
+        SELECT MAX(trade_date) FROM market_days
+    </select>
+
+</mapper>

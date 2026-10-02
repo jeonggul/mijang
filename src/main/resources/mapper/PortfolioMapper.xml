@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  PortfolioMapper.xml — 포트폴리오 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+-->
+<mapper namespace="com.example.mijang.portfolio.mapper.PortfolioMapper">
+
+    <select id="findDefaultId" parameterType="long" resultType="java.lang.Long">
+        SELECT id FROM portfolios
+         WHERE user_id = #{userId} AND is_default = 1 AND deleted_at IS NULL
+         LIMIT 1
+    </select>
+
+    <insert id="insertDefault">
+        INSERT INTO portfolios (user_id, name, is_default, sort_order)
+        VALUES (#{userId}, '기본 포트폴리오', 1, 0)
+    </insert>
+
+    <select id="findLastInsertedId" resultType="java.lang.Long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+</mapper>

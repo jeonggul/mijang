@@ -1,0 +1,177 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 가입 마무리</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="auth">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>MIJANG</small></p>
+
+      <!-- 왜 한 단계가 더 있는지 먼저 말한다. 이유를 모르면 "가입이 왜 안 끝나지" 가 된다 -->
+      <p class="note" style="line-height:1.7;margin-bottom:16px">
+        <b id="ss-provider">소셜</b> 계정으로 가입합니다.<br>
+        비밀번호를 함께 만들어 두면 나중에 소셜 연동을 해제해도 계정을 계속 쓸 수 있습니다.
+      </p>
+
+      <form id="ss-form">
+        <div class="field">
+          <label for="ss-email">이메일</label>
+          <input id="ss-email" type="email" autocomplete="email" readonly>
+          <p class="note">소셜 계정에서 가져온 주소입니다. 변경할 수 없습니다.</p>
+        </div>
+
+        <div class="field">
+          <label for="ss-nick">닉네임</label>
+          <div class="with-btn">
+            <input id="ss-nick" type="text" maxlength="10" placeholder="한글·영문·숫자 2~10자">
+            <button class="btn btn-sm" type="button" id="ss-nick-check">중복 확인</button>
+          </div>
+          <p class="msg" id="ss-nick-msg" hidden></p>
+        </div>
+
+        <div class="field">
+          <label for="ss-pw">비밀번호</label>
+          <input id="ss-pw" type="password" autocomplete="new-password" maxlength="16"
+                 placeholder="영문과 숫자를 모두 포함해 8~16자">
+        </div>
+
+        <div class="field">
+          <label for="ss-pw2">비밀번호 확인</label>
+          <input id="ss-pw2" type="password" autocomplete="new-password" maxlength="16"
+                 placeholder="비밀번호 확인">
+        </div>
+
+        <label class="check">
+          <input id="ss-terms" type="checkbox">
+          <span><a th:href="@{/terms}" target="_blank" rel="noopener">이용약관</a> 및
+            <a th:href="@{/privacy}" target="_blank" rel="noopener">개인정보 처리방침</a>에 동의합니다</span>
+        </label>
+        <label class="check">
+          <input id="ss-advice" type="checkbox">
+          <span>미장은 투자 자문을 제공하지 않음을 확인했습니다</span>
+        </label>
+
+        <p class="msg err" id="ss-msg" hidden></p>
+        <button class="btn btn-primary btn-block" type="submit" id="ss-submit" disabled>
+          가입하고 시작하기
+        </button>
+      </form>
+    </div>
+    <p class="auth-note">
+      가입을 마치면 소셜 로그인과 비밀번호 두 가지로 모두 들어올 수 있습니다.
+    </p>
+  </div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 소셜 첫 가입 (AUTH-07)
+   이메일과 제공자 신원은 세션에 있다. 여기서는 닉네임과 비밀번호만 보낸다 —
+   본문으로 이메일을 받으면 아무 주소로나 계정을 만들 수 있다. */
+(function () {
+  var email = document.getElementById("ss-email");
+  var nick = document.getElementById("ss-nick");
+  var nickMsg = document.getElementById("ss-nick-msg");
+  var pw = document.getElementById("ss-pw");
+  var pw2 = document.getElementById("ss-pw2");
+  var terms = document.getElementById("ss-terms");
+  var advice = document.getElementById("ss-advice");
+  var submit = document.getElementById("ss-submit");
+  var msg = document.getElementById("ss-msg");
+  var providerLabel = document.getElementById("ss-provider");
+
+  /* 중복 확인을 통과한 닉네임. 값을 고치면 지워진다 —
+     확인한 뒤 다른 값으로 바꿔 제출하는 것을 막는다 */
+  var checkedNickname = null;
+
+  var PROVIDER_NAMES = { GOOGLE: "구글", KAKAO: "카카오" };
+
+  function show(el, text, ok) {
+    el.textContent = text;
+    el.className = "msg " + (ok ? "ok" : "err");
+    el.hidden = false;
+  }
+
+  function valid() {
+    return checkedNickname === nick.value.trim()
+        && /^(?=.*[A-Za-z])(?=.*[0-9])[!-~]{8,16}$/.test(pw.value)
+        && pw.value === pw2.value
+        && terms.checked && advice.checked;
+  }
+  function refresh() { submit.disabled = !valid(); }
+
+  /* 보류된 신원을 받아 화면을 채운다. 없으면 세션이 끊긴 것이다 */
+  fetch("/api/auth/social/pending")
+    .then(function (res) {
+      if (!res.ok) { location.href = "/login?social=AUTH_REQUIRED"; return null; }
+      return res.json();
+    })
+    .then(function (body) {
+      if (!body || !body.success) return;
+      email.value = body.data.email;
+      nick.value = body.data.nickname || "";
+      providerLabel.textContent = PROVIDER_NAMES[body.data.provider] || "소셜";
+      refresh();
+    });
+
+  document.getElementById("ss-nick-check").addEventListener("click", function () {
+    var value = nick.value.trim();
+    if (!value) { show(nickMsg, "닉네임을 입력해주세요", false); return; }
+    fetch("/api/auth/check-nickname?nickname=" + encodeURIComponent(value))
+      .then(function (res) { return res.json(); })
+      .then(function (body) {
+        if (!body || !body.success) { show(nickMsg, "확인에 실패했습니다", false); return; }
+        if (body.data.available) { checkedNickname = value; }
+        show(nickMsg, body.data.message, body.data.available);
+        refresh();
+      });
+  });
+
+  nick.addEventListener("input", function () {
+    checkedNickname = null;
+    nickMsg.hidden = true;
+    refresh();
+  });
+  [pw, pw2, terms, advice].forEach(function (el) {
+    el.addEventListener("input", refresh);
+    el.addEventListener("change", refresh);
+  });
+
+  document.getElementById("ss-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!valid()) return;
+    submit.disabled = true;
+    msg.hidden = true;
+    fetch("/api/auth/social/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: nick.value.trim(), password: pw.value })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (body) {
+        if (body && body.success) { location.href = "/dashboard"; return; }
+        /* 오류 문구는 body.error.message 에 있다. ApiResponse 는 (success·data·error)
+           세 필드뿐이고 최상위 message 는 없다 — signup.html:229 와 같은 방식 */
+        show(msg, body && body.error ? body.error.message : "가입에 실패했습니다", false);
+        submit.disabled = false;
+      })
+      .catch(function () {
+        show(msg, "일시적인 오류가 발생했습니다", false);
+        submit.disabled = false;
+      });
+  });
+})();
+</script>
+</body>
+</html>

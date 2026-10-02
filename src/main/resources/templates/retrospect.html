@@ -1,0 +1,28 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 투자 회고</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}"><link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+<div class="layout no-panel">
+  <aside class="card sidebar">
+    <h2 class="card-head">회고 대상</h2>
+    <ul class="holdings-nav" id="retro-nav"><li class="sub">불러오는 중입니다</li></ul>
+    <a class="btn-record" th:href="@{/record-new}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>매매 기록 추가</a>
+  </aside>
+  <main>
+    <div class="page-head"><div><h1>투자 회고</h1></div><span class="grow"></span><div class="pills" data-toggle-group data-retro-sort><button type="button" data-value="SYM" aria-pressed="true">종목별</button><button type="button" data-value="TIME" aria-pressed="false">시간순</button></div></div>
+    <div class="stack-v" id="retro-list"><section class="card sub" style="padding:28px;text-align:center">거래 기록을 불러오는 중입니다</section></div>
+  </main>
+</div>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/retrospect.js}" defer></script>
+</body>
+</html>

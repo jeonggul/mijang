@@ -1,0 +1,107 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 게시글</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="layout no-panel">
+
+  <aside class="card sidebar">
+    <a class="btn-record" id="write-link" th:href="@{/community-write}">글쓰기</a>
+
+    <p class="nav-label">게시판</p>
+    <ul class="holdings-nav">
+      <li><a th:href="@{/community}"><span class="tk">자유</span></a></li>
+      <li><a th:href="@{/community(board='qna')}"><span class="tk">질문</span></a></li>
+    </ul>
+
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <div><h1 id="board-name">게시판</h1></div>
+      <span class="grow"></span>
+      <a class="btn btn-sm" id="board-link" th:href="@{/community}">목록으로</a>
+    </div>
+
+    <article class="card card-pad" style="margin-bottom:14px">
+      <!-- 내려간 글을 쓴 사람이 열었을 때만 뜬다. 문구는 community.js 가 상태에 맞춰 넣는다 -->
+      <p class="info info-warn" id="post-status" style="margin:0 0 12px" hidden></p>
+      <h2 id="post-title" style="margin:0 0 10px;font-size:var(--fs-section)">—</h2>
+      <p class="meta post-meta" id="post-meta"></p>
+
+      <!-- 글에 붙은 매매 카드가 들어오는 자리 -->
+      <div id="post-trade"></div>
+
+      <p class="post-body" id="post-body"></p>
+
+      <div class="post-actions">
+        <button class="btn btn-sm" type="button" id="like-btn" aria-pressed="false">좋아요</button>
+        <button class="btn btn-sm" type="button" id="scrap-btn" aria-pressed="false">스크랩</button>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn btn-sm" type="button" id="edit-btn" hidden>수정</button>
+        <button class="btn btn-sm" type="button" id="delete-btn" hidden>삭제</button>
+        <button class="btn btn-sm" type="button" data-open="report-modal">신고</button>
+      </div>
+    </article>
+
+    <section class="card">
+      <h2 class="card-head">댓글 <span class="sub num" id="comment-count">0개</span></h2>
+
+      <div class="card-pad" style="padding-top:0">
+        <div class="field">
+          <label for="cmt" class="sr-only">댓글</label>
+          <textarea id="cmt" rows="3" placeholder="댓글을 남겨보세요"></textarea>
+        </div>
+        <div class="modal-actions" style="margin-top:10px">
+          <button class="btn btn-primary btn-sm" type="button" id="comment-submit">댓글 등록</button>
+        </div>
+      </div>
+
+      <ul class="comment-list" id="comment-list"></ul>
+    </section>
+
+    <p class="note" style="margin-top:14px" id="price-note" hidden>
+      작성 시점 주가는 등록 시 저장되며 수정되지 않습니다</p>
+  </main>
+</div>
+
+<div class="overlay" id="report-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rp-t">
+    <h2 id="rp-t">이 게시글을 신고할까요?</h2>
+    <p>신고 내용은 관리자만 확인합니다.</p>
+    <fieldset class="reason-set">
+      <legend>신고 사유</legend>
+      <label><input type="radio" name="reason" value="SPAM" checked>스팸 · 홍보</label>
+      <label><input type="radio" name="reason" value="ABUSE">욕설 · 비방</label>
+      <label><input type="radio" name="reason" value="MISINFO">허위 정보</label>
+      <label><input type="radio" name="reason" value="ETC">기타</label>
+    </fieldset>
+    <p class="note">같은 게시글을 중복 신고할 수 없습니다.</p>
+    <p class="msg err" id="report-msg" hidden></p>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-danger" type="button" id="report-submit">신고</button>
+    </div>
+  </div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:inline="javascript">
+  window.MIJANG_POST_ID = /*[[${postId}]]*/ 0;
+</script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/community.js}" defer></script>
+</body>
+</html>

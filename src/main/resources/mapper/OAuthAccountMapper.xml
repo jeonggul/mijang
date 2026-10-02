@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mijang.user.mapper.OAuthAccountMapper">
+
+    <!-- 탈퇴한 계정은 잇지 않는다. 그 계정으로 다시 들어오는 길이 되면 안 된다 -->
+    <select id="findUserId" resultType="java.lang.Long">
+        SELECT o.user_id
+          FROM oauth_accounts o
+          JOIN users u ON u.id = o.user_id
+         WHERE o.provider          = #{provider}
+           AND o.provider_user_id  = #{providerUserId}
+           AND u.status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <select id="existsByUserAndProvider" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM oauth_accounts
+             WHERE user_id = #{userId} AND provider = #{provider}
+        )
+    </select>
+
+    <!-- 대상이 ACTIVE 일 때만 넣는다(4.13 #4). 다만 REPEATABLE READ 아래 SELECT 는 트랜잭션의
+         읽기 스냅샷을 보므로, 이 문장 하나만으로는 동시 탈퇴에 대한 원자성을 보장하지 못한다
+         (TOCTOU 는 여전히 열려 있다) — 진짜 경합 차단은 SocialLoginService.link 의
+         lockUserStatusForUpdate(FOR UPDATE) 가 한다. 여기는 그 잠금이 이미 막은 경우를
+         한 번 더 거르는 방어적 여분이자, 나중에 잠금 없이 이 메서드를 직접 부르는
+         실수를 대비한 마지막 방어선이다 -->
+    <insert id="insert">
+        INSERT INTO oauth_accounts (user_id, provider, provider_user_id)
+        SELECT #{userId}, #{provider}, #{providerUserId}
+          FROM users
+         WHERE id = #{userId}
+           AND status = 'ACTIVE'
+    </insert>
+
+    <!-- 붙인 순서대로 보여 준다. 설정 화면이 다시 정렬하지 않아도 되게 -->
+    <select id="findByUser"
+            resultType="com.example.mijang.user.dto.SocialAccountResponse">
+        SELECT provider, created_at AS linkedAt
+          FROM oauth_accounts
+         WHERE user_id = #{userId}
+         ORDER BY created_at
+    </select>
+
+    <!-- user_id 를 반드시 함께 건다. provider 만으로 지우면 남의 연동이 사라진다 -->
+    <delete id="deleteByUserAndProvider">
+        DELETE FROM oauth_accounts
+         WHERE user_id  = #{userId}
+           AND provider = #{provider}
+    </delete>
+
+    <delete id="deleteByUser">
+        DELETE FROM oauth_accounts WHERE user_id = #{userId}
+    </delete>
+</mapper>

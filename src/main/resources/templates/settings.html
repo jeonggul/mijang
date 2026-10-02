@@ -1,0 +1,134 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 설정</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page">
+  <div class="settings">
+    <nav aria-label="설정 메뉴">
+      <ul class="settings-nav" role="tablist" aria-orientation="vertical">
+        <li><button role="tab" id="n-account" aria-controls="s-account" aria-selected="true">계정</button></li>
+        <li><button role="tab" id="n-notify" aria-controls="s-notify" aria-selected="false">알림</button></li>
+        <li><button role="tab" id="n-display" aria-controls="s-display" aria-selected="false">표시</button></li>
+        <li><button role="tab" id="n-notice" aria-controls="s-notice" aria-selected="false">공지사항</button></li>
+        <li><button role="tab" id="n-faq" aria-controls="s-faq" aria-selected="false">FAQ</button></li>
+      </ul>
+    </nav>
+
+    <div class="stack-v">
+      <section role="tabpanel" id="s-account" aria-labelledby="n-account">
+        <div class="page-head"><div><h1>설정</h1></div></div>
+        <section class="card"><h2 class="card-head">계정</h2>
+          <div class="setting-row"><span class="txt"><b>이메일</b><small id="setting-email">—</small></span></div>
+          <div class="setting-row">
+            <span class="txt"><b>비밀번호</b><small id="password-changed-at">—</small></span>
+            <span class="val"><button class="btn btn-sm" type="button" data-open="pw-modal">변경</button></span>
+          </div>
+          <!-- 연동한 것이 없으면 이 자리는 비어 있다. 빈 상태 문구를 두지 않는 이유 —
+               연동은 선택이라 없는 것이 정상이고, "없습니다" 는 결핍처럼 읽힌다 -->
+          <div id="social-rows"></div>
+        </section>
+        <section class="card"><h2 class="card-head">계정 정리</h2>
+          <div class="setting-row">
+            <span class="txt"><b>로그아웃</b></span>
+            <span class="val"><button class="btn btn-sm" type="button" data-logout>로그아웃</button></span>
+          </div>
+          <div class="setting-row">
+            <span class="txt"><b>회원 탈퇴</b></span>
+            <span class="val"><button class="btn btn-sm btn-danger" type="button" data-open="quit-modal">탈퇴</button></span>
+          </div>
+        </section>
+      </section>
+
+      <section role="tabpanel" id="s-notify" aria-labelledby="n-notify" hidden>
+        <div class="page-head"><div><h1>알림</h1></div></div>
+        <section class="card"><h2 class="card-head">가격 알림</h2>
+          <div class="setting-row"><span class="txt"><b>목표가 도달</b></span><span class="val"><label class="switch"><input id="noti-target" type="checkbox"><span></span></label></span></div>
+          <div class="setting-row"><span class="txt"><b>급등락</b></span><span class="val"><label class="switch"><input id="noti-volatility" type="checkbox"><span></span></label></span></div>
+          <div class="setting-row">
+            <span class="txt"><b>등락 기준</b></span>
+            <span class="val"><div class="pills" data-noti-threshold><button type="button" data-value="0.03">3%</button><button type="button" data-value="0.05">5%</button><button type="button" data-value="0.10">10%</button></div></span>
+          </div>
+        </section>
+        <section class="card"><h2 class="card-head">정보 알림</h2>
+          <div class="setting-row"><span class="txt"><b>배당</b></span><span class="val"><label class="switch"><input id="noti-dividend" type="checkbox"><span></span></label></span></div>
+          <div class="setting-row"><span class="txt"><b>뉴스·공시</b></span><span class="val"><label class="switch"><input id="noti-news" type="checkbox"><span></span></label></span></div>
+        </section>
+        <p class="msg" id="noti-save-state" hidden></p>
+      </section>
+
+      <section role="tabpanel" id="s-display" aria-labelledby="n-display" hidden>
+        <div class="page-head"><div><h1>표시</h1></div></div>
+        <section class="card"><h2 class="card-head">통화</h2>
+          <div class="setting-row"><span class="txt"><b>기본 통화</b></span><span class="val"><div class="pills" data-toggle-group data-base-currency><button type="button" data-value="KRW">원화</button><button type="button" data-value="USD">달러</button></div></span></div>
+        </section>
+        <section class="card"><h2 class="card-head">테마</h2>
+          <div class="setting-row"><span class="txt"><b>화면 테마</b></span><span class="val"><div class="pills" data-toggle-group data-theme-pref><button type="button" data-value="SYSTEM">시스템</button><button type="button" data-value="LIGHT">라이트</button><button type="button" data-value="DARK">다크</button></div></span></div>
+        </section>
+      </section>
+
+      <section role="tabpanel" id="s-notice" aria-labelledby="n-notice" hidden>
+        <div class="page-head"><div><h1>공지사항</h1></div></div>
+        <section class="card"><h2 class="card-head">공지 <span class="sub num" id="notice-count">—</span></h2><ul class="list" id="notice-list"><li class="sub" style="padding:22px;text-align:center">불러오는 중입니다</li></ul></section>
+      </section>
+
+      <section role="tabpanel" id="s-faq" aria-labelledby="n-faq" hidden>
+        <div class="page-head"><div><h1>자주 묻는 질문</h1></div></div>
+        <section class="card"><h2 class="card-head">FAQ <span class="sub num" id="faq-count">—</span></h2><ul class="list faq" id="faq-list"><li class="sub" style="padding:22px;text-align:center">불러오는 중입니다</li></ul></section>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="pw-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pm-t">
+    <h2 id="pm-t">비밀번호 변경</h2>
+    <div class="field"><label for="pm-cur">현재 비밀번호</label><input id="pm-cur" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="pm-new">새 비밀번호</label><input id="pm-new" type="password" autocomplete="new-password" placeholder="영문과 숫자를 포함해 8~16자">
+      <p class="hint">닉네임이나 이메일 아이디가 들어간 비밀번호는 사용할 수 없습니다</p></div>
+    <div class="field"><label for="pm-new2">새 비밀번호 확인</label><input id="pm-new2" type="password" autocomplete="new-password"></div>
+    <p class="msg" id="pm-msg" hidden></p>
+    <div class="modal-actions"><button class="btn" type="button" data-close>취소</button><button class="btn btn-primary" type="button" id="pm-submit">변경</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="quit-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="qm-t">
+    <h2 id="qm-t">정말 탈퇴하시겠어요?</h2>
+    <div class="field"><label for="qm-confirm">확인을 위해 '탈퇴'를 입력해주세요</label><input id="qm-confirm" type="text" autocomplete="off"></div>
+    <div class="field"><label for="qm-pw">비밀번호</label><input id="qm-pw" type="password" autocomplete="current-password"></div>
+    <p class="msg err" id="qm-msg" hidden></p>
+    <div class="modal-actions"><button class="btn" type="button" data-close>취소</button><button class="btn btn-danger" type="button" id="qm-submit">탈퇴</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="unlink-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="um-t">
+    <h3 id="um-t">연동 해제</h3>
+    <p class="note" id="um-desc" style="line-height:1.7">
+      계정 연결을 끊습니다.
+    </p>
+    <p class="msg err" id="um-msg" hidden></p>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>취소</button>
+      <button class="btn btn-danger" type="button" id="um-submit">해제</button>
+    </div>
+  </div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/settings.js}" defer></script>
+</body>
+</html>

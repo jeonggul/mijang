@@ -1,0 +1,72 @@
+name: PR 본문 채우기
+
+# 커밋이 여러 개일 때만 일한다.
+#
+# 커밋이 하나면 깃허브가 알아서 제목·본문을 커밋에서 가져온다 — PR 템플릿을 두지 않는
+# 이유가 그것이다. 템플릿이 있으면 그 자동 채움이 꺼진다.
+# 여럿이면 깃허브가 브랜치 이름을 제목으로 쓰고 본문을 비워 두므로, 그때만 채운다.
+#
+# 소제목은 붙이지 않는다. 제목은 커밋 제목, 본문은 커밋 본문 그대로다.
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  fill:
+    # 포크에서 올라온 PR 은 토큰이 읽기 전용이라 본문을 쓸 수 없다.
+    # 시도했다가 실패로 빨갛게 뜨느니 아예 건너뛴다.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            // 사람이 이미 뭔가 적었으면 건드리지 않는다.
+            // 커밋이 하나여서 깃허브가 채워 둔 경우도 여기 걸린다.
+            if ((pr.body || '').trim() !== '') {
+              core.info('본문이 이미 있어 건너뛴다.');
+              return;
+            }
+
+            const all = await github.paginate(
+              github.rest.pulls.listCommits,
+              { ...context.repo, pull_number: pr.number, per_page: 100 }
+            );
+
+            // 머지 커밋은 이 브랜치가 한 일이 아니라 합친 기록이라 뺀다.
+            const commits = all.filter(c => (c.parents || []).length <= 1);
+            if (commits.length === 0) {
+              core.info('채울 커밋이 없어 건너뛴다.');
+              return;
+            }
+
+            const parts = commits.map(c => {
+              const [subject, ...rest] = c.commit.message.split('\n');
+              return { subject: subject.trim(), body: rest.join('\n').trim() };
+            });
+
+            if (parts.length === 1) {
+              // 깃허브가 놓친 경우를 위한 대비. 제목도 커밋 제목으로 맞춘다.
+              await github.rest.pulls.update({
+                ...context.repo,
+                pull_number: pr.number,
+                title: parts[0].subject,
+                body: parts[0].body
+              });
+              core.info('커밋 하나로 제목·본문을 채웠다.');
+              return;
+            }
+
+            // 여럿이면 본문을 다 이으면 길어진다. 제목만 한 줄씩 나열한다.
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number: pr.number,
+              body: parts.map(p => `- ${p.subject}`).join('\n')
+            });
+            core.info(`커밋 ${commits.length}개의 제목을 나열했다.`);

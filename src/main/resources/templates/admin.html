@@ -1,0 +1,769 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 관리자</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- 관리자 화면에는 서비스 헤더도 다크모드 전환도 없다. -->
+<div class="admin-layout">
+  <nav class="admin-nav" aria-label="관리자 메뉴">
+    <p class="logo"><img class="logo-mark" th:src="@{/img/logo.png}" alt=""><small>ADMIN</small></p>
+    <p class="nav-label">운영 메뉴</p>
+    <ul class="settings-nav" role="tablist" aria-orientation="vertical">
+      <li><button role="tab" id="m-dash" aria-controls="a-dash" aria-selected="true">운영 현황</button></li>
+      <li><button role="tab" id="m-stocks" aria-controls="a-stocks" aria-selected="false">종목 마스터</button></li>
+      <li><button role="tab" id="m-sync" aria-controls="a-sync" aria-selected="false">배치 상태</button></li>
+      <li><button role="tab" id="m-users" aria-controls="a-users" aria-selected="false">사용자</button></li>
+      <li><button role="tab" id="m-posts" aria-controls="a-posts" aria-selected="false">게시글</button></li>
+      <li><button role="tab" id="m-comments" aria-controls="a-comments" aria-selected="false">댓글</button></li>
+      <li><button role="tab" id="m-report" aria-controls="a-report" aria-selected="false">신고</button></li>
+      <li><button role="tab" id="m-notice" aria-controls="a-notice" aria-selected="false">공지사항</button></li>
+      <li><button role="tab" id="m-notice-new" aria-controls="a-notice-new" aria-selected="false">공지 등록</button></li>
+      <li><button role="tab" id="m-logs" aria-controls="a-logs" aria-selected="false">운영 로그</button></li>
+      <li><button role="tab" id="m-stats" aria-controls="a-stats" aria-selected="false">통계</button></li>
+      <li><button role="tab" id="m-config" aria-controls="a-config" aria-selected="false">운영 설정</button></li>
+    </ul>
+    <button class="logout" type="button" data-logout>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M15 17l5-5-5-5M20 12H9M12 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>로그아웃</button>
+  </nav>
+
+  <main class="admin-main">
+  <section role="tabpanel" id="a-dash" aria-labelledby="m-dash">
+    <div class="page-head"><div><h1>운영 현황</h1></div></div>
+
+    <div class="summary-strip">
+      <div><span class="k">가입 사용자</span><b class="num" id="ad-user-total">—</b><span class="s">탈퇴 계정 포함</span></div>
+      <div><span class="k">활성 종목</span><b class="num" id="ad-active">—</b><span class="s" id="ad-inactive">&nbsp;</span></div>
+      <div><span class="k">미처리 신고</span><b class="num" id="ov-report-count">—</b><span class="s">신고 탭에서 처리</span></div>
+      <div><span class="k">오늘 매매 기록</span><b class="num" id="ad-today-transactions">—</b><span class="s">작성 시각 기준</span></div>
+    </div>
+
+    <section class="card" style="margin-bottom:14px">
+      <h2 class="card-head">배치 실행 결과 <span class="sub">최근 24시간</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th class="" scope="col">배치</th><th class="r" scope="col">최근 실행</th><th class="r" scope="col">소요</th><th class="r" scope="col">처리 건수</th><th class="r" scope="col">상태</th></tr></thead>
+            <tbody id="ad-batches"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+      <!-- 실패한 배치가 있을 때만, 그 배치가 남긴 메시지를 띄운다.
+           문구를 박아 두면 아무 일 없을 때도 장애가 난 것처럼 보인다 -->
+      <p class="info info-warn" id="ad-warn" style="margin:12px 18px 16px" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-head">종목 마스터 <span class="sub num" id="ad-dash-stock-count">—</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th class="" scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="" scope="col">거래소</th><th class="" scope="col">섹터</th><th class="r" scope="col">상태</th></tr></thead>
+            <tbody id="ad-dash-stocks"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+      <p class="note" style="padding:12px 18px 16px">상장폐지·티커 변경 종목은 삭제하지 않고 비활성화합니다. 과거 매매 기록이 참조하기 때문입니다.</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-stocks" aria-labelledby="m-stocks" hidden>
+    <div class="page-head"><div><h1>종목 마스터</h1></div></div>
+
+    <div class="card card-pad" style="margin-bottom:14px">
+      <div class="row-between">
+        <div class="field" style="flex:1;margin:0">
+          <label for="ms-q" class="sr-only">티커 또는 종목명</label>
+          <input id="ms-q" type="search" placeholder="티커 또는 종목명">
+        </div>
+        <div class="pills" data-toggle-group data-stock-filter>
+          <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+          <button type="button" data-value="ACTIVE" aria-pressed="false">활성</button>
+          <button type="button" data-value="INACTIVE" aria-pressed="false">비활성</button>
+          <button type="button" data-value="ETF" aria-pressed="false">ETF</button>
+        </div>
+        <button class="btn btn-sm btn-primary" type="button" id="ad-sync">지금 동기화</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">종목 목록 <span class="sub num" id="ad-stock-count">—</span></h2>
+        <div class="table-wrap">
+          <!-- colgroup 으로 폭을 못 박는다. 필터를 바꾸면 남는 종목이 달라져 가장 긴
+               종목명에 맞춰 열이 늘었다 줄었다 했다 — 같은 표가 필터마다 다르게 보인다 -->
+          <table class="tbl tbl-band tbl-fixed">
+            <colgroup>
+              <col style="width:11%"><col style="width:32%"><col style="width:11%">
+              <col style="width:12%"><col style="width:14%"><col style="width:10%">
+              <col style="width:10%">
+            </colgroup>
+            <thead><tr><th class="" scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="" scope="col">거래소</th><th class="" scope="col">섹터</th><th class="r" scope="col">최근 동기화</th><th class="" scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="ad-stocks"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+      <nav class="pager" aria-label="종목 목록 페이지">
+        <button class="btn btn-sm" type="button" id="ms-prev">이전</button>
+        <span class="sub num" id="ms-page">1 / 1</span>
+        <button class="btn btn-sm" type="button" id="ms-next">다음</button>
+      </nav>
+      <p class="note" style="padding:12px 18px 16px">비활성 종목은 검색에서 제외되지만 과거 매매 기록에서는 계속 조회됩니다</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-sync" aria-labelledby="m-sync" hidden>
+    <div class="page-head"><div><h1>배치 상태</h1></div></div>
+
+    <div class="grid-3" style="margin-bottom:14px" id="ad-batch-cards"><!-- 스크립트가 채운다 --></div>
+
+    <section class="card">
+      <h2 class="card-head">실행 이력 <span class="sub">잡별 최근 1건</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th class="" scope="col">배치</th><th class="" scope="col">실행 시각</th><th class="r" scope="col">소요</th><th class="r" scope="col">처리</th><th class="" scope="col">상태</th><th class="txt" scope="col">메시지</th></tr></thead>
+            <tbody id="ad-batch-rows"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+      <p class="info info-warn" id="ad-warn2" style="margin:12px 18px 16px" hidden></p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-users" aria-labelledby="m-users" hidden>
+    <div class="page-head"><div><h1>사용자 관리</h1></div></div>
+
+    <div class="card card-pad" style="margin-bottom:14px">
+      <div class="row-between">
+        <div class="field" style="flex:1;margin:0">
+          <label for="us-q" class="sr-only">닉네임 또는 이메일</label>
+          <input id="us-q" type="search" placeholder="닉네임 또는 이메일">
+        </div>
+        <div class="pills" data-toggle-group data-user-filter>
+          <button type="button" data-value="ALL" aria-pressed="true">전체</button>
+          <button type="button" data-value="ACTIVE" aria-pressed="false">활성</button>
+          <button type="button" data-value="SUSPENDED" aria-pressed="false">정지</button>
+          <button type="button" data-value="WITHDRAWN" aria-pressed="false">탈퇴</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">사용자 목록 <span class="sub num" id="admin-user-count">—</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th class="" scope="col">닉네임</th><th class="txt" scope="col">이메일</th><th class="" scope="col">가입일</th><th class="r" scope="col">매매 기록</th><th class="r" scope="col">작성 글</th><th class="" scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="admin-user-list"><tr><td colspan="7" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
+          </table>
+        </div>
+      <p class="note" style="padding:12px 18px 16px">탈퇴 계정은 30일 후 물리 삭제됩니다. 그 전까지 작성 글의 작성자 참조가 유지됩니다.</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-posts" aria-labelledby="m-posts" hidden>
+    <div class="page-head"><div><h1>게시글 · 댓글 관리</h1></div></div>
+
+    <!-- 좌측 메뉴의 게시글·댓글 탭과 같은 일을 한다. 목록을 두 벌 관리하지 않으려고
+         여기서는 해당 탭 버튼을 눌러 주기만 한다 -->
+    <div class="pills" data-toggle-group data-tab-switch>
+      <button type="button" data-value="POST" data-tab="m-posts" aria-pressed="true">게시글</button>
+      <button type="button" data-value="CMT" data-tab="m-comments" aria-pressed="false">댓글</button>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">게시글 <span class="sub num" id="admin-post-count">—</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th class="txt" scope="col">제목</th><th scope="col">게시판</th><th scope="col">작성자</th><th class="r" scope="col">좋아요</th><th class="r" scope="col">댓글</th><th scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="admin-post-list"><tr><td colspan="7" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
+          </table>
+        </div>
+      <p class="note" style="padding:12px 18px 16px">숨긴 글은 목록·상세에서 보이지 않지만 지워지지 않습니다. 복원하면 그대로 돌아옵니다</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-comments" aria-labelledby="m-comments" hidden>
+    <div class="page-head"><div><h1>게시글 · 댓글 관리</h1></div></div>
+
+    <div class="pills" data-toggle-group data-tab-switch>
+      <button type="button" data-value="POST" data-tab="m-posts" aria-pressed="false">게시글</button>
+      <button type="button" data-value="CMT" data-tab="m-comments" aria-pressed="true">댓글</button>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">댓글 <span class="sub num" id="admin-comment-count">—</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th class="txt" scope="col">내용</th><th class="txt" scope="col">게시글</th><th scope="col">작성자</th><th scope="col">작성일</th><th scope="col">상태</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="admin-comment-list"><tr><td colspan="6" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
+          </table>
+        </div>
+      <p class="note" style="padding:12px 18px 16px">숨김 댓글은 작성자에게 상태 안내 문구로 치환됩니다</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-report" aria-labelledby="m-report" hidden>
+    <div class="page-head"><div><h1>신고 관리</h1></div></div>
+
+    <div class="pills" id="report-filter" data-toggle-group style="margin-bottom:14px">
+      <button type="button" data-value="PENDING" aria-pressed="true">미처리</button>
+      <button type="button" data-value="RESOLVED" aria-pressed="false">처리 완료</button>
+      <button type="button" data-value="REJECTED" aria-pressed="false">반려</button>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">신고 접수 <span class="sub num" id="admin-report-count">—</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th scope="col">대상</th><th class="txt" scope="col">내용</th><th scope="col">사유</th><th scope="col">신고자</th><th scope="col">접수</th><th class="r" scope="col">처리</th></tr></thead>
+            <tbody id="admin-report-list"><tr><td colspan="6" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
+          </table>
+        </div>
+      <div class="row-between" style="padding:12px 18px 16px">
+        <span class="note">숨김 처리하면 대상 글·댓글이 즉시 내려갑니다. 동일 대상에 같은 사용자가 중복 신고할 수 없습니다</span>
+      </div>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-notice" aria-labelledby="m-notice" hidden>
+    <div class="page-head"><div><h1>공지사항 관리</h1></div></div>
+
+    <section class="card">
+      <h2 class="card-head">공지 목록 <span class="sub num" id="admin-notice-count">—</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th scope="col">고정</th><th class="txt" scope="col">제목</th><th scope="col">등록일</th><th scope="col">수정일</th><th class="r" scope="col"></th></tr></thead>
+            <tbody id="admin-notice-list"><tr><td colspan="5" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
+          </table>
+        </div>
+      <p class="note" style="padding:12px 18px 16px">등록일과 실제 수정 시각을 분리해 표시합니다</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-notice-new" aria-labelledby="m-notice-new" hidden>
+    <div class="page-head"><div><h1>공지 등록</h1></div></div>
+
+    <form class="card card-pad" id="admin-notice-form">
+      <div class="field" style="margin-bottom:14px">
+        <label for="nt-title">제목</label>
+        <input id="nt-title" type="text" maxlength="150" required>
+        <p class="hint">최대 150자</p>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label for="nt-body">내용</label>
+        <textarea id="nt-body" rows="7" required></textarea>
+      </div>
+      <div class="setting-row" style="padding-left:0;padding-right:0">
+        <span class="txt"><b>상단 고정</b><small>공지 목록 맨 위에 고정합니다</small></span>
+        <span class="val"><label class="switch"><input id="nt-pinned" type="checkbox"><span></span></label></span>
+      </div>
+      <div class="modal-actions" style="margin:0">
+        <button class="btn" type="reset">취소</button>
+        <button class="btn btn-primary" type="submit">등록</button>
+      </div>
+    </form>
+  </section>
+  <section role="tabpanel" id="a-logs" aria-labelledby="m-logs" hidden>
+    <div class="page-head"><div><h1>운영 로그</h1></div></div>
+
+    <div class="card card-pad" style="margin-bottom:14px">
+      <div class="row-between">
+        <div class="field" style="flex:1;margin:0">
+          <label for="lg-q" class="sr-only">관리자 · 대상 검색</label>
+          <input id="lg-q" type="search" placeholder="관리자 · 대상 검색">
+        </div>
+        <!-- data-value 가 서버로 그대로 간다. "콘텐츠" 한 칸이 POST·COMMENT·REPORT·NOTICE 를
+             묶는데, 그 매핑은 서버(AdminService.LOG_TYPE_GROUPS)가 갖는다 -->
+        <div class="pills" data-toggle-group data-log-type>
+          <button type="button" data-value="" aria-pressed="true">전체</button>
+          <button type="button" data-value="CONTENT" aria-pressed="false">콘텐츠</button>
+          <button type="button" data-value="USER" aria-pressed="false">사용자</button>
+          <button type="button" data-value="STOCK" aria-pressed="false">종목</button>
+          <button type="button" data-value="BATCH" aria-pressed="false">배치</button>
+        </div>
+        <div class="pills" data-toggle-group data-log-range>
+          <button type="button" data-value="7" aria-pressed="true">최근 7일</button>
+          <button type="button" data-value="0" aria-pressed="false">전체 기간</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2 class="card-head">작업 이력 <span class="sub num" id="ad-log-count">—</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th class="" scope="col">시각</th><th class="" scope="col">관리자</th><th class="" scope="col">작업</th><th class="txt" scope="col">대상</th><th class="" scope="col">결과</th><th class="r" scope="col">IP</th></tr></thead>
+            <tbody id="ad-logs"><!-- 스크립트가 채운다 --></tbody>
+          </table>
+        </div>
+      <p class="note" style="padding:12px 18px 16px">조회는 기록되지 않습니다. 데이터를 바꾸는 작업만 남깁니다. 로그는 수정·삭제할 수 없습니다.</p>
+    </section>
+  </section>
+  <section role="tabpanel" id="a-stats" aria-labelledby="m-stats" hidden>
+    <div class="page-head">
+      <div><h1>통계</h1><p id="admin-stats-period">불러오는 중입니다</p></div>
+      <span class="grow"></span>
+      <div class="pills" data-toggle-group data-stats-period>
+        <button type="button" data-value="1M" aria-pressed="true">월간</button>
+        <button type="button" data-value="1W" aria-pressed="false">주간</button>
+        <button type="button" data-value="1D" aria-pressed="false">일간</button>
+      </div>
+    </div>
+
+    <section class="card stat-strip" style="margin-bottom:16px">
+      <div><span class="k">신규 가입</span><span class="v" id="stats-new-users">—</span><span class="s" id="stats-new-users-note">&nbsp;</span></div>
+      <div><span class="k">활동 사용자</span><span class="v" id="stats-active-users">—</span><span class="s">기록·글·댓글 작성 기준</span></div>
+      <div><span class="k">매매 기록</span><span class="v" id="stats-transactions">—</span><span class="s">기간 내 새로 작성</span></div>
+      <div><span class="k">판단 기록률</span><span class="v" id="stats-judgment-rate">—</span><span class="s" id="stats-judgment-note">매수 사유·목표가·심리</span></div>
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2 class="card-head">인기 종목 <span class="sub">현재 관심·보유 사용자 기준</span></h2>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th scope="col">순위</th><th scope="col">티커</th><th class="txt" scope="col">종목명</th><th class="r" scope="col">관심</th><th class="r" scope="col">보유 회원</th></tr></thead>
+            <tbody id="admin-popular-stocks"><tr><td colspan="5" class="sub" style="padding:22px;text-align:center">불러오는 중입니다</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-head">기간 활동 <span class="sub">작성 시각 기준</span></h2>
+        <div class="table-wrap">
+          <table class="tbl tbl-band">
+            <thead><tr><th scope="col">활동</th><th class="r" scope="col">건수</th></tr></thead>
+            <tbody>
+              <tr><td>판단 기록</td><td class="r num" id="stats-judgments">—</td></tr>
+              <tr><td>게시글</td><td class="r num" id="stats-posts">—</td></tr>
+              <tr><td>댓글</td><td class="r num" id="stats-comments">—</td></tr>
+              <tr><td>관심 등록</td><td class="r num" id="stats-watches">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note" style="padding:12px 18px 16px">페이지 방문과 재방문은 추적 데이터를 수집하지 않아 표시하지 않습니다</p>
+      </section>
+    </div>
+  </section>
+  <section role="tabpanel" id="a-config" aria-labelledby="m-config" hidden>
+    <div class="page-head"><div><h1>운영 설정</h1></div></div>
+
+    <!-- data-setting 이 저장 키다. 알약은 data-value, 스위치는 켜짐/꺼짐이 값이 된다 -->
+    <section class="card card-pad" style="margin-bottom:16px">
+      <h2 style="margin:0 0 6px;font-size:var(--fs-section)">데이터 갱신</h2>
+      <div class="setting-row">
+        <span class="txt"><b>뉴스 갱신 주기</b><small>Finnhub 한도에 직접 영향을 줍니다</small></span>
+        <span class="val">
+          <div class="pills" data-toggle-group data-setting="news.refresh.minutes">
+            <button type="button" data-value="30" aria-pressed="false">30분</button>
+            <button type="button" data-value="60" aria-pressed="true">1시간</button>
+            <button type="button" data-value="180" aria-pressed="false">3시간</button>
+          </div>
+        </span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>환율 대체값 사용</b><small>수집 실패 시 직전 영업일 환율로 대체합니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="fx.fallback.enabled" checked><span></span></label></span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>실시간 시세 공급</b><small>끄면 전 회원에게 지연 시세만 표시됩니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="quote.live.enabled" checked><span></span></label></span>
+      </div>
+    </section>
+
+    <section class="card card-pad" style="margin-bottom:16px">
+      <h2 style="margin:0 0 6px;font-size:var(--fs-section)">커뮤니티</h2>
+      <div class="setting-row">
+        <span class="txt"><b>신규 회원 글쓰기 제한</b><small>가입 후 일정 기간 글을 쓸 수 없게 합니다</small></span>
+        <span class="val">
+          <div class="pills" data-toggle-group data-setting="community.write.delay.days">
+            <button type="button" data-value="0" aria-pressed="false">없음</button>
+            <button type="button" data-value="1" aria-pressed="true">1일</button>
+            <button type="button" data-value="3" aria-pressed="false">3일</button>
+          </div>
+        </span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>자동 숨김 기준</b><small>미처리 신고가 이 횟수에 이르면 자동으로 숨깁니다</small></span>
+        <span class="val">
+          <!-- 자유 입력이 아니라 알약이다. 서버가 허용 목록(3·5·10)으로 막고 있어
+               아무 숫자나 받으면 화면만 저장에 실패한다 -->
+          <div class="pills" data-toggle-group data-setting="community.autohide.reports">
+            <button type="button" data-value="3" aria-pressed="false">3회</button>
+            <button type="button" data-value="5" aria-pressed="true">5회</button>
+            <button type="button" data-value="10" aria-pressed="false">10회</button>
+          </div>
+        </span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>금칙어 필터</b><small>리딩방·수익 보장 관련 표현 자동 검출</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="community.badword.enabled" checked><span></span></label></span>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2 style="margin:0 0 6px;font-size:var(--fs-section)">서비스</h2>
+      <div class="setting-row">
+        <span class="txt"><b>신규 가입 허용</b><small>끄면 가입 화면에서 안내 문구가 뜹니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="signup.enabled" checked><span></span></label></span>
+      </div>
+      <div class="setting-row">
+        <span class="txt"><b>점검 모드</b><small>켜면 관리자를 제외한 모든 접속이 차단됩니다</small></span>
+        <span class="val"><label class="switch"><input type="checkbox" data-setting="maintenance.enabled"><span></span></label></span>
+      </div>
+      <p class="info info-warn" style="margin-top:12px">점검 모드를 켜면 관리자 화면과 로그인만 열립니다. 이 화면에서 다시 끌 수 있습니다.</p>
+      <p class="msg" id="cfg-state" hidden></p>
+    </section>
+  </section>
+  </main>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}">
+/* 관리자 화면 (ADMIN-01 · ADMIN-02 · ADMIN-07)
+   접근 통제는 SecurityConfig 가 /api/admin/** 를 ADMIN 에만 열어 막는다(2.1).
+   화면이 탭을 숨기는 것은 편의일 뿐 방어가 아니다. */
+(function () {
+  var box = document.getElementById("ad-batches");
+  if (!box) return;
+
+  var DASH = "—";
+  /* 휴장일에 안 돈 것과 실패해서 못 돈 것은 다르다(2.4). SKIPPED 를 따로 보여준다 */
+  var STATUS = { SUCCESS: "정상", FAILED: "실패", SKIPPED: "건너뜀", RUNNING: "실행 중" };
+  var BADGE = { SUCCESS: "badge-ok", FAILED: "badge-err", SKIPPED: "", RUNNING: "badge-warn" };
+
+  function api(url, opts) {
+    return fetch(url, opts).then(function (res) {
+      if (res.status === 401) { location.href = "/login"; return null; }
+      if (res.status === 403) { return { forbidden: true }; }
+      return res.json().then(function (b) { return b.success ? b.data : { error: b.error }; });
+    });
+  }
+  function put(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function n(v) { return v == null ? DASH : Number(v).toLocaleString("ko-KR"); }
+
+  /* 초 단위로 보여준다. 밀리초는 배치 규모에서 의미가 없다 */
+  function dur(ms) { return ms == null ? DASH : (ms / 1000).toFixed(1) + "초"; }
+  function when(iso) {
+    if (!iso) return DASH;
+    return iso.slice(5, 10).replace("-", "-") + " " + iso.slice(11, 16);
+  }
+  function badge(status) {
+    var b = document.createElement("span");
+    b.className = "badge " + (BADGE[status] || "");
+    b.textContent = STATUS[status] || status;
+    return b;
+  }
+  function cells(tr, values) {
+    values.forEach(function (v) {
+      var td = tr.insertCell();
+      if (v && v.nodeType) { td.appendChild(v); } else { td.textContent = v; }
+    });
+  }
+
+  /* ── 배치 상태 (ADMIN-02) ─────────────────────────────────── */
+  function drawBatches(list) {
+    /* 대괄호가 둘 잇달아 붙는 표기를 쓰지 않는다 — Thymeleaf 가 인라인 표현식 여는 기호로
+       읽어 템플릿 파싱이 통째로 깨진다(report 5.8 과 같은 함정) */
+    var targets = ["ad-batches", "ad-batch-rows"];
+    var spans = { "ad-batches": 5, "ad-batch-rows": 6 };
+    targets.forEach(function (id) {
+      var body = document.getElementById(id);
+      if (!body) return;
+      body.replaceChildren();
+      if (!list || list.length === 0) {
+        var tr = body.insertRow();
+        var td = tr.insertCell();
+        td.colSpan = spans[id]; td.className = "sub";
+        td.style.padding = "24px"; td.style.textAlign = "center";
+        td.textContent = "아직 실행 기록이 없습니다";
+        return;
+      }
+      list.forEach(function (b) {
+        var tr = body.insertRow();
+        if (id === "ad-batches") {
+          cells(tr, [b.jobName, when(b.startedAt), dur(b.durationMs),
+                     n(b.processedCount) + "건", badge(b.status)]);
+        } else {
+          cells(tr, [b.jobName, when(b.startedAt), dur(b.durationMs),
+                     n(b.processedCount), badge(b.status), b.message || DASH]);
+        }
+      });
+    });
+
+    /* 실패한 배치가 있으면 그 배치가 남긴 메시지를 그대로 띄운다.
+       문구를 마크업에 박아 두면 아무 일 없을 때도 장애가 난 것처럼 보인다 */
+    var failed = (list || []).filter(function (b) { return b.status === "FAILED"; });
+    ["ad-warn", "ad-warn2"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.hidden = failed.length === 0;
+      if (failed.length) {
+        el.textContent = failed.map(function (b) {
+          return b.jobName + " — " + (b.message || "실패");
+        }).join(" · ");
+      }
+    });
+
+    var cards = document.getElementById("ad-batch-cards");
+    if (!cards) return;
+    cards.replaceChildren();
+    if (!list || list.length === 0) {
+      /* 표에만 안내가 뜨고 카드 자리가 통째로 비면 화면이 깨진 것처럼 보인다 */
+      var none = document.createElement("p");
+      none.className = "note";
+      none.textContent = "감싼 배치가 아직 한 번도 돌지 않았습니다";
+      cards.appendChild(none);
+      return;
+    }
+    list.forEach(function (b) {
+      var card = document.createElement("div");
+      card.className = "card card-pad batch-card";
+      var ttl = document.createElement("p");
+      ttl.className = "ttl";
+      ttl.textContent = b.jobName + " ";
+      ttl.appendChild(badge(b.status));
+      var note = document.createElement("p");
+      note.className = "note";
+      note.textContent = "최근 " + when(b.startedAt);
+      card.appendChild(ttl); card.appendChild(note);
+      cards.appendChild(card);
+    });
+  }
+
+  /* ── 종목 마스터 (ADMIN-01) ───────────────────────────────── */
+  var filter = "ALL";
+
+  /* 한 화면에 스무 개. 100개를 통째로 쏟아 놓으면 스크롤로만 찾아야 한다 */
+  var STOCK_PAGE_SIZE = 20;
+  var stockPage = 0;
+  var stockTotal = 0;
+
+  function query() {
+    var q = document.getElementById("ms-q");
+    var params = "limit=" + STOCK_PAGE_SIZE + "&offset=" + (stockPage * STOCK_PAGE_SIZE);
+    if (filter === "ACTIVE" || filter === "INACTIVE") params += "&status=" + filter;
+    if (filter === "ETF") params += "&assetClass=ETF";
+    if (q && q.value.trim()) params += "&q=" + encodeURIComponent(q.value.trim());
+    return params;
+  }
+
+  function stockRow(body, s, withAction) {
+    var tr = body.insertRow();
+    var state = document.createElement("span");
+    state.className = "badge " + (s.active ? "badge-ok" : "badge-warn");
+    state.textContent = s.active ? "활성" : "비활성";
+
+    var base = [s.symbol, s.nameKo || s.name, s.exchange || DASH, s.assetClass || DASH];
+    if (!withAction) { cells(tr, base.concat([state])); return; }
+
+    /* 지우지 않고 상태만 바꾼다(2.6). 과거 매매 기록이 이 종목을 참조한다 */
+    var btn = document.createElement("button");
+    btn.className = "btn btn-sm";
+    btn.type = "button";
+    btn.textContent = s.active ? "비활성화" : "복원";
+    btn.dataset.symbol = s.symbol;
+    btn.dataset.next = s.active ? "false" : "true";
+    cells(tr, base.concat([DASH, state, btn]));
+  }
+
+  async function loadStocks() {
+    var list = await api("/api/admin/stocks?" + query());
+    if (!list || list.forbidden || list.error) return;
+
+    var full = document.getElementById("ad-stocks");
+    if (full) { full.replaceChildren(); list.forEach(function (s) { stockRow(full, s, true); }); }
+
+    var total = await api("/api/admin/stocks/count?" + query());
+    if (typeof total === "number") { stockTotal = total; put("ad-stock-count", n(total) + "건"); }
+    drawStockPager();
+  }
+
+  /* 총건수는 limit 와 무관하게 따로 세어 온다. 마지막 쪽에서 다음을 눌러 빈 화면이
+     뜨지 않도록 여기서 막는다 */
+  function drawStockPager() {
+    var last = Math.max(0, Math.ceil(stockTotal / STOCK_PAGE_SIZE) - 1);
+    if (stockPage > last) { stockPage = last; }
+    put("ms-page", (stockPage + 1) + " / " + (last + 1));
+    var prev = document.getElementById("ms-prev");
+    var next = document.getElementById("ms-next");
+    if (prev) prev.disabled = stockPage <= 0;
+    if (next) next.disabled = stockPage >= last;
+  }
+
+  /* 운영 현황의 미리보기는 종목 탭의 검색어와 무관해야 한다. 같은 조회를 나눠 쓰면
+     종목 탭에서 검색한 순간 대시보드가 그 결과로 바뀐다 */
+  async function loadDashStocks() {
+    var dash = document.getElementById("ad-dash-stocks");
+    if (!dash) return;
+    var list = await api("/api/admin/stocks?limit=5");
+    if (!list || list.forbidden || list.error) return;
+    dash.replaceChildren();
+    list.forEach(function (s) { stockRow(dash, s, false); });
+    var total = await api("/api/admin/stocks/count");
+    if (typeof total === "number") put("ad-dash-stock-count", n(total) + "건");
+  }
+
+  /* 요약 스트립의 활성·비활성은 필터와 무관한 전체 값이라 따로 센다 */
+  async function loadStockSummary() {
+    var active = await api("/api/admin/stocks/count?status=ACTIVE");
+    var inactive = await api("/api/admin/stocks/count?status=INACTIVE");
+    if (typeof active === "number") put("ad-active", n(active));
+    if (typeof inactive === "number") put("ad-inactive", "비활성 " + n(inactive));
+  }
+
+  /* ── 운영 로그 (ADMIN-07) ─────────────────────────────────── */
+
+  /* 화면의 현재 필터. 눌린 버튼의 data-value 를 그대로 읽는다 —
+     따로 변수에 담아 두면 버튼 상태와 어긋나는 날이 온다 */
+  function logFilter() {
+    function pressed(sel, fallback) {
+      var g = document.querySelector(sel);
+      if (!g) return fallback;
+      var on = g.querySelector('button[aria-pressed="true"]');
+      return on ? (on.dataset.value || "") : fallback;
+    }
+    var q = document.getElementById("lg-q");
+    return {
+      q: q ? q.value.trim() : "",
+      type: pressed("[data-log-type]", ""),
+      days: pressed("[data-log-range]", "7"),
+    };
+  }
+
+  async function loadLogs() {
+    var f = logFilter();
+    var query = "limit=50&days=" + encodeURIComponent(f.days);
+    if (f.q) query += "&q=" + encodeURIComponent(f.q);
+    if (f.type) query += "&type=" + encodeURIComponent(f.type);
+    var list = await api("/api/admin/logs?" + query);
+    var body = document.getElementById("ad-logs");
+    if (!body || !list || list.forbidden || list.error) return;
+    body.replaceChildren();
+    var filtered = !!(f.q || f.type) || f.days !== "0";
+    put("ad-log-count", (filtered ? "조건에 맞는 " : "최근 ") + list.length + "건");
+    if (list.length === 0) {
+      var tr = body.insertRow();
+      var td = tr.insertCell();
+      td.colSpan = 6; td.className = "sub";
+      td.style.padding = "24px"; td.style.textAlign = "center";
+      /* 조건을 걸어 0건인 것과 애초에 기록이 없는 것은 다른 상황이다 */
+      td.textContent = filtered ? "조건에 맞는 기록이 없습니다" : "아직 기록이 없습니다";
+      return;
+    }
+    list.forEach(function (g) {
+      var tr = body.insertRow();
+      var result = document.createElement("span");
+      result.className = "badge " + (g.result === "SUCCESS" ? "badge-ok" : "badge-err");
+      result.textContent = g.result === "SUCCESS" ? "성공" : "실패";
+      /* 원본이 사라져도 무슨 대상이었는지 남도록 label 을 함께 저장해 둔다(2.2) */
+      cells(tr, [when(g.createdAt), g.adminNickname || DASH, g.action,
+                 g.targetLabel || g.targetId || DASH, result, DASH]);
+    });
+  }
+
+  /* ── 동작 연결 ────────────────────────────────────────────── */
+  var sync = document.getElementById("ad-sync");
+  if (sync) {
+    sync.addEventListener("click", async function () {
+      /* 1만 건이라 수십 초가 걸린다. 비동기로 던지면 성공했는지 알 수 없어
+         동기로 돌리고 기다린다(2.5). 그동안 버튼을 잠근다 */
+      var label = sync.textContent;
+      sync.disabled = true;
+      sync.textContent = "동기화 중…";
+      var out = await api("/api/admin/stocks/sync", { method: "POST" });
+      sync.disabled = false;
+      sync.textContent = label;
+      if (typeof out === "number") { alert(out.toLocaleString("ko-KR") + "건을 동기화했습니다"); }
+      loadStocks(); loadDashStocks(); loadStockSummary(); loadLogs(); loadBatches();
+    });
+  }
+
+  var stocksBody = document.getElementById("ad-stocks");
+  if (stocksBody) {
+    stocksBody.addEventListener("click", async function (e) {
+      var btn = e.target.closest("button[data-symbol]");
+      if (!btn) return;
+      var toActive = btn.dataset.next === "true";
+      var reason = toActive ? null : prompt("비활성 사유를 적어주세요 (예: 상장폐지)");
+      if (!toActive && !reason) return;
+      var out = await api("/api/admin/stocks/active", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbol: btn.dataset.symbol, active: toActive, reason: reason }),
+      });
+      if (out && out.error) { alert(out.error.message); return; }
+      loadStocks(); loadDashStocks(); loadStockSummary(); loadLogs();
+    });
+  }
+
+  var q = document.getElementById("ms-q");
+  if (q) {
+    var timer = null;
+    q.addEventListener("input", function () {
+      clearTimeout(timer);
+      /* 검색어가 바뀌면 첫 쪽으로 돌아간다. 3쪽에 있던 채로 검색하면
+         결과가 세 개뿐일 때 빈 화면이 뜬다 */
+      timer = setTimeout(function () { stockPage = 0; loadStocks(); }, 250);
+    });
+  }
+  var group = document.querySelector("[data-stock-filter]");
+  if (group) {
+    group.addEventListener("mj:change", function (e) {
+      filter = e.detail; stockPage = 0; loadStocks();
+    });
+  }
+
+  var msPrev = document.getElementById("ms-prev");
+  var msNext = document.getElementById("ms-next");
+  if (msPrev) msPrev.addEventListener("click", function () {
+    if (stockPage > 0) { stockPage--; loadStocks(); }
+  });
+  if (msNext) msNext.addEventListener("click", function () {
+    if ((stockPage + 1) * STOCK_PAGE_SIZE < stockTotal) { stockPage++; loadStocks(); }
+  });
+
+  /* 운영 로그 검색·종류·기간. 셋 다 loadLogs 가 눌린 버튼에서 직접 읽으므로
+     여기서는 "다시 불러라" 만 알려 주면 된다 */
+  ["[data-log-type]", "[data-log-range]"].forEach(function (sel) {
+    var g = document.querySelector(sel);
+    if (g) g.addEventListener("mj:change", loadLogs);
+  });
+  /* 게시글·댓글 전환 알약. 좌측 메뉴 탭을 눌러 실제 화면을 바꾼다 —
+     누르면 눌린 표시만 바뀌고 아무 일도 안 일어나던 자리다 */
+  document.querySelectorAll("[data-tab-switch]").forEach(function (g) {
+    g.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-tab]");
+      if (!btn) return;
+      var tab = document.getElementById(btn.dataset.tab);
+      if (tab) tab.click();
+    });
+  });
+
+  var logQ = document.getElementById("lg-q");
+  if (logQ) {
+    var logTimer = null;
+    logQ.addEventListener("input", function () {
+      clearTimeout(logTimer);
+      logTimer = setTimeout(loadLogs, 250);
+    });
+  }
+
+  async function loadBatches() { drawBatches(await api("/api/admin/batches")); }
+
+  window.addEventListener("admin:logs-changed", loadLogs);
+
+  loadBatches();
+  loadStocks();
+  loadDashStocks();
+  loadStockSummary();
+  loadLogs();
+})();
+</script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-notices.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-community.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-settings.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-users.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/admin-stats.js}" defer></script>
+</body>
+</html>

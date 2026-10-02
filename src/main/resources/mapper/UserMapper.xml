@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  UserMapper.xml — 회원 SQL
+
+  이 파일이 하는 일
+    위 인터페이스의 메서드마다 실제 SQL 을 붙여 둔 곳이다.
+    프로필 갱신은 보낸 값만 SET 에 들어가도록 조건으로 감싼다.
+-->
+<!-- 개발명세서(MVC): "UserMapper XML id 일치" -->
+<mapper namespace="com.example.mijang.user.mapper.UserMapper">
+
+    <!-- User 가 record 라 setter 가 없다. constructor 로 매핑해야 한다.
+         arg 순서가 record 선언 순서와 정확히 같아야 하며, 어긋나면 컴파일은 되고 값만 뒤바뀐다 -->
+    <resultMap id="userMap" type="com.example.mijang.user.domain.User">
+        <constructor>
+            <idArg   column="id"                javaType="java.lang.Long"/>
+            <arg     column="email"             javaType="java.lang.String"/>
+            <arg     column="password_hash"     javaType="java.lang.String"/>
+            <!-- _int 는 원시형 int, int 는 Integer 다. record 가 int 라 별칭을 정확히 써야
+                 생성자를 찾는다. 틀리면 컴파일은 되고 조회 때 NoSuchMethodException 이 난다 -->
+            <arg     column="password_version"  javaType="_int"/>
+            <arg     column="nickname"          javaType="java.lang.String"/>
+            <arg     column="profile_image_url" javaType="java.lang.String"/>
+            <arg     column="role"              javaType="java.lang.String"/>
+            <arg     column="base_currency"     javaType="java.lang.String"/>
+            <arg     column="theme"             javaType="java.lang.String"/>
+            <arg     column="status"            javaType="java.lang.String"/>
+            <arg     column="created_at"        javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <!-- 조회 컬럼을 한 곳에 모은다. 컬럼이 늘면 여기만 고치면 된다 -->
+    <sql id="cols">
+        id, email, password_hash, password_version, nickname, profile_image_url,
+        role, base_currency, theme, status, created_at
+    </sql>
+
+    <!-- AUTH-001 이메일 중복 판정. 모든 행을 세지만, 탈퇴 시 이메일이 표식으로
+         바뀌므로(4.12) 원본 이메일로는 자연히 안 잡힌다 — 탈퇴자 이메일은 재가입 가능하다 -->
+    <select id="countByEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM users
+         WHERE email = #{email}
+    </select>
+
+    <!-- AUTH-001 닉네임 중복 판정. 탈퇴자가 쓰던 닉네임은 다시 쓸 수 있게 제외한다.
+         DB 에 UNIQUE 가 없어 이 검사만으로는 동시 가입에서 뚫린다(2.2 주의) -->
+    <select id="countByNickname" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM users
+         WHERE nickname = #{nickname}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 탈퇴 계정은 로그인 대상이 아니다. 정지 계정은 조회한 뒤 서비스에서 따로 막는다 -->
+    <select id="findByEmail" parameterType="string" resultMap="userMap">
+        SELECT <include refid="cols"/>
+          FROM users
+         WHERE email = #{email}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 프로필 조회와 토큰 갱신에서 쓴다. 갱신 때 상태를 다시 보기 위해 필요하다 -->
+    <select id="findById" parameterType="long" resultMap="userMap">
+        SELECT <include refid="cols"/>
+          FROM users
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 나머지 컬럼(role·base_currency·theme·status)은 스키마 DEFAULT 에 맡긴다.
+         여기서 값을 적으면 기본값이 두 군데에 생겨 어긋나기 시작한다 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id"
+            parameterType="com.example.mijang.user.mapper.UserMapper$UserInsert">
+        INSERT INTO users (email, password_hash, nickname)
+        VALUES (#{email}, #{passwordHash}, #{nickname})
+    </insert>
+
+    <!-- 재설정과 변경이 같은 문장을 쓴다. updated_at 은 스키마의 ON UPDATE 가 채운다.
+         password_hash 조건이 동시 요청을 막는다. 확인할 때 본 값과 다르면 이미 누가
+         바꾼 것이므로 0 행이 바뀌고, 서비스가 그것을 보고 거절한다 -->
+    <update id="updatePassword">
+        UPDATE users
+           SET password_hash = #{passwordHash},
+               password_version = password_version + 1,
+               password_changed_at = CURRENT_TIMESTAMP(3)
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+           AND password_hash = #{expectedHash}
+    </update>
+
+    <!-- 탈퇴는 행을 지우지 않고 상태만 바꾼다. 게시글·댓글은 그대로 남아
+         화면에서 "탈퇴한 사용자" 로 보인다(4.12).
+
+         이메일을 {id}.withdrawn.{원본} 표식으로 바꾼다 — uk_users_email 이 UNIQUE 라
+         원본을 붙들고 있으면 그 이메일로 다시 가입할 수 없다. 표식은 슬롯을 비우면서
+         원본을 복원 가능한 형태로 남긴다. id 접두라 두 탈퇴 행이 겹치지 않는다.
+
+         탈퇴는 비밀번호 변경과 같은 급의 상태 전이다(4.13 #1·#2).
+
+         CAS: status='ACTIVE' 이고 password_hash 가 확인한 값과 같을 때만 바꾼다. 확인(SELECT)과
+         실행(UPDATE) 사이에 비밀번호가 바뀌거나 관리자가 정지시켰다면 조건이 어긋나 0행이 되고,
+         서비스가 그것을 보고 거절한다 — SUSPENDED 를 WITHDRAWN 으로 덮어쓰지 않는다.
+
+         password_version + 1: 이미 나간 access 토큰은 옛 세대를 들고 있어 다음 요청에서 걸린다.
+         비밀번호 변경(updatePassword)과 같은 장치다 — 탈퇴만 빠져 있어 최대 30분간 살아 있었다. -->
+    <update id="withdraw">
+        UPDATE users
+           SET status = 'WITHDRAWN',
+               deleted_at = CURRENT_TIMESTAMP(3),
+               email = CONCAT(id, '.withdrawn.', email),
+               password_version = password_version + 1
+         WHERE id = #{id}
+           AND status = 'ACTIVE'
+           AND password_hash = #{expectedHash}
+    </update>
+
+    <!-- withdraw 뒤 registry 에 기록할 세대를 그대로 읽는다. updateRole 도 password_version 을
+         올릴 수 있어, 호출 전 스냅샷+1로는 CAS UPDATE 가 실제로 만든 값과 어긋날 수 있다.
+         withdraw 의 행 잠금이 걸린 같은 트랜잭션 안에서 읽으므로 이 값을 그대로 믿는다 -->
+    <select id="findPasswordVersion" resultType="int">
+        SELECT password_version FROM users WHERE id = #{id}
+    </select>
+
+    <!-- 소셜 연동 전에 최신 커밋 상태를 잠그고 읽는다(4.13 #4). 일반 SELECT 는 스냅샷을
+         읽어 동시 탈퇴를 놓칠 수 있다 — FOR UPDATE 로 withdraw 의 행 잠금과 순서를 맞춘다 -->
+    <select id="lockUserStatusForUpdate" resultType="string">
+        SELECT status FROM users WHERE id = #{id} FOR UPDATE
+    </select>
+
+    <!-- 테스트 전용 — 마지막 관리자 가드를 검증하는 데만 쓴다 -->
+    <update id="promoteToAdminForTest">
+        UPDATE users SET role = 'ADMIN' WHERE id = #{id}
+    </update>
+
+    <select id="findWithdrawnEmailForTest" resultType="string">
+        SELECT email FROM users WHERE id = #{id}
+    </select>
+
+    <!-- 자기 자신을 빼고 센다(2.2) -->
+    <select id="countByNicknameExcluding" resultType="int">
+        SELECT COUNT(*)
+          FROM users
+         WHERE nickname = #{nickname}
+           AND id &lt;&gt; #{excludeUserId}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+    <!-- 보낸 값만 바꾼다. set 안이 전부 비면 문장을 만들 수 없으므로
+         "바꿀 것이 없으면 부르지 않는다"를 서비스가 보장한다 -->
+    <update id="updateProfile">
+        UPDATE users
+        <set>
+            <if test="nickname != null">        nickname = #{nickname},                </if>
+            <if test="profileImageUrl != null"> profile_image_url = #{profileImageUrl}, </if>
+            <if test="baseCurrency != null">    base_currency = #{baseCurrency},        </if>
+            <if test="theme != null">           theme = #{theme},                       </if>
+        </set>
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </update>
+
+    <!-- record 는 순서로 매핑된다. UserResponse 선언 순서와 같아야 한다 -->
+    <select id="findProfile" parameterType="long"
+            resultType="com.example.mijang.user.dto.UserResponse">
+        SELECT id AS userId, email, nickname, profile_image_url, role,
+               base_currency, theme, created_at, password_changed_at
+          FROM users
+         WHERE id = #{id}
+           AND status &lt;&gt; 'WITHDRAWN'
+    </select>
+
+</mapper>

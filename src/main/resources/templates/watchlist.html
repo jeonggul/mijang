@@ -1,0 +1,137 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 관심 종목</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <div class="page-head">
+    <div><h1>관심 종목</h1></div>
+    <span class="grow"></span>
+  </div>
+
+  <section class="card">
+    <h2 class="card-head">관심 종목 <span class="sub num" id="watch-count">—</span></h2>
+    <div class="table-wrap">
+      <table class="tbl tbl-band">
+        <thead>
+          <tr>
+            <th scope="col">티커</th><th class="txt" scope="col">종목명</th>
+            <th class="r" scope="col">현재가</th><th class="r" scope="col">원화 환산</th>
+            <th class="r" scope="col">등락률</th><th class="r" scope="col"><span class="sr-only">기록</span></th>
+          </tr>
+        </thead>
+        <tbody id="watch-rows">
+          <!-- 스크립트가 채운다 -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/quotes.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 관심 종목 목록 (WATCH-02) · 해제 (WATCH-01)
+   목록에 시세가 함께 실려 온다. 종목마다 상세를 다시 부르지 않는다. */
+(function () {
+  var tbody = document.getElementById("watch-rows");
+  var countEl = document.getElementById("watch-count");
+  if (!tbody) return;
+
+  function money(v) {
+    return v == null ? "—" : "$" + Number(v).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function percent(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + Number(v).toFixed(2) + "%"; }
+
+  /* 응답 봉투를 벗겨 {성공 여부, 값} 으로 돌려준다.
+     값만 돌려주면 안 된다 — 담기·빼기는 성공해도 data 가 null 이라
+     값으로 성공을 판단하면 성공을 실패로 읽는다 */
+  async function call(url, options) {
+    var res = await fetch(url, options);
+    if (res.status === 401) { location.href = "/login"; return { ok: false, data: null }; }
+    var body = await res.json();
+    return { ok: body.success === true, data: body.data };
+  }
+
+  function row(item) {
+    var tr = document.createElement("tr");
+    var cls = item.dayChangeRate == null ? "sub" : (item.dayChangeRate >= 0 ? "rise" : "fall");
+    /* 뼈대만 innerHTML 로 세운다. 티커는 벤더 문자열이라 종목명과 똑같이 조심한다 */
+    tr.innerHTML =
+      '<td><a></a></td>' +
+      '<td class="txt"></td>' +
+      /* data-quote 가 붙은 자리는 quotes.js 가 실시간으로 갈아 끼운다 */
+      '<td class="r num">' + money(item.currentPrice) + '</td>' +
+      /* 원화 환산도 quotes.js 가 채운다. 현재가와 같은 시세에 환율을 곱하므로
+         두 칸이 서로 다른 시점을 가리키지 않는다 */
+      '<td class="r num" data-quote-krw="">—</td>' +
+      '<td class="r num ' + cls + '">' + percent(item.dayChangeRate) + '</td>' +
+      '<td class="r"><a class="btn btn-sm" href="/record-new">기록 추가</a> ' +
+        '<button class="btn btn-sm" type="button">해제</button></td>';
+
+    var link = tr.children[0].firstChild;
+    link.setAttribute("href", "/stock?symbol=" + encodeURIComponent(item.symbol));
+    link.textContent = item.symbol;
+    if (!item.active) {
+      var bad = document.createElement("span");
+      bad.className = "badge badge-err";
+      bad.textContent = "거래 불가";
+      tr.children[0].append(" ", bad);
+    }
+    tr.children[2].setAttribute("data-quote", item.symbol);
+    tr.children[3].setAttribute("data-quote-krw", item.symbol);
+    tr.children[5].querySelector("button").setAttribute("data-remove", item.id);
+
+    /* 종목명은 textContent 로 넣는다. 벤더 문자열이라 그대로 HTML 에 붙이지 않는다.
+       한글명이 있으면 그것을 쓴다 */
+    tr.children[1].textContent = item.nameKo || item.name;
+    return tr;
+  }
+
+  async function load() {
+    var r = await call("/api/watchlists");
+    if (!r.ok) return;
+    var data = r.data;
+    tbody.replaceChildren();
+    countEl.textContent = data.length + "종목";
+    if (data.length === 0) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td colspan="6" class="sub" style="padding:24px;text-align:center">' +
+                     '담은 종목이 없습니다. <a href="/search">종목 검색</a>에서 ☆ 를 눌러 추가하세요</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+    data.forEach(function (item) { tbody.appendChild(row(item)); });
+  }
+
+  /* 해제도 위임으로 건다. 목록이 다시 그려지므로 개별로 걸면 빠뜨린다 */
+  tbody.addEventListener("click", async function (e) {
+    var btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    btn.disabled = true;
+    if ((await call("/api/watchlists/items/" + btn.dataset.remove, { method: "DELETE" })).ok) {
+      load();
+    } else {
+      btn.disabled = false;
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+/* ==========================================================================
+   미장 (MIJANG) — 디자인 토큰
+   피그마 변수 컬렉션 `미장 · 색상`과 1:1 대응
+   ========================================================================== */
+
+:root {
+  /* ── 의미색 · 손익 ─────────────────────────────────────────
+     국내 증권사 관례: 상승 빨강 / 하락 파랑
+     미국 사이트(상승 초록)와 반대다. 절대 뒤집지 말 것. */
+  --rise:            #F04452;   /* 의미/상승-이익 */
+  --fall:            #3182F6;   /* 의미/하락-손실 */
+
+  /* ── 의미색 · 기능 ───────────────────────────────────────── */
+  --record:          #233A66;   /* 의미/기록-주요 — 판단 메모·목표가·비중 */
+  --btn:             #1B2A4A;   /* 의미/버튼 */
+  --warn:            #E09B3D;   /* 의미/주의-추정 — 예상값·한도 초과 */
+  --axis:            #3A5488;   /* 차트/0축 */
+
+  /* ── 폼 검증 ─────────────────────────────────────────────
+     손익 색과 분리한다. 폼에서 빨강은 오류지 이익이 아니다. */
+  --valid-ok:        #2BA55D;   /* 검증/성공 */
+  --valid-err:       #E5484D;   /* 검증/오류 */
+
+  /* ── 텍스트 ──────────────────────────────────────────────── */
+  --text:            #16233D;   /* 텍스트/기본 */
+  --text-sub:        #7A879E;   /* 텍스트/보조 */
+  --text-inv:        #FFFFFF;   /* 텍스트/반전 */
+
+  /* ── 배경 · 선 ───────────────────────────────────────────── */
+  --surface:         #FFFFFF;   /* 배경/표면 */
+  --surface-soft:    #F4F7FC;   /* 배경/약 */
+  --canvas:          #EDF1F8;   /* 배경/캔버스 */
+  --line:            #DCE4F0;   /* 선/기본 */
+
+  /* ── 타이포 ──────────────────────────────────────────────
+     본문은 Sans, 숫자는 Mono.
+     고정폭이라 시세가 틱마다 갱신돼도 자릿수가 흔들리지 않는다. */
+  --font-sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fs-num-xl:  44px;  --lh-num-xl:  1.1;   --ls-num-xl:  -1.5px;
+  --fs-num-lg:  30px;  --lh-num-lg:  1.2;   --ls-num-lg:  -0.8px;
+  --fs-num-md:  19px;  --lh-num-md:  1.3;   --ls-num-md:  -0.3px;
+  --fs-num-sm:  13px;  --lh-num-sm:  1.45;
+  --fs-num-xs:  12px;
+
+  --fs-section: 17px;
+  --fs-card:    15px;
+  --fs-body:    14px;
+  --fs-label:   12px;
+  --fs-badge:   11px;
+
+  /* ── 레이아웃 ────────────────────────────────────────────── */
+  --radius-card: 12px;
+  --radius-ctl:  8px;
+  --header-h:    64px;
+  --sidebar-w:   240px;
+  --panel-w:     300px;
+  --gap:         16px;
+
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, .18);
+  --shadow-modal: 0 12px 32px rgba(0, 0, 0, .24);
+}
+
+/* ── 다크 테마 ────────────────────────────────────────────────
+   피그마 `다크` 모드와 동일. 랜딩 페이지에 적용된 값이다. */
+:root[data-theme="dark"] {
+  --rise:         #FF5A66;
+  --fall:         #5AA0FF;
+  --record:       #7FA0E0;
+  --btn:          #3A5488;
+  --warn:         #F0B45A;
+  --axis:         #7FA0E0;
+  --valid-ok:     #4ED17F;
+  --valid-err:    #FF6B6E;
+
+  --text:         #FFFFFF;
+  --text-sub:     #A6B4CC;
+  --text-inv:     #FFFFFF;
+
+  --surface:      rgba(19, 32, 56, .78);
+  --surface-soft: rgba(27, 42, 69, .78);
+  --canvas:       #080E1B;
+  --line:         rgba(255, 255, 255, .16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --rise:         #FF5A66;
+    --fall:         #5AA0FF;
+    --record:       #7FA0E0;
+    --btn:          #3A5488;
+    --warn:         #F0B45A;
+    --axis:         #7FA0E0;
+    --valid-ok:     #4ED17F;
+    --valid-err:    #FF6B6E;
+    --text:         #FFFFFF;
+    --text-sub:     #A6B4CC;
+    --text-inv:     #FFFFFF;
+    --surface:      rgba(19, 32, 56, .78);
+    --surface-soft: rgba(27, 42, 69, .78);
+    --canvas:       #080E1B;
+    --line:         rgba(255, 255, 255, .16);
+  }
+}

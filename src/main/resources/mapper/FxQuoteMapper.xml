@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  fx_quotes — 환율 시세 이력.
+
+  레코드는 자리 순서로 매핑된다(생성자 인자 이름을 쓰지 않는다).
+  그래서 SELECT 의 컬럼 순서가 FxQuote 의 선언 순서와 같아야 한다.
+    FxQuote(currencyCode, basePrice, quotedAt)
+-->
+<mapper namespace="com.example.mijang.fx.mapper.FxQuoteMapper">
+
+    <sql id="cols">
+        currency_code, base_price, quoted_at
+    </sql>
+
+    <!--
+      같은 시각이 이미 있으면 넘어간다.
+      벤더 값은 폴링보다 드물게 바뀌므로 이게 없으면 똑같은 행이 계속 쌓인다.
+      배치가 두 번 돌거나 재시도가 겹쳐도 안전하다.
+    -->
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO fx_quotes (currency_code, base_price, quoted_at)
+        VALUES (#{currencyCode}, #{basePrice}, #{quotedAt})
+    </insert>
+
+    <select id="findLatest" resultType="com.example.mijang.fx.domain.FxQuote">
+        SELECT <include refid="cols"/>
+          FROM fx_quotes
+         WHERE currency_code = #{currencyCode}
+         ORDER BY quoted_at DESC
+         LIMIT 1
+    </select>
+
+    <!--
+      날짜 경계를 KST 로 자른다. quoted_at 은 UTC 라 그냥 DATE() 로 자르면
+      한국의 하루와 어긋난다 — 한국 시각 오전 9시 이전 값이 전날로 잡힌다.
+    -->
+    <select id="findLastOfDate" resultType="com.example.mijang.fx.domain.FxQuote">
+        SELECT <include refid="cols"/>
+          FROM fx_quotes
+         WHERE currency_code = #{currencyCode}
+           AND DATE(CONVERT_TZ(quoted_at, '+00:00', '+09:00')) = #{date}
+         ORDER BY quoted_at DESC
+         LIMIT 1
+    </select>
+</mapper>

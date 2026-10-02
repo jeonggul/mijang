@@ -1,0 +1,648 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미장 — 매매 기록 추가</title>
+<link rel="icon" th:href="@{/img/favicon.png}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/tokens.css}">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: siteHeader}"></header>
+
+<div class="page-wide">
+  <div class="grid-2">
+    <div>
+      <div class="page-head">
+        <div><h1 id="form-title">매매 기록 추가</h1></div>
+      </div>
+
+      <form id="record-form">
+
+        <section class="card card-pad" style="margin-bottom:14px">
+          <h2 class="form-sec">거래 정보</h2>
+          <div class="field-row">
+            <div class="field" style="flex:1.9">
+              <label for="sym">종목</label>
+              <button class="sym-picker" type="button" data-open="pick-modal" id="sym-btn" data-symbol="">
+                <span class="tk" id="sym-tk">종목 선택</span><span class="nm" id="sym-nm"></span>
+                <span class="spacer"></span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                  <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <p class="hint" id="sym-hint">기록할 종목을 먼저 고릅니다</p>
+            </div>
+            <div class="field">
+              <label>매매 구분</label>
+              <!-- data-side 는 폼이 값을 읽어가는 표식이다. ui.js 가 aria-pressed 를 뒤집고,
+                   제출할 때 이 그룹 안에서 눌린 버튼의 data-value 를 side 로 보낸다 -->
+              <div class="pills" data-toggle-group data-side>
+                <button type="button" data-value="BUY" aria-pressed="true">매수</button>
+                <button type="button" data-value="SELL" aria-pressed="false">매도</button>
+              </div>
+              <p class="hint">매도 시 실현손익이 계산됩니다</p>
+            </div>
+            <div class="field">
+              <label for="dt">체결일</label>
+              <input id="dt" type="date">
+              <p class="hint">미국 현지 거래일 기준</p>
+            </div>
+            <div class="field">
+              <label for="tm">체결 시각</label>
+              <input id="tm" type="time">
+              <p class="hint">비우면 장 마감(16:00)으로 기록</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card-pad" style="margin-bottom:14px">
+          <h2 class="form-sec">수량 · 가격</h2>
+          <!-- .field-grid 는 네 칸의 폭과 라벨·입력·힌트 줄을 맞춘다(.field-row 는 줄이 넘칠 때
+               남은 칸이 늘어나 폭이 어긋난다). 힌트가 없는 칸도 자리는 같이 차지한다 -->
+          <div class="field-grid">
+            <div class="field">
+              <!-- 단위 토글. 라벨과 같은 줄에 둔다 — 아래에 따로 두면 이 칸만 줄이 하나 더 생겨
+                   입력칸이 옆칸보다 내려앉는다 -->
+              <div class="field-head">
+                <label for="qty" id="qty-label">수량 (주)</label>
+                <span class="spacer"></span>
+                <div class="pills pills-xs" data-toggle-group data-qty-unit>
+                  <button type="button" data-value="SHARES" aria-pressed="true">수량</button>
+                  <button type="button" data-value="AMOUNT" aria-pressed="false">소수점</button>
+                </div>
+              </div>
+              <input id="qty" type="number" step="0.000001" placeholder="0" inputmode="decimal">
+              <p class="hint" id="qty-hint">소수점 매수 가능</p>
+            </div>
+            <div class="field">
+              <label for="prc">체결 단가 (USD)</label>
+              <input id="prc" type="number" step="0.0001" placeholder="0" inputmode="decimal">
+              <p class="hint">1주 가격입니다</p>
+            </div>
+            <div class="field">
+              <label for="fx">적용 환율</label>
+              <input id="fx" type="number" step="0.0001" placeholder="비우면 그날 환율" inputmode="decimal">
+              <p class="hint accent" id="fx-hint">체결일 기준 자동 입력 · 수정 가능</p>
+            </div>
+            <div class="field">
+              <label for="fee">수수료 (USD)</label>
+              <input id="fee" type="number" step="0.0001" placeholder="0" inputmode="decimal">
+              <p class="hint">비우면 0으로 기록됩니다</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 판단 기록 — Record Accent 로 다른 입력과 구분한다. 접히지 않는다 -->
+        <section class="card card-pad record-sec" style="margin-bottom:14px">
+          <h2 class="form-sec"><i class="dot"></i>판단 기록
+            <span class="spacer"></span>
+            <small>여기 적은 내용이 회고 화면에서 대조됩니다</small></h2>
+
+          <div class="field" style="margin-bottom:14px">
+            <label for="why">매수 사유</label>
+            <textarea id="why" rows="4" maxlength="2000"
+                      placeholder="왜 샀는지 남겨두면 나중에 되돌아볼 수 있습니다"></textarea>
+            <p class="hint">비워두면 저장은 되지만 회고에 사용할 수 없습니다</p>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="tgt">목표가 (USD)</label>
+              <input id="tgt" type="number" step="0.0001" placeholder="0">
+            </div>
+            <div class="field" style="flex:2.3">
+              <label>당시 심리</label>
+              <!-- data-sentiment 도 같은 표식이다. 이게 없으면 심리가 서버에 전달되지 않는다 -->
+              <div class="pills" data-toggle-group data-sentiment>
+                <button type="button" data-value="CONFIDENT" aria-pressed="true">확신</button>
+                <button type="button" data-value="NEUTRAL" aria-pressed="false">관망</button>
+                <button type="button" data-value="ANXIOUS" aria-pressed="false">불안</button>
+                <button type="button" data-value="FOMO" aria-pressed="false">추격</button>
+              </div>
+              <p class="hint">하나만 선택 · 나중에 수정할 수 있습니다</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="modal-actions" style="margin:0">
+          <a class="btn" th:href="@{/record-list}">취소</a>
+          <button class="btn btn-primary" type="submit" id="save-btn">기록 저장</button>
+          <p class="form-error" id="form-error" role="alert" hidden></p>
+        </div>
+      </form>
+    </div>
+
+    <!-- 저장 전에 무엇이 어떻게 바뀌는지 먼저 보여준다 -->
+    <aside class="stack-v">
+      <section class="card card-pad">
+        <h2 class="form-sec">현재 보유 현황 <span class="spacer"></span>
+          <span class="badge badge-line">저장 전</span></h2>
+
+        <p class="prev-group" id="prev-symbol">종목을 고르면 표시됩니다</p>
+        <ul class="prev-list">
+          <li><span class="k">보유 수량</span><span class="v num" id="prev-qty">—</span></li>
+          <li><span class="k">평균단가</span><span class="v num" id="prev-avg">—</span></li>
+          <li><span class="k">평균매수환율</span><span class="v num" id="prev-fx">—</span></li>
+        </ul>
+
+        <hr class="rule">
+
+        <p class="prev-group">포트폴리오 전체</p>
+        <ul class="prev-list">
+          <li><span class="k">총 평가금액</span><span class="v num" id="prev-total">—</span></li>
+        </ul>
+        <!-- 저장 후 값은 서버가 전체 재계산해서 준다(2.2). 화면에서 미리 계산하면
+             평단가 계산이 서버와 화면 두 곳에 생긴다 — 2.10 이 막으려던 바로 그 상황이다 -->
+        <p class="note">저장하면 서버가 전체 기록을 다시 훑어 재계산합니다.</p>
+      </section>
+
+      <p class="info">미장은 주문을 실행하지 않습니다. 증권사에서 이미 체결된 내역을 기록하는 화면입니다.</p>
+    </aside>
+  </div>
+</div>
+
+<!-- SR-006-4 종목 선택 -->
+<div class="overlay" id="pick-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pm-t">
+    <h2 id="pm-t">종목 선택</h2>
+    <p>매매 기록을 남길 종목을 찾습니다.</p>
+    <div class="field">
+      <input id="pick-q" type="search" autocomplete="off" placeholder="티커 또는 종목명"
+             aria-label="티커 또는 종목명" aria-controls="pick-list">
+    </div>
+    <ul class="list pick-list" id="pick-list"><!-- 스크립트가 채운다 --></ul>
+    <p class="note">비활성 종목(상장폐지·티커 변경)은 신규 매수 기록에 사용할 수 없습니다.</p>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/ui.js}"></script>
+<script th:attr="nonce=${cspNonce}" th:src="@{/js/header-search.js}" defer></script>
+<script th:attr="nonce=${cspNonce}">
+/* 거래 등록 (ACCOUNT-01~03) */
+(function () {
+  var form = document.getElementById("record-form");
+  if (!form) return;
+  var err = document.getElementById("form-error");
+  var save = document.getElementById("save-btn");
+
+  /* 오늘 날짜를 기본값으로 넣는다. 대부분의 기록은 당일 것이다.
+     단 "오늘" 은 한국이 아니라 **미국 거래일** 기준이다(라벨도 그렇게 적혀 있다).
+     한국 날짜를 넣으면 미국은 아직 어제여서 TX_TRADE_DATE_FUTURE 로 늘 거절당한다.
+     같은 이유로 max 를 걸어 미래 거래일을 아예 고를 수 없게 한다(2.6). */
+  function marketToday() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  }
+  var dt = document.getElementById("dt");
+  if (dt) {
+    dt.value = marketToday();
+    dt.max = marketToday();
+  }
+
+  /* 토글 버튼의 현재 값. aria-pressed 가 곧 상태다 */
+  function pressed(sel, fallback) {
+    var on = document.querySelector(sel + ' [aria-pressed="true"]');
+    return on ? on.dataset.value : fallback;
+  }
+
+  /* 빈 칸은 보내지 않는다. 서버가 @Positive 로 막으므로 0 이나 "" 를 보내면 거절당한다 */
+  function num(id) {
+    var el = document.getElementById(id);
+    if (!el) return null;
+    var v = el.value.trim();
+    return v === "" ? null : v;
+  }
+
+  function show(message) {
+    err.textContent = message;
+    err.hidden = false;
+    save.disabled = false;
+  }
+
+  /* ── 수량 단위 (주 / 원화 금액) ────────────────────────────
+     국내 증권사 소수점 매수는 "몇 주" 가 아니라 "얼마어치" 로, 그것도 **원화 금액**으로 주문한다.
+     $100 어치가 아니라 13만원어치를 산다. 그대로 적게 두고 주 수는 여기서 환산한다 —
+     사용자에게 계산기를 두 번(원화→달러, 달러→주) 두드리게 하면 그 자리에서 반올림이 어긋난다.
+
+         주 수 = 원화 금액 ÷ 적용 환율 ÷ 체결 단가
+
+     서버로 나가는 값은 언제나 주 수다. 원장에 금액을 넣을 자리는 없다(2.1). */
+  var QTY_SCALE = 6;          /* 스키마의 DECIMAL(18,6) */
+  var qtyInput = document.getElementById("qty");
+  var qtyLabel = document.getElementById("qty-label");
+  var qtyHint = document.getElementById("qty-hint");
+  var prcInput = document.getElementById("prc");
+  var fxInput = document.getElementById("fx");
+  var fxHint = document.getElementById("fx-hint");
+
+  function qtyUnit() {
+    return pressed("[data-qty-unit]", "SHARES");
+  }
+
+  function numberOf(el) {
+    var v = el.value.trim();
+    if (v === "") return null;
+    var n = Number(v);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+
+  /* 원화 금액 → 주 수. 환율과 단가가 둘 다 있어야 구할 수 있다 */
+  function sharesOf(krw) {
+    var a = Number(krw), fx = numberOf(fxInput), p = numberOf(prcInput);
+    if (!isFinite(a) || a <= 0 || fx === null || p === null) return null;
+    return a / fx / p;
+  }
+
+  /* 주 수 → 원화 금액 */
+  function krwOf(shares) {
+    var q = Number(shares), fx = numberOf(fxInput), p = numberOf(prcInput);
+    if (!isFinite(q) || q <= 0 || fx === null || p === null) return null;
+    return q * p * fx;
+  }
+
+  /* 보여줄 때는 꼬리 0 을 뗀다. 0.500000 주보다 0.5 주가 읽기 쉽다 */
+  function trimNum(v, scale) {
+    var t = Number(v).toFixed(scale);
+    return t.indexOf(".") < 0 ? t : t.replace(/0+$/, "").replace(/\.$/, "");
+  }
+
+  function drawQtyHint() {
+    if (!qtyInput) return;
+    if (qtyUnit() === "SHARES") {
+      qtyLabel.textContent = "수량 (주)";
+      qtyInput.step = "0.000001";
+      qtyInput.placeholder = "0";
+      qtyHint.classList.remove("err");
+      qtyHint.textContent = "소수점 매수 가능";
+      return;
+    }
+    qtyLabel.textContent = "금액 (원)";
+    qtyInput.step = "1";
+    qtyInput.placeholder = "0";
+
+    var amount = qtyInput.value.trim();
+    if (amount === "") {
+      qtyHint.classList.remove("err");
+      qtyHint.textContent = "산 원화 금액을 적으면 주 수로 바꿔 기록합니다";
+      return;
+    }
+    /* 무엇이 비어서 환산이 안 되는지 짚어 준다. "환산할 수 없습니다" 만으로는 뭘 채워야 할지 모른다 */
+    if (numberOf(prcInput) === null) {
+      qtyHint.classList.add("err");
+      qtyHint.textContent = "체결 단가를 먼저 입력해주세요";
+      return;
+    }
+    if (numberOf(fxInput) === null) {
+      qtyHint.classList.add("err");
+      qtyHint.textContent = "적용 환율을 먼저 입력해주세요";
+      return;
+    }
+    qtyHint.classList.remove("err");
+    qtyHint.textContent = trimNum(sharesOf(amount), QTY_SCALE) + "주로 기록됩니다";
+  }
+
+  /* 단위를 바꾸면 값도 같은 거래를 가리키도록 옮겨 준다. 숫자만 그대로 두면
+     "10주" 가 "10원" 이 되어 전혀 다른 거래가 된다 */
+  var qtyGroup = document.querySelector("[data-qty-unit]");
+  if (qtyGroup) {
+    qtyGroup.addEventListener("mj:change", function (e) {
+      var v = qtyInput.value.trim();
+      if (v !== "") {
+        var moved = e.detail === "AMOUNT" ? krwOf(v) : sharesOf(v);
+        /* 환산할 수 없으면 비운다. 남겨두면 뜻이 바뀐다 */
+        qtyInput.value = moved === null ? ""
+            : (e.detail === "AMOUNT" ? String(Math.round(moved)) : trimNum(moved, QTY_SCALE));
+      }
+      drawQtyHint();
+    });
+  }
+  if (qtyInput) qtyInput.addEventListener("input", drawQtyHint);
+  if (prcInput) prcInput.addEventListener("input", drawQtyHint);
+
+  /* ── 거래일 환율 자동 입력 ─────────────────────────────────
+     원화 금액으로 적으려면 환율이 있어야 한다. 사용자가 매번 찾아 적을 이유가 없고,
+     화면이 환산에 쓴 환율과 서버에 저장되는 환율이 달라도 안 된다 — 그래서 칸에 실제로 채운다.
+     직접 고쳐 넣은 값은 건드리지 않는다(힌트가 "수정 가능" 이라고 약속한다). */
+  var fxAuto = true;
+  if (fxInput) {
+    fxInput.addEventListener("input", function () {
+      fxAuto = false;                 // 손댄 순간부터는 자동으로 덮지 않는다
+      /* 자동 입력에 실패했다는 빨간 안내를 그대로 두면, 직접 채워 넣은 뒤에도 뭔가 잘못된 것처럼 보인다 */
+      if (numberOf(fxInput) !== null) {
+        fxHint.classList.remove("err");
+        fxHint.textContent = "직접 입력한 환율로 기록됩니다";
+      }
+      drawQtyHint();
+    });
+  }
+
+  async function fillFxRate() {
+    if (!fxInput || !fxAuto) return;
+    var date = document.getElementById("dt").value;
+    if (!date) return;
+    try {
+      var res = await fetch("/api/fx/rates?date=" + encodeURIComponent(date));
+      if (res.status === 401) { location.href = "/login"; return; }
+      var out = await res.json();
+      var rate = out.success ? out.data : null;
+      if (!rate) {
+        fxInput.value = "";
+        fxHint.classList.add("err");
+        fxHint.textContent = "그날 환율이 없습니다 · 직접 입력해주세요";
+      } else {
+        fxInput.value = rate.rate;
+        fxHint.classList.remove("err");
+        /* 주말·휴일이면 직전 영업일 값으로 대체된다. 어느 날 값인지 밝힌다 */
+        fxHint.textContent = rate.substituted
+            ? rate.substitutedFrom + " 환율로 대체 · 수정 가능"
+            : "체결일 기준 자동 입력 · 수정 가능";
+      }
+    } catch (e) {
+      fxHint.textContent = "환율을 불러오지 못했습니다 · 직접 입력해주세요";
+    }
+    drawQtyHint();
+  }
+
+  var dtInput = document.getElementById("dt");
+  if (dtInput) dtInput.addEventListener("change", function () { fillFxRate(); });
+  fillFxRate();
+  drawQtyHint();
+
+  /* 종목 선택 모달이 고른 티커를 버튼에 담아 둔다. 폼은 그 값만 읽는다 */
+  document.addEventListener("mj:symbol-pick", function (e) {
+    var btn = document.getElementById("sym-btn");
+    btn.dataset.symbol = e.detail.symbol;
+    /* textContent 로 통째로 갈아치우면 안에 있는 돋보기 아이콘까지 지워진다.
+       티커·종목명 칸만 각각 채운다 */
+    document.getElementById("sym-tk").textContent = e.detail.symbol;
+    document.getElementById("sym-nm").textContent = e.detail.name || "";
+  });
+
+  /* ?edit=<id> 로 들어오면 그 기록을 고치는 화면이 된다.
+     화면을 새로 만들지 않는 이유 — 수량 단위 환산·환율 채움·종목 검색이 전부 여기 있다.
+     복사하면 한쪽만 고쳐지고 두 화면이 서로 다르게 동작한다 */
+  var EDIT_ID = new URLSearchParams(location.search).get("edit");
+
+  if (EDIT_ID) {
+    document.getElementById("form-title").textContent = "매매 기록 수정";
+    save.textContent = "수정 저장";
+
+    (async function () {
+      var res = await fetch("/api/transactions/" + encodeURIComponent(EDIT_ID));
+      if (res.status === 401) { location.href = "/login"; return; }
+      var out = await res.json();
+      if (!out.success) { show("기록을 불러오지 못했습니다"); save.disabled = true; return; }
+      var tx = out.data;
+
+      /* 종목 버튼은 모달이 채우는 자리다. 같은 이벤트를 쏴서 한 길로 흐르게 한다 */
+      document.dispatchEvent(new CustomEvent("mj:symbol-pick",
+        { detail: { symbol: tx.symbol, name: tx.name } }));
+
+      setPressed("[data-side]", tx.side);
+      setPressed("[data-sentiment]", tx.sentiment);
+      /* 수량은 늘 주 수로 되돌려 놓는다. 원화로 적었더라도 서버에는 주 수로 저장돼 있다 */
+      setPressed("[data-qty-unit]", "SHARES");
+      document.getElementById("qty").value = trimZero(tx.quantity);
+      document.getElementById("prc").value = trimZero(tx.price);
+      document.getElementById("fx").value = trimZero(tx.fxRate);
+      document.getElementById("fee").value = tx.fee == null ? "" : trimZero(tx.fee);
+      document.getElementById("dt").value = tx.tradeDate;
+      /* 저장된 체결 시각을 시각칸에 되돌린다. 안 넣으면 수정 저장 때 빈 칸이 16:00 으로
+         떨어져 원래 시각을 조용히 덮어쓴다. tradedAt 은 "…T14:30:00" 꼴이라 HH:MM 만 뗀다 */
+      document.getElementById("tm").value = tx.tradedAt ? tx.tradedAt.slice(11, 16) : "";
+      document.getElementById("why").value = tx.buyReason || "";
+      document.getElementById("tgt").value = tx.targetPrice == null ? "" : trimZero(tx.targetPrice);
+      form.dispatchEvent(new CustomEvent("mj:refresh"));
+    })();
+  }
+
+  /* 알약 그룹에서 한 값을 눌러 둔 상태로 만든다. ui.js 가 aria-pressed 를 본다 */
+  function setPressed(selector, value) {
+    var group = document.querySelector(selector);
+    if (!group || value == null) return;
+    group.querySelectorAll("button[data-value]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.value === value));
+    });
+  }
+
+  /* DECIMAL(18,6) 이라 "10.000000" 으로 온다. 그대로 칸에 넣으면 읽기 사납다 */
+  function trimZero(v) {
+    if (v == null) return "";
+    var n = Number(v);
+    return Number.isFinite(n) ? String(n) : String(v);
+  }
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    err.hidden = true;
+    save.disabled = true;
+
+    var symbol = document.getElementById("sym-btn").dataset.symbol;
+    if (!symbol) { show("종목을 선택해주세요"); return; }
+
+    /* 서버는 LocalDateTime 을 받는다. 시각을 비우면 장 마감(16:00)을 붙인다 —
+       같은 날 여러 거래를 구분하려는 사람은 시각을 직접 넣을 수 있다 */
+    /* 원화 금액으로 적었으면 여기서 주 수로 바꿔 보낸다. 서버는 주 수만 받는다 */
+    var quantity = num("qty");
+    if (quantity !== null && qtyUnit() === "AMOUNT") {
+      if (numberOf(prcInput) === null) { show("체결 단가를 먼저 입력해주세요"); return; }
+      if (numberOf(fxInput) === null) { show("적용 환율을 먼저 입력해주세요"); return; }
+      var shares = sharesOf(quantity);
+      quantity = shares.toFixed(QTY_SCALE);
+      if (Number(quantity) <= 0) { show("금액이 너무 작아 1주의 소수점으로도 담기지 않습니다"); return; }
+    }
+
+    var body = {
+      symbol: symbol,
+      side: pressed("[data-side]", "BUY"),
+      quantity: quantity,
+      price: num("prc"),
+      fxRate: num("fx"),
+      fee: num("fee"),
+      tradedAt: document.getElementById("dt").value + "T"
+                + (document.getElementById("tm").value || "16:00") + ":00",
+      buyReason: document.getElementById("why").value.trim() || null,
+      targetPrice: num("tgt"),
+      sentiment: pressed("[data-sentiment]", null)
+    };
+
+    /* 수정 모드면 그 기록을 고치고, 아니면 새로 넣는다.
+       두 화면을 따로 만들면 검증과 단위 환산이 두 벌이 되어 한쪽만 고쳐진다 */
+    var res = await fetch(EDIT_ID ? "/api/transactions/" + encodeURIComponent(EDIT_ID)
+                                  : "/api/transactions", {
+      method: EDIT_ID ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 401) { location.href = "/login"; return; }
+    var out = await res.json();
+    /* 보유보다 많이 팔면 서버가 422 로 막는다(2.5). 그 문구를 그대로 보여준다 */
+    if (!out.success) { show(out.error ? out.error.message : "저장하지 못했습니다"); return; }
+    location.href = "/record-list";
+  });
+})();
+
+/* 종목 선택 모달 (SR-006-4)
+   프로토타입은 고정된 네 줄이었고 mj:symbol-pick 을 아무도 쏘지 않았다.
+   그래서 폼이 티커를 영원히 못 받아 저장 자체가 되지 않았다. 실제 검색에 연결한다. */
+(function () {
+  var modal = document.getElementById("pick-modal");
+  var input = document.getElementById("pick-q");
+  var list = document.getElementById("pick-list");
+  if (!modal || !input || !list) return;
+
+  var timer = null;
+
+  function message(text) {
+    list.replaceChildren();
+    var li = document.createElement("li");
+    li.className = "note";
+    li.style.padding = "14px";
+    li.textContent = text;
+    list.appendChild(li);
+  }
+
+  function draw(items) {
+    if (items.length === 0) { message("결과가 없습니다."); return; }
+    list.replaceChildren();
+    items.forEach(function (s) {
+      var li = document.createElement("li");
+      var btn = document.createElement("button");
+      btn.type = "button";
+
+      var tk = document.createElement("span");
+      tk.className = "tk";
+      tk.textContent = s.symbol;
+      var nm = document.createElement("span");
+      nm.className = "nm";
+      nm.textContent = s.nameKo || s.name || "";
+      var meta = document.createElement("span");
+      meta.className = "meta";
+      meta.textContent = s.exchange || "";
+      btn.appendChild(tk); btn.appendChild(nm); btn.appendChild(meta);
+
+      /* 상장폐지·거래불가 종목은 새 기록에 쓸 수 없다(2.6). 서버도 422 로 막지만
+         고를 수 있게 두면 다 적고 나서야 거절당한다 */
+      if (s.active === false) {
+        btn.disabled = true;
+        var bad = document.createElement("span");
+        bad.className = "badge badge-line";
+        bad.textContent = "거래불가";
+        btn.appendChild(bad);
+      } else {
+        btn.dataset.symbol = s.symbol;
+        btn.dataset.name = s.nameKo || s.name || "";
+      }
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+
+  async function search() {
+    var q = input.value.trim();
+    if (!q) { list.replaceChildren(); return; }
+    try {
+      var res = await fetch("/api/stocks/search?q=" + encodeURIComponent(q));
+      if (res.status === 401) { location.href = "/login"; return; }
+      var body = await res.json();
+      if (!body.success) { message("검색하지 못했습니다."); return; }
+      draw((body.data || []).slice(0, 20));
+    } catch (e) {
+      message("검색하지 못했습니다.");
+    }
+  }
+
+  /* 디바운스. 글자마다 보내면 타자 속도만큼 요청이 나간다 */
+  input.addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(search, 200);
+  });
+
+  list.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-symbol]");
+    if (!btn) return;
+    document.dispatchEvent(new CustomEvent("mj:symbol-pick", {
+      detail: { symbol: btn.dataset.symbol, name: btn.dataset.name },
+    }));
+    modal.hidden = true;
+  });
+
+  /* 열릴 때 바로 칠 수 있게 커서를 넣어 준다 */
+  document.addEventListener("click", function (e) {
+    if (e.target.closest('[data-open="pick-modal"]')) setTimeout(function () { input.focus(); }, 0);
+  });
+})();
+
+/* 고른 종목의 현재 보유 현황 · 총 평가금액
+   저장 후 값은 서버가 전체 재계산해서 준다(2.2). 화면에서 미리 계산하지 않는다 —
+   평단가 계산이 서버와 화면 두 곳에 생기면 2.10 이 막으려던 상황이 그대로 벌어진다. */
+(function () {
+  var holdings = null;
+
+  function num(v, digits, suffix) {
+    return v == null ? "—" : Number(v).toLocaleString("ko-KR",
+      { minimumFractionDigits: digits, maximumFractionDigits: digits }) + (suffix || "");
+  }
+
+  /* 보유 수량은 자리수를 고정하지 않는다. 0 자리로 맞추면 0.53주가 1주로 보인다 */
+  function shares(v) {
+    return v == null ? "—" : Number(v).toLocaleString("ko-KR",
+      { minimumFractionDigits: 0, maximumFractionDigits: 6 }) + "주";
+  }
+  function text(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  async function api(url) {
+    var res = await fetch(url);
+    if (res.status === 401) { location.href = "/login"; return undefined; }
+    var body = await res.json();
+    return body.success ? body.data : null;
+  }
+
+  function fill(symbol, name) {
+    var h = (holdings || []).filter(function (x) { return x.symbol === symbol; })[0];
+
+    text("prev-symbol", symbol ? symbol + " 보유 현황" : "종목을 고르면 표시됩니다");
+    if (!h) {
+      text("prev-qty", symbol ? "0주" : "—");
+      text("prev-avg", "—");
+      text("prev-fx", "—");
+      text("sym-hint", symbol ? "아직 보유하지 않은 종목입니다" : "기록할 종목을 먼저 고릅니다");
+      return;
+    }
+    text("prev-qty", shares(h.quantity));
+    text("prev-avg", h.avgPrice == null ? "—" : "$" + num(h.avgPrice, 2));
+    text("prev-fx", num(h.avgFxRate, 1));
+    text("sym-hint", "보유 중 " + shares(h.quantity));
+  }
+
+  document.addEventListener("mj:symbol-pick", function (e) {
+    fill(e.detail.symbol, e.detail.name);
+  });
+
+  (async function load() {
+    var list = await api("/api/portfolio/holdings");
+    if (list === undefined) return;
+    holdings = list || [];
+
+    var total = await api("/api/portfolio/total");
+    if (total === undefined) return;
+    text("prev-total", total == null ? "—"
+      : Math.round(Number(total)).toLocaleString("ko-KR") + "원");
+  })();
+})();
+</script>
+
+</body>
+</html>
